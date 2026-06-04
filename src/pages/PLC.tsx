@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useDbStorage } from '@/hooks/useDbStorage';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { HandHeart, Users, Clock, Plus, Calendar, BookOpen, Megaphone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { HandHeart, Users, Clock, Plus, Calendar, BookOpen, Megaphone, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PLCGroup } from '@/types';
@@ -105,6 +106,15 @@ export default function PLC() {
             </div>
           </div>
           <div className="grid grid-cols-2 sm:flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 sm:gap-2 text-xs sm:text-sm border-success/30 text-success hover:bg-success/10"
+              onClick={() => navigate('/resumen-plc')}
+            >
+              <ClipboardList className="w-4 h-4 shrink-0" />
+              <span className="truncate">Resumen</span>
+            </Button>
             <Button variant="outline" size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm" onClick={() => setCalendarDialogOpen(true)}>
               <Calendar className="w-4 h-4 shrink-0" />
               <span className="truncate">Calendario</span>

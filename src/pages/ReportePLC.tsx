@@ -20,6 +20,7 @@ import { useDbStorage } from '@/hooks/useDbStorage';
 import { PLCGroup } from '@/types';
 import { useMembers } from '@/contexts/MembersContext';
 import { useTestimonies } from '@/contexts/TestimoniesContext';
+import { savePlcReport } from '@/lib/plcReports';
 
 interface ReportePLCData {
   fechaPLC: Date | undefined;
@@ -116,7 +117,46 @@ export default function ReportePLC() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!currentPLC) {
+      toast.error('PLC no encontrado');
+      return;
+    }
+
+    try {
+      const expectedIds = plcMembers.map((m) => m.id);
+      const attendeeNames = plcMembers
+        .filter((m) => formData.miembrosAsistentesIds.includes(m.id))
+        .map((m) => `${m.firstName} ${m.lastName}`.trim());
+
+      await savePlcReport({
+        plcGroupId: currentPLC.id,
+        plcName: currentPLC.name,
+        leaderId: currentPLC.leaderId,
+        leaderName: formData.liderNombre,
+        reportDate: formData.fechaPLC ?? null,
+        meetingDay: formData.diaReunion,
+        attendeeIds: formData.miembrosAsistentesIds,
+        attendeeNames,
+        expectedMemberIds: expectedIds,
+        cantidadInvitados: formData.cantidadInvitados,
+        nombresInvitados: formData.nombresInvitados,
+        huboConvertidos: formData.huboConvertidos,
+        convertidosInfo: formData.convertidosInfo,
+        huboReconciliados: formData.huboReconciliados,
+        reconciliadosInfo: formData.reconciliadosInfo,
+        huboIncorporados: formData.huboIncorporados,
+        incorporadosInfo: formData.incorporadosInfo,
+        testimonioMilagros: formData.testimonioMilagros,
+        ofrendaRecolectada: formData.ofrendaRecolectada,
+        todosRecibieronAnuncios: formData.todosRecibieronAnuncios,
+        comentarios: formData.comentarios,
+      });
+    } catch {
+      toast.error('No se pudo guardar el reporte en la base de datos');
+      return;
+    }
+
     if (formData.testimonioMilagros.trim().length > 0) {
       const liderName = formData.liderNombre && formData.liderNombre !== 'Líder no detectado'
         ? formData.liderNombre
@@ -125,9 +165,9 @@ export default function ReportePLC() {
         ? format(formData.fechaPLC, 'yyyy-MM-dd')
         : new Date().toISOString().split('T')[0];
       addTestimony({
-        authorId: currentPLC?.leaderId ?? 'plc',
+        authorId: currentPLC.leaderId ?? 'plc',
         authorName: liderName,
-        title: `Testimonio PLC ${currentPLC?.name ?? ''}`.trim(),
+        title: `Testimonio PLC ${currentPLC.name}`.trim(),
         content: formData.testimonioMilagros.trim(),
         date: fechaStr,
         status: 'pending',
@@ -220,9 +260,12 @@ export default function ReportePLC() {
               <p className="text-muted-foreground">
                 Gracias por enviar el reporte del PLC. La información ha sido registrada correctamente.
               </p>
-              <div className="flex gap-2 mt-4">
+              <div className="flex flex-wrap gap-2 mt-4 justify-center">
                 <Button variant="outline" onClick={handleReset}>
                   Nuevo Reporte
+                </Button>
+                <Button variant="outline" onClick={() => navigate('/resumen-plc')}>
+                  Ver Resumen
                 </Button>
                 <Button onClick={() => navigate('/')}>
                   Ir al inicio

@@ -16,6 +16,7 @@ export const AVAILABLE_PAGES: PagePermission[] = [
   { path: '/calendar-2026', label: 'Calendario 2026', group: 'Eventos' },
 
   { path: '/plc', label: 'PLC', group: 'PLC' },
+  { path: '/resumen-plc', label: 'Resumen PLC', group: 'PLC' },
   { path: '/reporte-plc', label: 'Reporte PLC', group: 'PLC' },
 
   { path: '/membresia', label: 'Nuevos Comienzos', group: 'Discipulado' },

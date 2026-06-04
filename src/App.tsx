@@ -18,6 +18,7 @@ import Tags from "./pages/Tags";
 import Events from "./pages/Events";
 import PLC from "./pages/PLC";
 import ReportePLC from "./pages/ReportePLC";
+import ResumenPLC from "./pages/ResumenPLC";
 import NuevosComienzos from "./pages/NuevosComienzos";
 import ReporteMembresia from "./pages/ReporteMembresia";
 
@@ -100,6 +101,7 @@ const App = () => (
                 <Route path="/tags" element={<P><Tags /></P>} />
                 <Route path="/events" element={<P><Events /></P>} />
                 <Route path="/plc" element={<P><PLC /></P>} />
+                <Route path="/resumen-plc" element={<P><ResumenPLC /></P>} />
                 <Route path="/reporte-plc" element={<P><ReportePLC /></P>} />
                 <Route path="/membresia" element={<P><NuevosComienzos /></P>} />
                 <Route path="/reporte-membresia" element={<P><ReporteMembresia /></P>} />
