@@ -15,23 +15,23 @@ import { UserAccountsSection } from '@/components/settings/UserAccountsSection';
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme();
-  const { profile, updateProfile, updateChurch, setAvatar } = useProfile();
+  const { profile, updateProfile, updateChurch, uploadAvatar } = useProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const onPickAvatar = () => fileInputRef.current?.click();
-  const onAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
       toast.error('Por favor seleccione una imagen');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAvatar(reader.result as string);
+    try {
+      await uploadAvatar(file);
       toast.success('Foto de perfil actualizada');
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      toast.error('No se pudo guardar la foto en la base de datos.');
+    }
     e.target.value = '';
   };
 
@@ -125,7 +125,7 @@ export default function Settings() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
                   className="hidden"
                   onChange={onAvatarChange}
                 />

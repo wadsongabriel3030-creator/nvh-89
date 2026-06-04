@@ -5,6 +5,9 @@ import { Sparkles, Plus, Users, CheckCircle, Clock, FileText, BookOpen } from 'l
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useDbStorage } from '@/hooks/useDbStorage';
+import { useMembers } from '@/contexts/MembersContext';
+import { notifyMemberProgressUpdated } from '@/lib/memberProgressEvents';
 
 const CURSO_MEMBRESIA = {
   id: 'membresia',
@@ -15,7 +18,6 @@ const CURSO_MEMBRESIA = {
   lecciones: ['Vida Nuevos Hechos'],
 };
 import { NuevosComienzosParticipant } from '@/types';
-import { mockMembers } from '@/lib/mock-data';
 import { ParticipantCard } from '@/components/nuevos-comienzos/ParticipantCard';
 import { AddParticipantDialog } from '@/components/nuevos-comienzos/AddParticipantDialog';
 import { EditParticipantDialog } from '@/components/nuevos-comienzos/EditParticipantDialog';
@@ -28,25 +30,33 @@ const initialParticipants: NuevosComienzosParticipant[] = [
 
 export default function NuevosComienzos() {
   const navigate = useNavigate();
-  const [participants, setParticipants] = useState<NuevosComienzosParticipant[]>(initialParticipants);
+  const { members } = useMembers();
+  const { value: participants, setValue: setParticipants } = useDbStorage<NuevosComienzosParticipant[]>(
+    'membresia-participants-v1',
+    initialParticipants,
+    'membresia'
+  );
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState<NuevosComienzosParticipant | null>(null);
   const [reporteOpen, setReporteOpen] = useState(false);
 
-  const getMember = (memberId: string) => mockMembers.find(m => m.id === memberId);
+  const getMember = (memberId: string) => members.find(m => m.id === memberId);
 
   const handleAdd = (participant: NuevosComienzosParticipant) => {
     setParticipants(prev => [...prev, participant]);
+    notifyMemberProgressUpdated();
   };
 
   const handleEdit = (updated: NuevosComienzosParticipant) => {
     setParticipants(prev => prev.map(p => p.id === updated.id ? updated : p));
+    notifyMemberProgressUpdated();
   };
 
   const handleDelete = (id: string) => {
     setParticipants(prev => prev.filter(p => p.id !== id));
+    notifyMemberProgressUpdated();
   };
 
   const openEditDialog = (participant: NuevosComienzosParticipant) => {
@@ -174,7 +184,7 @@ export default function NuevosComienzos() {
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
         onAdd={handleAdd}
-        members={mockMembers}
+        members={members}
         existingParticipantIds={participants.map(p => p.memberId)}
       />
       <EditParticipantDialog

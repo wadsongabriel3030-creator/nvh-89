@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { notifyMemberProgressUpdated } from '@/lib/memberProgressEvents';
 
 export interface ClassReportInput {
   area: string;
@@ -35,6 +36,7 @@ export async function saveClassReport(input: ClassReportInput) {
     created_by: userData.user?.id ?? null,
   } as never);
   if (error) throw error;
+  notifyMemberProgressUpdated();
 }
 
 /** Carga todos los reportes de clase del banco de datos. */

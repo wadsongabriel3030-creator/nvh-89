@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -16,24 +16,20 @@ import { useMembers } from '@/contexts/MembersContext';
 import { Check, Minus, Users, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchClassReports, type ClassReportRow } from '@/lib/classReports';
+import { MEMBER_PROGRESS_EVENT } from '@/lib/memberProgressEvents';
 
-/**
- * Cada "clase" es una columna dentro de un área (página).
- * - storageKeys: claves de localStorage con listas de memberIds (formato legado)
- * - discipuladoCurso/Leccion: matchea reportes guardados en `discipulado-reportes-v1`
- *   (compara por nombre completo del miembro)
- * - reporteKey/reporteLeccion: matchea reportes guardados en `reportes-clases-v1`
- *   (formato unificado por página: { area, leccion, asistentes: [memberId|nombre] })
- */
 type Clase = {
   key: string;
   label: string;
   storageKeys?: string[];
+  appStorageKeys?: string[];
+  appStorageAttendanceKeys?: string[];
   discipuladoCurso?: string;
   discipuladoLeccion?: string;
+  discipleshipCourseSlug?: string;
+  enrollmentColumn?: boolean;
   reporteKey?: string;
   reporteLeccion?: string;
-  /** Tablas de Supabase con alumnos (member_id / full_name) que cuentan para esta clase */
   dbStudents?: string[];
 };
 
@@ -52,6 +48,12 @@ const GROUP_ORDER = [
   'Vida en Libertad',
   'Discipulado',
 ] as const;
+
+const DISCIPLESHIP_COURSE_IDS: Record<string, string> = {
+  '3': 'administracion',
+  '4': 'la-familia',
+  '5': 'creencias-basicas',
+};
 
 const AREAS: Area[] = [
   {
@@ -75,6 +77,9 @@ const AREAS: Area[] = [
         key: 'vida_nuevos_hechos',
         label: 'Vida Nuevos Hechos',
         storageKeys: ['vida-nuevos-hechos-participants', 'inscripcion-vida-nuevos'],
+        appStorageKeys: ['membresia-participants-v1'],
+        reporteKey: 'membresia',
+        reporteLeccion: 'Vida Nuevos Hechos',
         dbStudents: ['membresia_students', 'nuevos_comienzos_participants'],
       },
       {
@@ -132,6 +137,8 @@ const AREAS: Area[] = [
         key: 'cvl',
         label: 'Curso Vida en Libertad',
         storageKeys: ['curso-vida-libertad-participants'],
+        appStorageKeys: ['vl-enrolled-curso-vida-libertad'],
+        appStorageAttendanceKeys: ['vl-attendance-curso-vida-libertad'],
         reporteKey: 'curso-vida-libertad',
         reporteLeccion: 'Curso Vida en Libertad',
       },
@@ -139,6 +146,8 @@ const AREAS: Area[] = [
         key: 'rvl',
         label: 'Retiro Vida en Libertad',
         storageKeys: ['retiro-vida-libertad-participants', 'inscripcion-retiro-vida-libertad'],
+        appStorageKeys: ['vl-enrolled-retiro-vida-libertad'],
+        appStorageAttendanceKeys: ['vl-attendance-retiro-vida-libertad'],
         reporteKey: 'retiro-vida-libertad',
         reporteLeccion: 'Retiro Vida en Libertad',
       },
@@ -156,7 +165,8 @@ const AREAS: Area[] = [
         label: 'Administración – Curso',
         discipuladoCurso: 'administracion',
         discipuladoLeccion: 'CURSO La Administración',
-        dbStudents: ['discipleship_students'],
+        discipleshipCourseSlug: 'administracion',
+        enrollmentColumn: true,
       },
       {
         key: 'adm_practica',
@@ -169,7 +179,8 @@ const AREAS: Area[] = [
         label: 'La Familia – Curso',
         discipuladoCurso: 'la-familia',
         discipuladoLeccion: 'CURSO La Familia',
-        dbStudents: ['discipleship_students'],
+        discipleshipCourseSlug: 'la-familia',
+        enrollmentColumn: true,
       },
       {
         key: 'fam_seminario',
@@ -182,7 +193,8 @@ const AREAS: Area[] = [
         label: 'Creencias Básicas – Curso',
         discipuladoCurso: 'creencias-basicas',
         discipuladoLeccion: 'CURSO Creencias Básicas de la Cristiandad',
-        dbStudents: ['creencias_students', 'discipleship_students'],
+        discipleshipCourseSlug: 'creencias-basicas',
+        enrollmentColumn: true,
       },
       {
         key: 'cb_practica',
@@ -195,7 +207,6 @@ const AREAS: Area[] = [
 ];
 
 function readMemberIds(keys: string[]): Set<string> {
-
   const ids = new Set<string>();
   if (typeof window === 'undefined') return ids;
   for (const k of keys) {
@@ -203,18 +214,89 @@ function readMemberIds(keys: string[]): Set<string> {
       const raw = localStorage.getItem(k);
       if (!raw) continue;
       const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) continue;
-      for (const item of parsed) {
-        if (typeof item === 'string') ids.add(item);
-        else if (item && typeof item === 'object') {
-          if (item.memberId) ids.add(String(item.memberId));
-          else if (item.id) ids.add(String(item.id));
-        }
-      }
+      extractMemberIdsFromValue(parsed).forEach((id) => ids.add(id));
     } catch {
       // ignora
     }
   }
+  return ids;
+}
+
+function extractMemberIdsFromValue(value: unknown): Set<string> {
+  const ids = new Set<string>();
+  if (!value) return ids;
+
+  if (typeof value === 'string') {
+    ids.add(value);
+    return ids;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      extractMemberIdsFromValue(item).forEach((id) => ids.add(id));
+    }
+    return ids;
+  }
+
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    if (obj.memberId) ids.add(String(obj.memberId));
+    if (obj.id) ids.add(String(obj.id));
+  }
+
+  return ids;
+}
+
+function readDiscipleshipEnrollment(): Record<string, Set<string>> {
+  const map: Record<string, Set<string>> = {};
+  if (typeof window === 'undefined') return map;
+
+  try {
+    const raw = localStorage.getItem('discipleship-courses-v1');
+    if (!raw) return map;
+    const saved = JSON.parse(raw) as Record<string, { id?: string }[]>;
+    for (const [courseId, students] of Object.entries(saved)) {
+      const slug = DISCIPLESHIP_COURSE_IDS[courseId];
+      if (!slug || !Array.isArray(students)) continue;
+      if (!map[slug]) map[slug] = new Set();
+      for (const s of students) {
+        if (s?.id) map[slug].add(String(s.id));
+      }
+    }
+  } catch {
+    // ignora
+  }
+
+  return map;
+}
+
+function matchNamesToMemberIds(
+  names: Set<string>,
+  members: { id: string; firstName: string; lastName: string }[]
+): Set<string> {
+  const ids = new Set<string>();
+  members.forEach((m) => {
+    const full = `${m.firstName} ${m.lastName}`.trim().toLowerCase();
+    if (names.has(full)) ids.add(m.id);
+  });
+  return ids;
+}
+
+function collectReportMemberIds(
+  reports: ClassReportRow[],
+  match: (r: ClassReportRow) => boolean,
+  members: { id: string; firstName: string; lastName: string }[]
+): Set<string> {
+  const ids = new Set<string>();
+  const names = new Set<string>();
+
+  for (const r of reports) {
+    if (!match(r)) continue;
+    (r.attendee_ids || []).forEach((id) => ids.add(String(id)));
+    (r.attendee_names || []).forEach((n) => names.add(String(n).trim().toLowerCase()));
+  }
+
+  matchNamesToMemberIds(names, members).forEach((id) => ids.add(id));
   return ids;
 }
 
@@ -227,38 +309,55 @@ export function MembersProgressTable() {
     Record<string, { member_id: string | null; full_name: string | null }[]>
   >({});
   const [plcMemberIds, setPlcMemberIds] = useState<Set<string>>(new Set());
+  const [appStorageData, setAppStorageData] = useState<Record<string, unknown>>({});
 
   const area = useMemo(() => AREAS.find((a) => a.id === areaId) ?? AREAS[0], [areaId]);
+  const discipleshipEnrollment = useMemo(() => readDiscipleshipEnrollment(), [appStorageData, reports]);
 
-  // Carga reportes y alumnos desde el banco de datos
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     const tables = Array.from(
       new Set(AREAS.flatMap((a) => a.clases.flatMap((c) => c.dbStudents ?? [])))
     );
-    const [reps, plcRes, ...studentResults] = await Promise.all([
+
+    const appKeys = Array.from(
+      new Set(
+        AREAS.flatMap((a) =>
+          a.clases.flatMap((c) => [
+            ...(c.appStorageKeys ?? []),
+            ...(c.appStorageAttendanceKeys ?? []),
+          ])
+        )
+      )
+    );
+
+    const [reps, plcRes, appStorageRes, ...studentResults] = await Promise.all([
       fetchClassReports(),
-      supabase
-        .from('app_storage')
-        .select('value')
-        .eq('key', 'plc_groups_list')
-        .maybeSingle(),
-      ...tables.map((t) =>
-        supabase.from(t as any).select('member_id, full_name')
-      ),
+      supabase.from('app_storage').select('value').eq('key', 'plc_groups_list').maybeSingle(),
+      appKeys.length
+        ? supabase.from('app_storage').select('key, value').in('key', appKeys)
+        : Promise.resolve({ data: [] as { key: string; value: unknown }[] }),
+      ...tables.map((t) => supabase.from(t as 'membresia_students').select('member_id, full_name')),
     ]);
+
     setReports(reps);
+
+    const storageMap: Record<string, unknown> = {};
+    for (const row of appStorageRes.data ?? []) {
+      storageMap[row.key] = row.value;
+    }
+    setAppStorageData(storageMap);
+
     const studentsMap: Record<string, { member_id: string | null; full_name: string | null }[]> = {};
     tables.forEach((t, i) => {
-      studentsMap[t] = ((studentResults[i] as any)?.data ?? []) as {
+      studentsMap[t] = (studentResults[i]?.data ?? []) as {
         member_id: string | null;
         full_name: string | null;
       }[];
     });
     setDbStudents(studentsMap);
 
-    // Recolecta todos los IDs de miembros y líderes registrados en algún PLC
     const ids = new Set<string>();
-    const groups = (plcRes as any)?.data?.value;
+    const groups = plcRes.data?.value;
     if (Array.isArray(groups)) {
       for (const g of groups) {
         if (g?.leaderId) ids.add(String(g.leaderId));
@@ -266,58 +365,43 @@ export function MembersProgressTable() {
       }
     }
     setPlcMemberIds(ids);
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-    const onStorage = () => loadData();
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+    const onUpdate = () => loadData();
+    window.addEventListener(MEMBER_PROGRESS_EVENT, onUpdate);
+    window.addEventListener('storage', onUpdate);
+    window.addEventListener('focus', onUpdate);
+    return () => {
+      window.removeEventListener(MEMBER_PROGRESS_EVENT, onUpdate);
+      window.removeEventListener('storage', onUpdate);
+      window.removeEventListener('focus', onUpdate);
+    };
+  }, [loadData]);
 
   const progressMap = useMemo(() => {
     const map: Record<string, Set<string>> = {};
+
     for (const c of area.clases) {
       const ids = new Set<string>();
 
-      // Reportes de Discipulado guardados en el banco (area = discipulado:<curso>)
       if (c.discipuladoCurso && c.discipuladoLeccion) {
-        const names = new Set<string>();
-        for (const r of reports) {
-          if (
-            r.area === `discipulado:${c.discipuladoCurso}` &&
-            r.leccion === c.discipuladoLeccion
-          ) {
-            (r.attendee_ids || []).forEach((id) => ids.add(String(id)));
-            (r.attendee_names || []).forEach((n) =>
-              names.add(String(n).trim().toLowerCase())
-            );
-          }
-        }
-        members.forEach((m) => {
-          const full = `${m.firstName} ${m.lastName}`.trim().toLowerCase();
-          if (names.has(full)) ids.add(m.id);
-        });
+        collectReportMemberIds(
+          reports,
+          (r) => r.area === `discipulado:${c.discipuladoCurso}` && r.leccion === c.discipuladoLeccion,
+          members
+        ).forEach((id) => ids.add(id));
       }
 
-      // Reportes de clases guardados en el banco (area = reporteKey)
       if (c.reporteKey && c.reporteLeccion) {
-        const names = new Set<string>();
-        for (const r of reports) {
-          if (r.area === c.reporteKey && r.leccion === c.reporteLeccion) {
-            (r.attendee_ids || []).forEach((id) => ids.add(String(id)));
-            (r.attendee_names || []).forEach((n) =>
-              names.add(String(n).trim().toLowerCase())
-            );
-          }
-        }
-        members.forEach((m) => {
-          const full = `${m.firstName} ${m.lastName}`.trim().toLowerCase();
-          if (names.has(full)) ids.add(m.id);
-        });
+        collectReportMemberIds(
+          reports,
+          (r) => r.area === c.reporteKey && r.leccion === c.reporteLeccion,
+          members
+        ).forEach((id) => ids.add(id));
       }
 
-      // Alumnos inscritos en tablas del banco
       if (c.dbStudents?.length) {
         const names = new Set<string>();
         for (const t of c.dbStudents) {
@@ -326,14 +410,33 @@ export function MembersProgressTable() {
             if (s.full_name) names.add(String(s.full_name).trim().toLowerCase());
           });
         }
-        members.forEach((m) => {
-          const full = `${m.firstName} ${m.lastName}`.trim().toLowerCase();
-          if (names.has(full)) ids.add(m.id);
-        });
+        matchNamesToMemberIds(names, members).forEach((id) => ids.add(id));
+      }
+
+      if (c.appStorageKeys?.length) {
+        for (const key of c.appStorageKeys) {
+          extractMemberIdsFromValue(appStorageData[key]).forEach((id) => ids.add(id));
+        }
+      }
+
+      if (c.appStorageAttendanceKeys?.length) {
+        for (const key of c.appStorageAttendanceKeys) {
+          const sessions = appStorageData[key];
+          if (!Array.isArray(sessions)) continue;
+          for (const session of sessions) {
+            if (session && typeof session === 'object' && Array.isArray((session as { presentIds?: string[] }).presentIds)) {
+              (session as { presentIds: string[] }).presentIds.forEach((id) => ids.add(String(id)));
+            }
+          }
+        }
       }
 
       if (c.storageKeys?.length) {
         readMemberIds(c.storageKeys).forEach((id) => ids.add(id));
+      }
+
+      if (c.enrollmentColumn && c.discipleshipCourseSlug) {
+        (discipleshipEnrollment[c.discipleshipCourseSlug] ?? new Set()).forEach((id) => ids.add(id));
       }
 
       if (c.key === 'plc') {
@@ -343,17 +446,12 @@ export function MembersProgressTable() {
           if (plcMemberIds.has(m.id)) ids.add(m.id);
         });
       }
-      if (c.key === 'nuevos_comienzos') {
-        members.forEach((m) => {
-          if (m.tags?.some((t) => t.category === 'nuevos_comienzos')) ids.add(m.id);
-        });
-      }
 
       map[c.key] = ids;
     }
-    return map;
-  }, [area, members, reports, dbStudents, plcMemberIds]);
 
+    return map;
+  }, [area, members, reports, dbStudents, plcMemberIds, appStorageData, discipleshipEnrollment]);
 
   const filtered = members.filter((m) => {
     const q = search.trim().toLowerCase();

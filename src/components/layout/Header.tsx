@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 
 export function Header() {
-  const { profile, setAvatar } = useProfile();
+  const { profile, uploadAvatar } = useProfile();
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,19 +34,19 @@ export function Header() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
       toast.error('Por favor seleccione una imagen');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAvatar(reader.result as string);
+    try {
+      await uploadAvatar(file);
       toast.success('Foto de perfil actualizada');
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      toast.error('No se pudo guardar la foto en la base de datos.');
+    }
     e.target.value = '';
   };
 

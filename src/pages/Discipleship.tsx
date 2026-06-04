@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { ManageCourseDialog, CourseLesson } from '@/components/discipleship/ManageCourseDialog';
 import { ViewStudentsDialog, CourseStudent } from '@/components/discipleship/ViewStudentsDialog';
 import { AddStudentDialog } from '@/components/discipleship/AddStudentDialog';
+import { notifyMemberProgressUpdated } from '@/lib/memberProgressEvents';
 
 interface CourseData {
   id: string;
@@ -144,6 +145,7 @@ export default function Discipleship() {
         return { ...c, studentList: merged, students: merged.length };
       })
     );
+    notifyMemberProgressUpdated();
   };
 
   const goToReporte = (course: CourseData) => {

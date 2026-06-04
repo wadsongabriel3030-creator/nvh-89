@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { useMembers } from '@/contexts/MembersContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { saveClassReport } from '@/lib/classReports';
 
 const CURSO_NOMBRE = 'Vida Nuevos Hechos';
 const LECCIONES = ['Vida Nuevos Hechos'];
@@ -45,9 +46,26 @@ export default function ReporteMembresia() {
     setAsistentes(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!fecha || !quienDio || !leccion) {
       toast.error('Complete fecha, quien dio la clase y lección');
+      return;
+    }
+    try {
+      const attendeeNames = members
+        .filter((m) => asistentes.includes(m.id))
+        .map((m) => `${m.firstName} ${m.lastName}`.trim());
+      await saveClassReport({
+        area: 'membresia',
+        leccion,
+        reportDate: fecha,
+        leaderName: quienDio,
+        attendeeIds: asistentes,
+        attendeeNames,
+        extra: { invitados, decisiones, observaciones },
+      });
+    } catch {
+      toast.error('No se pudo guardar el reporte');
       return;
     }
     toast.success(`Reporte de "${CURSO_NOMBRE}" enviado con éxito`);

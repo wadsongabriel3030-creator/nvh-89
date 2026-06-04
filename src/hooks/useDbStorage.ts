@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { notifyMemberProgressUpdated } from '@/lib/memberProgressEvents';
 
 /**
  * Hook que substitui o uso de localStorage por persistência no banco (tabela app_storage).
@@ -48,6 +49,7 @@ export function useDbStorage<T>(key: string, defaultValue: T, category = 'genera
         },
         { onConflict: 'key' }
       );
+      notifyMemberProgressUpdated();
     },
     [key, category]
   );
