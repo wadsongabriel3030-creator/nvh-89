@@ -14,15 +14,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { PrayerGuide } from '@/types';
+import { getPrayerGuideI18n, PrayerGuideLocale } from '@/components/prayer-guide/i18n';
 
 interface EditPrayerGuideDialogProps {
+  locale?: PrayerGuideLocale;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   guide: PrayerGuide | null;
   onSubmit: (id: string, data: Partial<PrayerGuide>) => void;
 }
 
-export function EditPrayerGuideDialog({ open, onOpenChange, guide, onSubmit }: EditPrayerGuideDialogProps) {
+export function EditPrayerGuideDialog({ locale = 'pt', open, onOpenChange, guide, onSubmit }: EditPrayerGuideDialogProps) {
+  const t = getPrayerGuideI18n(locale);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -67,46 +70,46 @@ export function EditPrayerGuideDialog({ open, onOpenChange, guide, onSubmit }: E
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Editar Guia de Oração</DialogTitle>
+          <DialogTitle>{t.editDialog.title}</DialogTitle>
           <DialogDescription>
-            Atualize os dados do guia de oração.
+            {t.editDialog.description}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-title">Título *</Label>
+            <Label htmlFor="edit-title">{t.addDialog.titleLabel}</Label>
             <Input
               id="edit-title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Ex: Jejum de Daniel"
+              placeholder={t.addDialog.titlePlaceholder}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-description">Descrição *</Label>
+            <Label htmlFor="edit-description">{t.addDialog.descriptionLabel}</Label>
             <Textarea
               id="edit-description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Descreva o propósito e instruções do guia de oração..."
+              placeholder={t.addDialog.descriptionPlaceholder}
               rows={3}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-verses">Versículos (separados por vírgula)</Label>
+            <Label htmlFor="edit-verses">{t.addDialog.versesLabel}</Label>
             <Input
               id="edit-verses"
               value={formData.verses}
               onChange={(e) => setFormData({ ...formData, verses: e.target.value })}
-              placeholder="João 3:16, Salmos 23:1, Mateus 6:9-13"
+              placeholder={t.addDialog.versesPlaceholder}
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Período</Label>
+            <Label>{t.addDialog.periodLabel}</Label>
             <Select
               value={formData.period}
               onValueChange={(value: 'daily' | 'weekly' | 'monthly') => 
@@ -117,16 +120,16 @@ export function EditPrayerGuideDialog({ open, onOpenChange, guide, onSubmit }: E
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="daily">📅 Diário</SelectItem>
-                <SelectItem value="weekly">📆 Semanal</SelectItem>
-                <SelectItem value="monthly">🗓️ Mensal</SelectItem>
+                <SelectItem value="daily">📅 {t.card.periodDaily}</SelectItem>
+                <SelectItem value="weekly">📆 {t.card.periodWeekly}</SelectItem>
+                <SelectItem value="monthly">🗓️ {t.card.periodMonthly}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-startDate">Data Início *</Label>
+              <Label htmlFor="edit-startDate">{t.addDialog.startDateLabel}</Label>
               <Input
                 id="edit-startDate"
                 type="date"
@@ -135,7 +138,7 @@ export function EditPrayerGuideDialog({ open, onOpenChange, guide, onSubmit }: E
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-endDate">Data Fim (opcional)</Label>
+              <Label htmlFor="edit-endDate">{t.addDialog.endDateLabel}</Label>
               <Input
                 id="edit-endDate"
                 type="date"
@@ -147,9 +150,9 @@ export function EditPrayerGuideDialog({ open, onOpenChange, guide, onSubmit }: E
 
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
             <div>
-              <Label htmlFor="edit-isActive">Ativo</Label>
+              <Label htmlFor="edit-isActive">{t.addDialog.activeLabel}</Label>
               <p className="text-sm text-muted-foreground">
-                Guias inativos não aparecem para membros
+                {t.addDialog.activeHint}
               </p>
             </div>
             <Switch
@@ -162,10 +165,10 @@ export function EditPrayerGuideDialog({ open, onOpenChange, guide, onSubmit }: E
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t.addDialog.cancel}
           </Button>
           <Button onClick={handleSubmit} disabled={!formData.title || !formData.description}>
-            Salvar Alterações
+            {t.editDialog.save}
           </Button>
         </DialogFooter>
       </DialogContent>

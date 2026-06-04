@@ -358,6 +358,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          encargado: string | null
           end_time: string | null
           event_date: string
           id: string
@@ -375,6 +376,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          encargado?: string | null
           end_time?: string | null
           event_date: string
           id?: string
@@ -392,6 +394,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          encargado?: string | null
           end_time?: string | null
           event_date?: string
           id?: string
@@ -1036,43 +1039,88 @@ export type Database = {
           },
         ]
       }
-      tithes: {
+      tithe_records: {
         Row: {
-          amount: number
           created_at: string
+          currency: Database["public"]["Enums"]["tithe_currency"]
+          first_fruits_amount: number
+          first_fruits_payment_method: Database["public"]["Enums"]["tithe_payment_form"]
+          first_fruits_transfer_number: string | null
           id: string
           member_id: string | null
+          member_name: string
           notes: string | null
-          payment_method: Database["public"]["Enums"]["payment_method"]
+          offering_amount: number
+          offering_payment_method: Database["public"]["Enums"]["tithe_payment_form"]
+          offering_transfer_number: string | null
+          pro_templo_amount: number
+          pro_templo_payment_method: Database["public"]["Enums"]["tithe_payment_form"]
+          pro_templo_transfer_number: string | null
           recorded_by: string | null
-          reference: string | null
+          special_offering_amount: number
+          special_offering_payment_method: Database["public"]["Enums"]["tithe_payment_form"]
+          special_offering_transfer_number: string | null
+          tithe_amount: number
           tithe_date: string
+          tithe_payment_method: Database["public"]["Enums"]["tithe_payment_form"]
+          tithe_transfer_number: string | null
+          updated_at: string
         }
         Insert: {
-          amount: number
           created_at?: string
+          currency?: Database["public"]["Enums"]["tithe_currency"]
+          first_fruits_amount?: number
+          first_fruits_payment_method?: Database["public"]["Enums"]["tithe_payment_form"]
+          first_fruits_transfer_number?: string | null
           id?: string
           member_id?: string | null
+          member_name: string
           notes?: string | null
-          payment_method: Database["public"]["Enums"]["payment_method"]
+          offering_amount?: number
+          offering_payment_method?: Database["public"]["Enums"]["tithe_payment_form"]
+          offering_transfer_number?: string | null
+          pro_templo_amount?: number
+          pro_templo_payment_method?: Database["public"]["Enums"]["tithe_payment_form"]
+          pro_templo_transfer_number?: string | null
           recorded_by?: string | null
-          reference?: string | null
+          special_offering_amount?: number
+          special_offering_payment_method?: Database["public"]["Enums"]["tithe_payment_form"]
+          special_offering_transfer_number?: string | null
+          tithe_amount?: number
           tithe_date: string
+          tithe_payment_method?: Database["public"]["Enums"]["tithe_payment_form"]
+          tithe_transfer_number?: string | null
+          updated_at?: string
         }
         Update: {
-          amount?: number
           created_at?: string
+          currency?: Database["public"]["Enums"]["tithe_currency"]
+          first_fruits_amount?: number
+          first_fruits_payment_method?: Database["public"]["Enums"]["tithe_payment_form"]
+          first_fruits_transfer_number?: string | null
           id?: string
           member_id?: string | null
+          member_name?: string
           notes?: string | null
-          payment_method?: Database["public"]["Enums"]["payment_method"]
+          offering_amount?: number
+          offering_payment_method?: Database["public"]["Enums"]["tithe_payment_form"]
+          offering_transfer_number?: string | null
+          pro_templo_amount?: number
+          pro_templo_payment_method?: Database["public"]["Enums"]["tithe_payment_form"]
+          pro_templo_transfer_number?: string | null
           recorded_by?: string | null
-          reference?: string | null
+          special_offering_amount?: number
+          special_offering_payment_method?: Database["public"]["Enums"]["tithe_payment_form"]
+          special_offering_transfer_number?: string | null
+          tithe_amount?: number
           tithe_date?: string
+          tithe_payment_method?: Database["public"]["Enums"]["tithe_payment_form"]
+          tithe_transfer_number?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "tithes_member_id_fkey"
+            foreignKeyName: "tithe_records_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "members"
@@ -1122,6 +1170,8 @@ export type Database = {
       leader_category: "Adulto" | "Joven Adulto" | "Joven"
       member_status: "active" | "inactive" | "visitor"
       payment_method: "cash" | "transfer" | "pix" | "card"
+      tithe_currency: "GTQ" | "USD"
+      tithe_payment_form: "efectivo" | "transferencia" | "cheque"
       tag_category:
         | "discipleship"
         | "nuevos_comienzos"

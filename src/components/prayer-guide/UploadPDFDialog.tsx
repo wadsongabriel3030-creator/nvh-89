@@ -12,15 +12,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, FileText, X } from 'lucide-react';
 import { PrayerGuide } from '@/types';
+import { getPrayerGuideI18n, PrayerGuideLocale } from '@/components/prayer-guide/i18n';
 
 interface UploadPDFDialogProps {
+  locale?: PrayerGuideLocale;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   guide: PrayerGuide | null;
   onUpload: (file: File) => Promise<void>;
 }
 
-export function UploadPDFDialog({ open, onOpenChange, guide, onUpload }: UploadPDFDialogProps) {
+export function UploadPDFDialog({ locale = 'pt', open, onOpenChange, guide, onUpload }: UploadPDFDialogProps) {
+  const t = getPrayerGuideI18n(locale);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -82,9 +85,9 @@ export function UploadPDFDialog({ open, onOpenChange, guide, onUpload }: UploadP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload de PDF</DialogTitle>
+          <DialogTitle>{t.uploadDialog.title}</DialogTitle>
           <DialogDescription>
-            Adicione um arquivo PDF ao guia "{guide?.title}"
+            {guide?.title ? t.uploadDialog.description(guide.title) : ''}
           </DialogDescription>
         </DialogHeader>
 
@@ -127,17 +130,17 @@ export function UploadPDFDialog({ open, onOpenChange, guide, onUpload }: UploadP
                   className="text-destructive hover:text-destructive"
                 >
                   <X className="w-4 h-4 mr-1" />
-                  Remover
+                  {t.uploadDialog.remove}
                 </Button>
               </div>
             ) : (
               <div className="space-y-2">
                 <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
                 <p className="font-medium text-foreground">
-                  Arraste um arquivo PDF aqui
+                  {t.uploadDialog.dragHint}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  ou clique para selecionar
+                  {t.uploadDialog.selectHint}
                 </p>
               </div>
             )}
@@ -147,10 +150,10 @@ export function UploadPDFDialog({ open, onOpenChange, guide, onUpload }: UploadP
           {guide?.pdfFile && (
             <div className="p-3 bg-muted/50 rounded-lg">
               <p className="text-sm text-muted-foreground">
-                PDF atual: <span className="font-medium text-foreground">{guide.pdfFile.name}</span>
+                {t.uploadDialog.currentPdf} <span className="font-medium text-foreground">{guide.pdfFile.name}</span>
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                O upload de um novo PDF substituirá o arquivo atual.
+                {t.uploadDialog.replaceHint}
               </p>
             </div>
           )}
@@ -158,13 +161,13 @@ export function UploadPDFDialog({ open, onOpenChange, guide, onUpload }: UploadP
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t.uploadDialog.cancel}
           </Button>
           <Button 
             onClick={handleUpload} 
             disabled={!selectedFile || isUploading}
           >
-            {isUploading ? 'Enviando...' : 'Fazer Upload'}
+            {isUploading ? t.uploadDialog.uploading : t.uploadDialog.upload}
           </Button>
         </DialogFooter>
       </DialogContent>

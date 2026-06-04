@@ -67,6 +67,7 @@ type EventRow = {
   start_time: string | null;
   end_time: string | null;
   location: string | null;
+  encargado: string | null;
   type: string | null;
   is_recurring: boolean;
   recurrence_type: string | null;
@@ -82,6 +83,7 @@ const rowToEvent = (row: EventRow, attendees: string[]): Event => ({
   startTime: row.start_time || '',
   endTime: row.end_time || '',
   location: row.location || undefined,
+  encargado: row.encargado || undefined,
   type: row.type || 'worship',
   attendees,
   isRecurring: row.is_recurring,
@@ -97,6 +99,7 @@ const eventToRow = (event: Event) => ({
   start_time: event.startTime || null,
   end_time: event.endTime || null,
   location: event.location ?? null,
+  encargado: event.encargado ?? null,
   type: event.type,
   is_recurring: event.isRecurring,
   recurrence_type: event.recurrenceType ?? null,

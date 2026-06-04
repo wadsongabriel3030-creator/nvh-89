@@ -17,9 +17,11 @@ import {
 } from 'lucide-react';
 import { PrayerGuide, PrayerProgress } from '@/types';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { es, ptBR } from 'date-fns/locale';
+import { getPrayerGuideI18n, PrayerGuideLocale } from '@/components/prayer-guide/i18n';
 
 interface PrayerGuideCardProps {
+  locale?: PrayerGuideLocale;
   guide: PrayerGuide;
   progress: PrayerProgress[];
   hasCompletedToday: boolean;
@@ -33,6 +35,7 @@ interface PrayerGuideCardProps {
 }
 
 export function PrayerGuideCard({
+  locale = 'pt',
   guide,
   progress,
   hasCompletedToday,
@@ -44,11 +47,14 @@ export function PrayerGuideCard({
   onMarkComplete,
   onViewHistory,
 }: PrayerGuideCardProps) {
+  const t = getPrayerGuideI18n(locale);
+  const dateLocale = locale === 'es' ? es : ptBR;
+
   const getPeriodLabel = (period: string) => {
     switch (period) {
-      case 'daily': return 'Diário';
-      case 'weekly': return 'Semanal';
-      case 'monthly': return 'Mensal';
+      case 'daily': return t.card.periodDaily;
+      case 'weekly': return t.card.periodWeekly;
+      case 'monthly': return t.card.periodMonthly;
       default: return period;
     }
   };
@@ -90,7 +96,7 @@ export function PrayerGuideCard({
             <CardDescription className="line-clamp-2">{guide.description}</CardDescription>
           </div>
           <Badge variant={guide.isActive ? 'default' : 'secondary'} className="shrink-0">
-            {guide.isActive ? 'Ativo' : 'Inativo'}
+            {guide.isActive ? t.card.active : t.card.inactive}
           </Badge>
         </div>
       </CardHeader>
@@ -104,15 +110,15 @@ export function PrayerGuideCard({
           </div>
           {guide.startDate && (
             <span className="text-muted-foreground text-xs">
-              {format(new Date(guide.startDate), "dd/MM/yyyy", { locale: ptBR })}
-              {guide.endDate && ` - ${format(new Date(guide.endDate), "dd/MM/yyyy", { locale: ptBR })}`}
+              {format(new Date(guide.startDate), "dd/MM/yyyy", { locale: dateLocale })}
+              {guide.endDate && ` - ${format(new Date(guide.endDate), "dd/MM/yyyy", { locale: dateLocale })}`}
             </span>
           )}
         </div>
 
         {/* Versículos */}
         <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">Versículos:</p>
+          <p className="text-sm font-medium text-foreground">{t.card.verses}</p>
           <div className="flex flex-wrap gap-1">
             {guide.verses.slice(0, 4).map((verse, idx) => (
               <Badge key={idx} variant="outline" className="text-xs">
@@ -130,8 +136,8 @@ export function PrayerGuideCard({
         {/* Progresso */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Progresso</span>
-            <span className="font-medium">{progress.length} orações</span>
+            <span className="text-muted-foreground">{t.card.progress}</span>
+            <span className="font-medium">{t.card.prayersCount(progress.length)}</span>
           </div>
           <Progress value={calculateProgress()} className="h-2" />
         </div>
@@ -153,7 +159,7 @@ export function PrayerGuideCard({
         {hasCompletedToday && (
           <div className="flex items-center gap-2 p-2 bg-success/10 text-success rounded-lg">
             <CheckCircle2 className="w-4 h-4" />
-            <span className="text-sm font-medium">Oração concluída hoje!</span>
+            <span className="text-sm font-medium">{t.card.completedToday}</span>
           </div>
         )}
 
@@ -166,7 +172,7 @@ export function PrayerGuideCard({
               onClick={onMarkComplete}
             >
               <CheckCircle2 className="w-4 h-4" />
-              Marcar Concluída
+              {t.card.markComplete}
             </Button>
           )}
           
@@ -177,7 +183,7 @@ export function PrayerGuideCard({
             onClick={onViewHistory}
           >
             <Eye className="w-4 h-4" />
-            Histórico
+            {t.card.history}
           </Button>
 
           {canManage && (

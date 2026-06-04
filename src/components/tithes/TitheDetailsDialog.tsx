@@ -10,8 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Banknote, User, FileText, CreditCard, Gift } from 'lucide-react';
-import { TitheRecord } from './AddTitheDialog';
+import { TitheRecord, TithePaymentMethod } from './AddTitheDialog';
 import { cn } from '@/lib/utils';
+import { formatTitheCurrency, getRecordTotal } from '@/lib/titheRecords';
 
 interface TitheDetailsDialogProps {
   open: boolean;
@@ -34,9 +35,7 @@ export function TitheDetailsDialog({ open, onOpenChange, tithe, onEdit, onDelete
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return `Q ${amount.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
+  const formatCurrency = (amount: number) => formatTitheCurrency(amount, tithe.currency || 'GTQ');
 
   const paymentMethodLabels: Record<string, string> = {
     efectivo: 'Efectivo',
@@ -54,11 +53,33 @@ export function TitheDetailsDialog({ open, onOpenChange, tithe, onEdit, onDelete
     transfer: 'bg-blue-500/10 text-blue-600',
   };
 
-  const tithePaymentMethod = tithe.tithePaymentMethod || (tithe.paymentMethod === 'transfer' ? 'transferencia' : 'efectivo');
-  const offeringPaymentMethod = tithe.offeringPaymentMethod || 'efectivo';
-  const titheAmount = tithe.titheAmount || tithe.amount || 0;
-  const offeringAmount = tithe.offeringAmount || 0;
-  const totalAmount = titheAmount + offeringAmount;
+  const renderCategory = (
+    title: string,
+    amount: number,
+    method: TithePaymentMethod,
+    transferNumber?: string,
+    colorClass = 'text-foreground'
+  ) => {
+    if (!amount) return null;
+    return (
+      <div className="space-y-3">
+        <h4 className="font-semibold text-sm">{title}</h4>
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <p className="text-sm font-medium">Monto</p>
+            <p className={cn('text-lg font-bold', colorClass)}>{formatCurrency(amount)}</p>
+          </div>
+          <Badge className={cn('border-0', paymentMethodColors[method])}>
+            {paymentMethodLabels[method]}
+          </Badge>
+        </div>
+        {method === 'transferencia' && transferNumber && (
+          <p className="text-sm text-muted-foreground pl-1">Ref: {transferNumber}</p>
+        )}
+        <Separator />
+      </div>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,70 +118,25 @@ export function TitheDetailsDialog({ open, onOpenChange, tithe, onEdit, onDelete
             </div>
           </div>
 
-          <Separator />
-
-          {/* Diezmo */}
-          <div className="space-y-3">
-            <h4 className="font-semibold text-sm">Diezmo</h4>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <Banknote className="w-5 h-5 text-green-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Monto</p>
-                <p className="text-lg font-bold text-green-600">{formatCurrency(titheAmount)}</p>
-              </div>
-              <Badge className={cn('border-0', paymentMethodColors[tithePaymentMethod])}>
-                {paymentMethodLabels[tithePaymentMethod]}
-              </Badge>
-            </div>
-            {tithePaymentMethod === 'transferencia' && tithe.titheTransferNumber && (
-              <div className="flex items-center gap-3 pl-12">
-                <div>
-                  <p className="text-xs text-muted-foreground">Número de transferencia</p>
-                  <p className="text-sm">{tithe.titheTransferNumber}</p>
-                </div>
-              </div>
-            )}
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Moneda: {tithe.currency === 'USD' ? 'Dólar ($)' : 'Quetzal (Q)'}
+          </p>
 
           <Separator />
 
-          {/* Ofrenda */}
-          <div className="space-y-3">
-            <h4 className="font-semibold text-sm">Ofrenda</h4>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Gift className="w-5 h-5 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Monto</p>
-                <p className="text-lg font-bold text-blue-600">{formatCurrency(offeringAmount)}</p>
-              </div>
-              <Badge className={cn('border-0', paymentMethodColors[offeringPaymentMethod])}>
-                {paymentMethodLabels[offeringPaymentMethod]}
-              </Badge>
-            </div>
-            {offeringPaymentMethod === 'transferencia' && tithe.offeringTransferNumber && (
-              <div className="flex items-center gap-3 pl-12">
-                <div>
-                  <p className="text-xs text-muted-foreground">Número de transferencia</p>
-                  <p className="text-sm">{tithe.offeringTransferNumber}</p>
-                </div>
-              </div>
-            )}
-          </div>
+          {renderCategory('Diezmo', tithe.titheAmount || 0, tithe.tithePaymentMethod, tithe.titheTransferNumber, 'text-green-600')}
+          {renderCategory('Ofrenda', tithe.offeringAmount || 0, tithe.offeringPaymentMethod, tithe.offeringTransferNumber, 'text-blue-600')}
+          {renderCategory('Primicia', tithe.firstFruitsAmount || 0, tithe.firstFruitsPaymentMethod, tithe.firstFruitsTransferNumber)}
+          {renderCategory('ProTemplo', tithe.proTemploAmount || 0, tithe.proTemploPaymentMethod, tithe.proTemploTransferNumber)}
+          {renderCategory('Ofrenda Especial', tithe.specialOfferingAmount || 0, tithe.specialOfferingPaymentMethod, tithe.specialOfferingTransferNumber)}
 
-          <Separator />
-
-          {/* Total */}
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
               <CreditCard className="w-5 h-5 text-primary" />
             </div>
             <div>
               <p className="text-sm font-medium">Total</p>
-              <p className="text-xl font-bold text-primary">{formatCurrency(totalAmount)}</p>
+              <p className="text-xl font-bold text-primary">{formatCurrency(getRecordTotal(tithe))}</p>
             </div>
           </div>
 

@@ -78,6 +78,7 @@ export interface Event {
   startTime: string;
   endTime: string;
   location?: string;
+  encargado?: string;
   type: string;
   attendees: string[];
   isRecurring: boolean;

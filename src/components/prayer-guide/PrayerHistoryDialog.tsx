@@ -17,9 +17,11 @@ import {
 } from 'lucide-react';
 import { PrayerGuide, PrayerHistory, PrayerProgress } from '@/types';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { es, ptBR } from 'date-fns/locale';
+import { getPrayerGuideI18n, PrayerGuideLocale } from '@/components/prayer-guide/i18n';
 
 interface PrayerHistoryDialogProps {
+  locale?: PrayerGuideLocale;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   guide: PrayerGuide | null;
@@ -28,12 +30,16 @@ interface PrayerHistoryDialogProps {
 }
 
 export function PrayerHistoryDialog({ 
+  locale = 'pt',
   open, 
   onOpenChange, 
   guide, 
   history,
   progress 
 }: PrayerHistoryDialogProps) {
+  const t = getPrayerGuideI18n(locale);
+  const dateLocale = locale === 'es' ? es : ptBR;
+
   const getActionIcon = (action: PrayerHistory['action']) => {
     switch (action) {
       case 'created':
@@ -52,13 +58,13 @@ export function PrayerHistoryDialog({
   const getActionLabel = (action: PrayerHistory['action']) => {
     switch (action) {
       case 'created':
-        return 'Guia criado';
+        return t.historyDialog.actionCreated;
       case 'completed':
-        return 'Oração concluída';
+        return t.historyDialog.actionCompleted;
       case 'downloaded_pdf':
-        return 'PDF baixado';
+        return t.historyDialog.actionDownloaded;
       case 'uploaded_pdf':
-        return 'PDF enviado';
+        return t.historyDialog.actionUploaded;
       default:
         return action;
     }
@@ -102,9 +108,9 @@ export function PrayerHistoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[80vh]">
         <DialogHeader>
-          <DialogTitle>Histórico de Orações</DialogTitle>
+          <DialogTitle>{t.historyDialog.title}</DialogTitle>
           <DialogDescription>
-            Histórico completo do guia "{guide?.title}"
+            {guide?.title ? t.historyDialog.description(guide.title) : ''}
           </DialogDescription>
         </DialogHeader>
 
@@ -113,19 +119,19 @@ export function PrayerHistoryDialog({
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 bg-muted/50 rounded-lg text-center">
               <p className="text-2xl font-bold text-primary">{progress.length}</p>
-              <p className="text-xs text-muted-foreground">Total de orações</p>
+              <p className="text-xs text-muted-foreground">{t.historyDialog.totalPrayers}</p>
             </div>
             <div className="p-3 bg-muted/50 rounded-lg text-center">
               <p className="text-2xl font-bold text-success">
                 {new Set(progress.map(p => p.memberId)).size}
               </p>
-              <p className="text-xs text-muted-foreground">Participantes</p>
+              <p className="text-xs text-muted-foreground">{t.historyDialog.participants}</p>
             </div>
             <div className="p-3 bg-muted/50 rounded-lg text-center">
               <p className="text-2xl font-bold text-orange-500">
                 {history.filter(h => h.action === 'downloaded_pdf').length}
               </p>
-              <p className="text-xs text-muted-foreground">Downloads</p>
+              <p className="text-xs text-muted-foreground">{t.historyDialog.downloads}</p>
             </div>
           </div>
 
@@ -135,7 +141,7 @@ export function PrayerHistoryDialog({
               {allActivities.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Nenhuma atividade registrada ainda.</p>
+                  <p>{t.historyDialog.noActivity}</p>
                 </div>
               ) : (
                 allActivities.map((activity) => (
@@ -152,7 +158,7 @@ export function PrayerHistoryDialog({
                           {getActionLabel(activity.action)}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
-                          por {activity.memberName}
+                          {t.historyDialog.by(activity.memberName)}
                         </span>
                       </div>
                       {activity.notes && (
@@ -161,7 +167,7 @@ export function PrayerHistoryDialog({
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground mt-1">
-                        {format(new Date(activity.date), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                        {format(new Date(activity.date), t.historyDialog.dateFormat, { locale: dateLocale })}
                       </p>
                     </div>
                   </div>

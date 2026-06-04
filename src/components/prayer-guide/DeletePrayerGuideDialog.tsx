@@ -9,8 +9,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { PrayerGuide } from '@/types';
+import { getPrayerGuideI18n, PrayerGuideLocale } from '@/components/prayer-guide/i18n';
 
 interface DeletePrayerGuideDialogProps {
+  locale?: PrayerGuideLocale;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   guide: PrayerGuide | null;
@@ -18,30 +20,32 @@ interface DeletePrayerGuideDialogProps {
 }
 
 export function DeletePrayerGuideDialog({ 
+  locale = 'pt',
   open, 
   onOpenChange, 
   guide, 
   onConfirm 
 }: DeletePrayerGuideDialogProps) {
+  const t = getPrayerGuideI18n(locale);
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Excluir Guia de Oração</AlertDialogTitle>
+          <AlertDialogTitle>{t.deleteDialog.title}</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja excluir o guia <strong>"{guide?.title}"</strong>?
+            {guide?.title ? t.deleteDialog.description(guide.title) : ''}
             <br /><br />
-            Esta ação não pode ser desfeita. Todo o histórico de orações e progresso 
-            associado a este guia será permanentemente removido.
+            {t.deleteDialog.warning}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel>{t.deleteDialog.cancel}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            Excluir
+            {t.deleteDialog.confirm}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

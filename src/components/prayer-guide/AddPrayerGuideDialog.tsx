@@ -15,14 +15,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { PrayerGuide, PrayerGuidePDF } from '@/types';
 import { FileText, Upload, X } from 'lucide-react';
+import { getPrayerGuideI18n, PrayerGuideLocale } from '@/components/prayer-guide/i18n';
 
 interface AddPrayerGuideDialogProps {
+  locale?: PrayerGuideLocale;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: Omit<PrayerGuide, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => void;
 }
 
-export function AddPrayerGuideDialog({ open, onOpenChange, onSubmit }: AddPrayerGuideDialogProps) {
+export function AddPrayerGuideDialog({ locale = 'pt', open, onOpenChange, onSubmit }: AddPrayerGuideDialogProps) {
+  const t = getPrayerGuideI18n(locale);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -96,47 +99,47 @@ export function AddPrayerGuideDialog({ open, onOpenChange, onSubmit }: AddPrayer
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Criar Guia de Oração</DialogTitle>
+          <DialogTitle>{t.addDialog.title}</DialogTitle>
           <DialogDescription>
-            Preencha os dados para criar um novo guia de oração para os membros.
+            {t.addDialog.description}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Título *</Label>
+            <Label htmlFor="title">{t.addDialog.titleLabel}</Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Ex: Jejum de Daniel"
+              placeholder={t.addDialog.titlePlaceholder}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição *</Label>
+            <Label htmlFor="description">{t.addDialog.descriptionLabel}</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Descreva o propósito e instruções do guia de oração..."
+              placeholder={t.addDialog.descriptionPlaceholder}
               rows={3}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="verses">Versículos (separados por vírgula)</Label>
+            <Label htmlFor="verses">{t.addDialog.versesLabel}</Label>
             <Input
               id="verses"
               value={formData.verses}
               onChange={(e) => setFormData({ ...formData, verses: e.target.value })}
-              placeholder="João 3:16, Salmos 23:1, Mateus 6:9-13"
+              placeholder={t.addDialog.versesPlaceholder}
             />
           </div>
 
           {/* Upload PDF */}
           <div className="space-y-2">
-            <Label>Arquivo PDF (opcional)</Label>
+            <Label>{t.addDialog.pdfLabel}</Label>
             <input
               ref={fileInputRef}
               type="file"
@@ -152,10 +155,10 @@ export function AddPrayerGuideDialog({ open, onOpenChange, onSubmit }: AddPrayer
               >
                 <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  Clique para fazer upload de um PDF
+                  {t.addDialog.pdfUploadHint}
                 </p>
                 <p className="text-xs text-muted-foreground/70 mt-1">
-                  O arquivo ficará disponível para download na página do guia
+                  {t.addDialog.pdfUploadSubhint}
                 </p>
               </div>
             ) : (
@@ -166,7 +169,7 @@ export function AddPrayerGuideDialog({ open, onOpenChange, onSubmit }: AddPrayer
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{pdfPreview.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    PDF anexado com sucesso
+                    {t.addDialog.pdfAttached}
                   </p>
                 </div>
                 <Button
@@ -183,7 +186,7 @@ export function AddPrayerGuideDialog({ open, onOpenChange, onSubmit }: AddPrayer
           </div>
 
           <div className="space-y-2">
-            <Label>Período</Label>
+            <Label>{t.addDialog.periodLabel}</Label>
             <Select
               value={formData.period}
               onValueChange={(value: 'daily' | 'weekly' | 'monthly') => 
@@ -194,16 +197,16 @@ export function AddPrayerGuideDialog({ open, onOpenChange, onSubmit }: AddPrayer
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="daily">📅 Diário</SelectItem>
-                <SelectItem value="weekly">📆 Semanal</SelectItem>
-                <SelectItem value="monthly">🗓️ Mensal</SelectItem>
+                <SelectItem value="daily">📅 {t.card.periodDaily}</SelectItem>
+                <SelectItem value="weekly">📆 {t.card.periodWeekly}</SelectItem>
+                <SelectItem value="monthly">🗓️ {t.card.periodMonthly}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startDate">Data Início *</Label>
+              <Label htmlFor="startDate">{t.addDialog.startDateLabel}</Label>
               <Input
                 id="startDate"
                 type="date"
@@ -212,7 +215,7 @@ export function AddPrayerGuideDialog({ open, onOpenChange, onSubmit }: AddPrayer
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="endDate">Data Fim (opcional)</Label>
+              <Label htmlFor="endDate">{t.addDialog.endDateLabel}</Label>
               <Input
                 id="endDate"
                 type="date"
@@ -224,9 +227,9 @@ export function AddPrayerGuideDialog({ open, onOpenChange, onSubmit }: AddPrayer
 
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
             <div>
-              <Label htmlFor="isActive">Ativo</Label>
+              <Label htmlFor="isActive">{t.addDialog.activeLabel}</Label>
               <p className="text-sm text-muted-foreground">
-                Guias inativos não aparecem para membros
+                {t.addDialog.activeHint}
               </p>
             </div>
             <Switch
@@ -239,10 +242,10 @@ export function AddPrayerGuideDialog({ open, onOpenChange, onSubmit }: AddPrayer
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t.addDialog.cancel}
           </Button>
           <Button onClick={handleSubmit} disabled={!formData.title || !formData.description || !formData.startDate}>
-            Criar Guia
+            {t.addDialog.create}
           </Button>
         </DialogFooter>
       </DialogContent>

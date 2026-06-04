@@ -18,6 +18,7 @@ import { PLCAnunciosDialog } from '@/components/plc/PLCAnunciosDialog';
 import { useMembers } from '@/contexts/MembersContext';
 
 export default function PLC() {
+  const navigate = useNavigate();
   const { value: groups, setValue: setGroups } = useDbStorage<PLCGroup[]>('plc_groups_list', []);
   const { members, addTagToMember, updateMember, getMembroPLCTag } = useMembers();
   const [addDialogOpen, setAddDialogOpen] = useState(false);

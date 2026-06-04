@@ -15,8 +15,12 @@ import { PrayerGuide, PrayerProgress, PrayerHistory, PrayerGuidePDF } from '@/ty
 import { toast } from 'sonner';
 
 import { useDbStorage } from '@/hooks/useDbStorage';
+import { getPrayerGuideI18n } from '@/components/prayer-guide/i18n';
+
+const LOCALE = 'es' as const;
 
 const SecretoDeDaniel = () => {
+  const t = getPrayerGuideI18n(LOCALE);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editGuide, setEditGuide] = useState<PrayerGuide | null>(null);
@@ -39,20 +43,20 @@ const SecretoDeDaniel = () => {
     saveGuides([...guides, newGuide]);
     const entry: PrayerHistory = { id: Date.now().toString(), guideId: newGuide.id, guideTitle: newGuide.title, memberId: 'user-1', memberName: 'Admin', action: 'created', date: new Date().toISOString() };
     saveHistory([entry, ...history]);
-    toast.success('Guia criado com sucesso!');
+    toast.success(t.page.guideCreated);
   };
 
   const handleUpdate = (id: string, data: Partial<PrayerGuide>) => {
     saveGuides(guides.map(g => g.id === id ? { ...g, ...data, updatedAt: new Date().toISOString() } : g));
     setEditGuide(null);
-    toast.success('Guia atualizado!');
+    toast.success(t.page.guideUpdated);
   };
 
   const handleDelete = (id: string) => {
     saveGuides(guides.filter(g => g.id !== id));
     saveProgress(progress.filter(p => p.guideId !== id));
     setDeleteGuideData(null);
-    toast.success('Guia removido!');
+    toast.success(t.page.guideRemoved);
   };
 
   const handleDownload = (guide: PrayerGuide) => {
@@ -63,7 +67,7 @@ const SecretoDeDaniel = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('Download iniciado!');
+    toast.success(t.page.downloadStarted);
   };
 
   const handleUploadPDF = async (file: File) => {
@@ -73,7 +77,7 @@ const SecretoDeDaniel = () => {
       const pdf: PrayerGuidePDF = { id: Date.now().toString(), name: file.name, data: reader.result as string, uploadedAt: new Date().toISOString() };
       saveGuides(guides.map(g => g.id === uploadPdfGuide.id ? { ...g, pdfFile: pdf, updatedAt: new Date().toISOString() } : g));
       setUploadPdfGuide(null);
-      toast.success('PDF anexado com sucesso!');
+      toast.success(t.page.pdfAttached);
     };
     reader.readAsDataURL(file);
   };
@@ -81,13 +85,13 @@ const SecretoDeDaniel = () => {
   const handleMarkComplete = (notes?: string) => {
     if (!markCompleteGuide) return;
     const existing = progress.find(p => p.guideId === markCompleteGuide.id && p.memberId === 'user-1' && new Date(p.completedDate).toDateString() === new Date().toDateString());
-    if (existing) { toast.info('Já marcado como concluído hoje!'); return; }
+    if (existing) { toast.info(t.page.alreadyCompletedToday); return; }
     const newProgress: PrayerProgress = { id: Date.now().toString(), guideId: markCompleteGuide.id, memberId: 'user-1', memberName: 'Admin', completedDate: new Date().toISOString(), notes };
     saveProgress([...progress, newProgress]);
     const entry: PrayerHistory = { id: Date.now().toString(), guideId: markCompleteGuide.id, guideTitle: markCompleteGuide.title, memberId: 'user-1', memberName: 'Admin', action: 'completed', date: new Date().toISOString(), notes };
     saveHistory([entry, ...history]);
     setMarkCompleteGuide(null);
-    toast.success('Oração marcada como concluída!');
+    toast.success(t.page.prayerCompleted);
   };
 
   const hasCompletedToday = (guideId: string) => progress.some(p => p.guideId === guideId && p.memberId === 'user-1' && new Date(p.completedDate).toDateString() === new Date().toDateString());
@@ -136,7 +140,7 @@ const SecretoDeDaniel = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground text-sm">
-                Nenhuma guía cadastrada ainda. Clique em "Nueva Guía" para adicionar.
+                {t.page.emptyGuides}
               </p>
             </CardContent>
           </Card>
@@ -145,6 +149,7 @@ const SecretoDeDaniel = () => {
             {filtered.map(guide => (
               <PrayerGuideCard
                 key={guide.id}
+                locale={LOCALE}
                 guide={guide}
                 progress={progress.filter(p => p.guideId === guide.id)}
                 hasCompletedToday={hasCompletedToday(guide.id)}
@@ -161,26 +166,26 @@ const SecretoDeDaniel = () => {
         )}
       </div>
 
-      <AddPrayerGuideDialog open={showAddDialog} onOpenChange={setShowAddDialog} onSubmit={handleCreate} />
+      <AddPrayerGuideDialog locale={LOCALE} open={showAddDialog} onOpenChange={setShowAddDialog} onSubmit={handleCreate} />
 
       {editGuide && (
-        <EditPrayerGuideDialog open={!!editGuide} onOpenChange={(open) => !open && setEditGuide(null)} guide={editGuide} onSubmit={(id, data) => handleUpdate(id, data)} />
+        <EditPrayerGuideDialog locale={LOCALE} open={!!editGuide} onOpenChange={(open) => !open && setEditGuide(null)} guide={editGuide} onSubmit={(id, data) => handleUpdate(id, data)} />
       )}
 
       {deleteGuideData && (
-        <DeletePrayerGuideDialog open={!!deleteGuideData} onOpenChange={(open) => !open && setDeleteGuideData(null)} guide={deleteGuideData} onConfirm={() => handleDelete(deleteGuideData.id)} />
+        <DeletePrayerGuideDialog locale={LOCALE} open={!!deleteGuideData} onOpenChange={(open) => !open && setDeleteGuideData(null)} guide={deleteGuideData} onConfirm={() => handleDelete(deleteGuideData.id)} />
       )}
 
       {uploadPdfGuide && (
-        <UploadPDFDialog open={!!uploadPdfGuide} onOpenChange={(open) => !open && setUploadPdfGuide(null)} guide={uploadPdfGuide} onUpload={handleUploadPDF} />
+        <UploadPDFDialog locale={LOCALE} open={!!uploadPdfGuide} onOpenChange={(open) => !open && setUploadPdfGuide(null)} guide={uploadPdfGuide} onUpload={handleUploadPDF} />
       )}
 
       {historyGuide && (
-        <PrayerHistoryDialog open={!!historyGuide} onOpenChange={(open) => !open && setHistoryGuide(null)} guide={historyGuide} history={history.filter(h => h.guideId === historyGuide.id)} progress={progress.filter(p => p.guideId === historyGuide.id)} />
+        <PrayerHistoryDialog locale={LOCALE} open={!!historyGuide} onOpenChange={(open) => !open && setHistoryGuide(null)} guide={historyGuide} history={history.filter(h => h.guideId === historyGuide.id)} progress={progress.filter(p => p.guideId === historyGuide.id)} />
       )}
 
       {markCompleteGuide && (
-        <MarkCompleteDialog open={!!markCompleteGuide} onOpenChange={(open) => !open && setMarkCompleteGuide(null)} guide={markCompleteGuide} onConfirm={handleMarkComplete} />
+        <MarkCompleteDialog locale={LOCALE} open={!!markCompleteGuide} onOpenChange={(open) => !open && setMarkCompleteGuide(null)} guide={markCompleteGuide} onConfirm={handleMarkComplete} />
       )}
     </MainLayout>
   );

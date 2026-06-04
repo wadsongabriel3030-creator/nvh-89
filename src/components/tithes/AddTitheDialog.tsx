@@ -16,19 +16,35 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+export type TithePaymentMethod = 'efectivo' | 'transferencia' | 'cheque';
+export type TitheCurrency = 'GTQ' | 'USD';
+export type TitheCategory =
+  | 'diezmo'
+  | 'ofrenda'
+  | 'primicia'
+  | 'pro_templo'
+  | 'ofrenda_especial';
+
 export interface TitheRecord {
   id: string;
   memberName: string;
   date: string;
+  currency: TitheCurrency;
   titheAmount: number;
-  tithePaymentMethod: 'efectivo' | 'transferencia' | 'cheque';
+  tithePaymentMethod: TithePaymentMethod;
   titheTransferNumber?: string;
   offeringAmount: number;
-  offeringPaymentMethod: 'efectivo' | 'transferencia' | 'cheque';
+  offeringPaymentMethod: TithePaymentMethod;
   offeringTransferNumber?: string;
   firstFruitsAmount: number;
-  firstFruitsPaymentMethod: 'efectivo' | 'transferencia' | 'cheque';
+  firstFruitsPaymentMethod: TithePaymentMethod;
   firstFruitsTransferNumber?: string;
+  proTemploAmount: number;
+  proTemploPaymentMethod: TithePaymentMethod;
+  proTemploTransferNumber?: string;
+  specialOfferingAmount: number;
+  specialOfferingPaymentMethod: TithePaymentMethod;
+  specialOfferingTransferNumber?: string;
   notes?: string;
   createdAt: string;
   // Legacy fields for compatibility
@@ -74,6 +90,7 @@ export function AddTitheDialog({ open, onOpenChange, onSubmit }: AddTitheDialogP
       id: Date.now().toString(),
       date: formData.date,
       memberName: formData.memberName.trim(),
+      currency: 'GTQ',
       titheAmount,
       tithePaymentMethod: formData.tithePaymentMethod,
       titheTransferNumber: formData.tithePaymentMethod === 'transferencia' ? formData.titheTransferNumber.trim() || undefined : undefined,
@@ -83,6 +100,10 @@ export function AddTitheDialog({ open, onOpenChange, onSubmit }: AddTitheDialogP
       firstFruitsAmount,
       firstFruitsPaymentMethod: formData.firstFruitsPaymentMethod,
       firstFruitsTransferNumber: formData.firstFruitsPaymentMethod === 'transferencia' ? formData.firstFruitsTransferNumber.trim() || undefined : undefined,
+      proTemploAmount: 0,
+      proTemploPaymentMethod: 'efectivo',
+      specialOfferingAmount: 0,
+      specialOfferingPaymentMethod: 'efectivo',
       notes: formData.notes.trim() || undefined,
       createdAt: new Date().toISOString(),
       // Legacy fields

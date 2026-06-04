@@ -56,6 +56,7 @@ export function AddEventDialog({ open, onOpenChange, onSubmit }: AddEventDialogP
     startTime: '',
     endTime: '',
     location: '',
+    encargado: '',
     type: 'worship',
     isRecurring: false,
     recurrenceType: 'fixed' as 'fixed' | 'temporal',
@@ -74,6 +75,7 @@ export function AddEventDialog({ open, onOpenChange, onSubmit }: AddEventDialogP
       startTime: formData.startTime,
       endTime: formData.endTime,
       location: formData.location || undefined,
+      encargado: formData.encargado || undefined,
       type: formData.type,
       attendees: [],
       isRecurring: formData.isRecurring,
@@ -91,6 +93,7 @@ export function AddEventDialog({ open, onOpenChange, onSubmit }: AddEventDialogP
       startTime: '',
       endTime: '',
       location: '',
+      encargado: '',
       type: 'worship',
       isRecurring: false,
       recurrenceType: 'fixed',
@@ -189,6 +192,16 @@ export function AddEventDialog({ open, onOpenChange, onSubmit }: AddEventDialogP
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               placeholder="Dirección del evento"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="encargado">Encargado de Evento</Label>
+            <Input
+              id="encargado"
+              value={formData.encargado}
+              onChange={(e) => setFormData({ ...formData, encargado: e.target.value })}
+              placeholder="Nombre del encargado"
             />
           </div>
 
