@@ -25,7 +25,7 @@ export default function ReunionesDiscipuladores() {
               <Calendar className="w-6 h-6 text-amber-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Reuniones Discipuladores</h1>
+              <h1 className="text-3xl font-bold text-foreground">Reuniones de mentores</h1>
               <p className="text-muted-foreground">
                 Calendario de reuniones para discipuladores
               </p>

@@ -60,9 +60,9 @@ const mainNavItems: NavItem[] = [
 ];
 
 const secondaryNavItems: NavItem[] = [
-  { 
-    icon: Church, 
-    label: 'Reunión Dominical', 
+  {
+    icon: Church,
+    label: 'Reunión Dominical',
     children: [
       { icon: Upload, label: 'Recursos', href: '/reunion-dominical/recursos' },
       { icon: FileText, label: 'Programa', href: '/reunion-dominical/programa' },
@@ -71,9 +71,9 @@ const secondaryNavItems: NavItem[] = [
       { icon: Megaphone, label: 'Anuncios', href: '/reunion-dominical/anuncios' },
     ]
   },
-  { 
-    icon: BookHeart, 
-    label: 'Guía de Oración', 
+  {
+    icon: BookHeart,
+    label: 'Guía de Oración',
     children: [
       { icon: BookOpenCheck, label: 'Secreto de Daniel', href: '/secreto-de-daniel' },
       { icon: Clock, label: 'Oración 24/7', href: '/oracion-247' },
@@ -102,15 +102,15 @@ const secondaryNavItems: NavItem[] = [
   },
   { icon: Heart, label: 'Escuela de Equipamiento', href: '/creencias-basicas' },
   { icon: Droplets, label: 'Bautismos', href: '/batismos' },
-  { 
-    icon: BookOpen, 
-    label: 'Discipulado', 
+  {
+    icon: BookOpen,
+    label: 'Escuela de Equipamiento',
     children: [
-      { icon: BookOpen, label: 'Discipulado', href: '/discipleship' },
+      { icon: BookOpen, label: 'Nivel I', href: '/discipleship' },
       { icon: GraduationCap, label: 'Cursos', href: '/cursos' },
-      { icon: Users, label: 'Listado de Líderes', href: '/listado-lideres' },
-      { icon: Calendar, label: 'Reuniones Discipuladores', href: '/reuniones-discipuladores' },
-      { icon: BookOpenCheck, label: 'Guía de Reunión', href: '/guia-reunion-discipulado' },
+      { icon: Users, label: 'Listado de Maestros', href: '/listado-lideres' },
+      { icon: Calendar, label: 'Reuniones de mentores', href: '/reuniones-discipuladores' },
+      { icon: BookOpenCheck, label: 'Guía de Mentor', href: '/guia-reunion-discipulado' },
       { icon: BookOpen, label: 'Proceso de Discipular', href: '/proceso-discipular' },
     ]
   },
@@ -152,7 +152,7 @@ export function Sidebar() {
   };
 
   const toggleExpand = (label: string) => {
-    setExpandedItems(prev => 
+    setExpandedItems(prev =>
       prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]
     );
   };
@@ -175,11 +175,11 @@ export function Sidebar() {
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent ml-0 pl-[10px]'
             )}
           >
-            <Icon 
+            <Icon
               className={cn(
                 'w-[18px] h-[18px] shrink-0 transition-colors duration-200',
                 isChildActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-              )} 
+              )}
               strokeWidth={isChildActive ? 2 : 1.5}
             />
             <span className={cn(
@@ -239,11 +239,11 @@ export function Sidebar() {
             : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent ml-0 pl-[10px]'
         )}
       >
-        <Icon 
+        <Icon
           className={cn(
             'w-[18px] h-[18px] shrink-0 transition-colors duration-200',
             isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-          )} 
+          )}
           strokeWidth={isActive ? 2 : 1.5}
         />
         <span className={cn(
@@ -301,9 +301,9 @@ export function Sidebar() {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 h-16 border-b border-border/50">
-          <img 
-            src={logo} 
-            alt="Nuevos Hechos Logo" 
+          <img
+            src={logo}
+            alt="Nuevos Hechos Logo"
             className="w-9 h-9 rounded-lg object-contain"
           />
           <div className="flex flex-col">
@@ -350,7 +350,7 @@ export function Sidebar() {
             <Settings className="w-[18px] h-[18px] shrink-0" strokeWidth={1.5} />
             <span className="text-sm">Configuración</span>
           </Link>
-          
+
           {!isMobile && (
             <Button
               variant="ghost"

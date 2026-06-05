@@ -52,7 +52,7 @@ export default function ListadoLideres() {
             <Users className="w-6 h-6 text-purple-600" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Listado de Líderes</h1>
+            <h1 className="text-3xl font-bold text-foreground">Listado de Maestros</h1>
             <p className="text-muted-foreground">
               {isLoading ? 'Cargando…' : `${leaders.length} líderes registrados`}
             </p>

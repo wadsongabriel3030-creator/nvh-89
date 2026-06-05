@@ -10,7 +10,7 @@ export const AVAILABLE_PAGES: PagePermission[] = [
   { path: '/guests', label: 'Visitantes', group: 'Personas' },
   { path: '/tags', label: 'Etiquetas', group: 'Personas' },
   { path: '/primera-vez', label: 'Primera Vez', group: 'Personas' },
-  { path: '/listado-lideres', label: 'Listado de Líderes', group: 'Personas' },
+  { path: '/listado-lideres', label: 'Listado de Maestros', group: 'Personas' },
 
   { path: '/events', label: 'Eventos', group: 'Eventos' },
   { path: '/calendar-2026', label: 'Calendario 2026', group: 'Eventos' },
@@ -25,7 +25,7 @@ export const AVAILABLE_PAGES: PagePermission[] = [
   { path: '/discipleship', label: 'Discipulado', group: 'Discipulado' },
   { path: '/cursos', label: 'Cursos', group: 'Discipulado' },
   { path: '/reporte-discipulado', label: 'Reporte Discipulado', group: 'Discipulado' },
-  { path: '/reuniones-discipuladores', label: 'Reuniones Discipuladores', group: 'Discipulado' },
+  { path: '/reuniones-discipuladores', label: 'Reuniones de mentores', group: 'Discipulado' },
   { path: '/guia-reunion-discipulado', label: 'Guía Reunión Discipulado', group: 'Discipulado' },
   { path: '/proceso-discipular', label: 'Proceso Discipular', group: 'Discipulado' },
   { path: '/primeros-pasos', label: 'Primeros Pasos', group: 'Discipulado' },

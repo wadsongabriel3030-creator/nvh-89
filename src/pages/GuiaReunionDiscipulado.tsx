@@ -72,7 +72,7 @@ export default function GuiaReunionDiscipulado() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">
-                Guía de Reunión Discipulado
+                Guía de Mentor
               </h1>
               <p className="text-muted-foreground">
                 Guía para cada reunión semanal que se tiene con el discípulo
