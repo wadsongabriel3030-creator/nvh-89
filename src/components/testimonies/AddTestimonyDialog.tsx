@@ -134,7 +134,7 @@ export function AddTestimonyDialog({ open, onOpenChange, onSubmit }: AddTestimon
           {step === 2 && (
             <div className="space-y-4 animate-in fade-in duration-300">
               <div>
-                <Label className="text-base font-semibold">¿Cuál fue la situación?</Label>
+                <Label className="text-base font-semibold">¿Cuál era la situación?</Label>
                 <p className="text-sm text-muted-foreground mb-3">
                   Describa brevemente, la situación por la que se estaba atravesando.
                 </p>
@@ -152,9 +152,9 @@ export function AddTestimonyDialog({ open, onOpenChange, onSubmit }: AddTestimon
           {step === 3 && (
             <div className="space-y-4 animate-in fade-in duration-300">
               <div>
-                <Label className="text-base font-semibold">¿Cuál fue la acción a tomar?</Label>
+                <Label className="text-base font-semibold">¿Qué acción se tomó?</Label>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Comparte que cambios o acciones se realizaron para obtener respuesta (orar, ayunar, asistir a la iglesia, etc.)
+                  Comparte las acciones que se realizaron para obtener las respuestas
                 </p>
                 <Textarea
                   value={formData.action}
@@ -170,9 +170,9 @@ export function AddTestimonyDialog({ open, onOpenChange, onSubmit }: AddTestimon
           {step === 4 && (
             <div className="space-y-4 animate-in fade-in duration-300">
               <div>
-                <Label className="text-base font-semibold">¿Cuál fue la respuesta ante la situación?</Label>
+                <Label className="text-base font-semibold">¿Cuál fue el resultado?</Label>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Comparte cómo Dios obró ante la situación.
+                  Comparte cómo Dios obró en esa situación.
                 </p>
                 <Textarea
                   value={formData.response}

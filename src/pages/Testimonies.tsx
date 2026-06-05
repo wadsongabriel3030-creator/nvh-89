@@ -5,25 +5,45 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, Heart, Eye, EyeOff, Check, X, Edit, Trash2, Quote } from 'lucide-react';
+import { Plus, Heart, Eye, EyeOff, Edit, Trash2, Quote } from 'lucide-react';
 import { format } from 'date-fns';
 import { useTestimonies } from '@/contexts/TestimoniesContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { Testimony } from '@/types';
 
 export default function TestimoniesPage() {
   const navigate = useNavigate();
   const { testimonies, updateTestimony, deleteTestimony } = useTestimonies();
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
-
-  const handleApprove = (id: string) => {
-    updateTestimony(id, { status: 'approved', approvedBy: 'Admin', approvedAt: new Date().toISOString() });
-  };
-
-  const handleReject = (id: string) => {
-    updateTestimony(id, { status: 'rejected' });
-  };
+  const [editingTestimony, setEditingTestimony] = useState<Testimony | null>(null);
+  const [editForm, setEditForm] = useState({ authorName: '', title: '', content: '' });
 
   const handleDelete = (id: string) => {
     deleteTestimony(id);
+  };
+
+  const handleEditOpen = (testimony: Testimony) => {
+    setEditingTestimony(testimony);
+    setEditForm({
+      authorName: testimony.authorName,
+      title: testimony.title,
+      content: testimony.content,
+    });
+  };
+
+  const handleEditSave = async () => {
+    if (!editingTestimony) return;
+    await updateTestimony(editingTestimony.id, {
+      authorName: editForm.authorName,
+      title: editForm.title,
+      content: editForm.content,
+    });
+    toast.success('Testimonio actualizado con éxito');
+    setEditingTestimony(null);
   };
 
   const filteredTestimonies = testimonies.filter(t =>
@@ -139,31 +159,9 @@ export default function TestimoniesPage() {
                         </Badge>
                       </div>
                     </div>
-                    <p className="mt-3 text-sm text-foreground/80 leading-relaxed">{testimony.content}</p>
+                    <p className="mt-3 text-sm text-foreground/80 leading-relaxed whitespace-pre-line">{testimony.content}</p>
                     <div className="flex items-center gap-2 mt-4">
-                      {testimony.status === 'pending' && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            className="gap-1"
-                            onClick={() => handleApprove(testimony.id)}
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            Aprobar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1"
-                            onClick={() => handleReject(testimony.id)}
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            Rechazar
-                          </Button>
-                        </>
-                      )}
-                      <Button variant="ghost" size="sm" className="gap-1 ml-auto">
+                      <Button variant="ghost" size="sm" className="gap-1 ml-auto" onClick={() => handleEditOpen(testimony)}>
                         <Edit className="w-3.5 h-3.5" />
                         Editar
                       </Button>
@@ -192,6 +190,46 @@ export default function TestimoniesPage() {
             </p>
           </Card>
         )}
+
+        {/* Edit Dialog */}
+        <Dialog open={!!editingTestimony} onOpenChange={(open) => { if (!open) setEditingTestimony(null); }}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Editar Testimonio</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label>Nombre del autor</Label>
+                <Input
+                  value={editForm.authorName}
+                  onChange={(e) => setEditForm({ ...editForm, authorName: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>Título</Label>
+                <Input
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>Contenido</Label>
+                <Textarea
+                  value={editForm.content}
+                  onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                  rows={8}
+                  className="mt-1 resize-none"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditingTestimony(null)}>Cancelar</Button>
+              <Button onClick={handleEditSave}>Guardar</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

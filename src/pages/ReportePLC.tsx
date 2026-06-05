@@ -579,13 +579,35 @@ export default function ReportePLC() {
                   <p className="text-sm text-muted-foreground mb-3">
                     Ingrese el monto total de la ofrenda
                   </p>
-                  <Input
-                    value={formData.ofrendaRecolectada}
-                    onChange={(e) => setFormData({ ...formData, ofrendaRecolectada: e.target.value })}
-                    placeholder="Monto de la ofrenda"
-                    type="number"
-                    className="mt-2"
-                  />
+                  <div className="relative mt-2">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">Q</span>
+                    <Input
+                      value={formData.ofrendaRecolectada}
+                      onChange={(e) => {
+                        // Allow only digits, dots and commas
+                        const raw = e.target.value.replace(/[^0-9.,]/g, '');
+                        setFormData({ ...formData, ofrendaRecolectada: raw });
+                      }}
+                      onBlur={() => {
+                        // Format on blur: normalize to number then format as Q1.151,99
+                        const cleaned = formData.ofrendaRecolectada
+                          .replace(/\./g, '')  // remove thousand dots
+                          .replace(',', '.');  // comma decimal to dot decimal
+                        const num = parseFloat(cleaned);
+                        if (!isNaN(num)) {
+                          const formatted = num.toLocaleString('de-DE', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          });
+                          setFormData((prev) => ({ ...prev, ofrendaRecolectada: formatted }));
+                        }
+                      }}
+                      placeholder="0,00"
+                      type="text"
+                      inputMode="decimal"
+                      className="pl-8"
+                    />
+                  </div>
                 </div>
               </div>
             )}

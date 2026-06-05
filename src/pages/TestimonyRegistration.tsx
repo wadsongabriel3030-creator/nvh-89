@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { useTestimonies } from '@/contexts/TestimoniesContext';
 import { Quote, ChevronLeft, ChevronRight, Send, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,7 +20,9 @@ interface TestimonyFormData {
 const TOTAL_STEPS = 4;
 
 export default function TestimonyRegistration() {
+  const { addTestimony } = useTestimonies();
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState<TestimonyFormData>({
     authorName: '',
@@ -40,9 +43,25 @@ export default function TestimonyRegistration() {
     }
   };
 
-  const handleSubmit = () => {
-    toast.success('¡Testimonio enviado con éxito!');
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await addTestimony({
+        authorId: '',
+        authorName: formData.authorName,
+        title: `Testimonio de ${formData.authorName}`,
+        content: `Situación: ${formData.situation}\n\nAcción: ${formData.action}\n\nResultado: ${formData.response}`,
+        date: new Date().toISOString().split('T')[0],
+        status: 'pending',
+        visibility: 'internal',
+      });
+      toast.success('¡Testimonio enviado con éxito!');
+      setSubmitted(true);
+    } catch (error) {
+      toast.error('Error al enviar el testimonio. Intente de nuevo.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -148,7 +167,7 @@ export default function TestimonyRegistration() {
               {step === 2 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div>
-                    <Label className="text-base font-semibold">¿Cuál fue la situación? *</Label>
+                    <Label className="text-base font-semibold">¿Cuál era la situación? *</Label>
                     <p className="text-sm text-muted-foreground mb-3">
                       Describa brevemente, la situación por la que se estaba atravesando.
                     </p>
@@ -166,9 +185,9 @@ export default function TestimonyRegistration() {
               {step === 3 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div>
-                    <Label className="text-base font-semibold">¿Cuál fue la acción a tomar? *</Label>
+                    <Label className="text-base font-semibold">¿Qué acción se tomó? *</Label>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Comparte que cambios o acciones se realizaron para obtener respuesta (orar, ayunar, asistir a la iglesia, etc.)
+                      Comparte las acciones que se realizaron para obtener las respuestas
                     </p>
                     <Textarea
                       value={formData.action}
@@ -184,9 +203,9 @@ export default function TestimonyRegistration() {
               {step === 4 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div>
-                    <Label className="text-base font-semibold">¿Cuál fue la respuesta ante la situación? *</Label>
+                    <Label className="text-base font-semibold">¿Cuál fue el resultado? *</Label>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Comparte cómo Dios obró ante la situación.
+                      Comparte cómo Dios obró en esa situación.
                     </p>
                     <Textarea
                       value={formData.response}
@@ -230,7 +249,7 @@ export default function TestimonyRegistration() {
               ) : (
                 <Button
                   onClick={handleSubmit}
-                  disabled={!isStepValid()}
+                  disabled={!isStepValid() || isSubmitting}
                   className="gap-2"
                 >
                   <Send className="w-4 h-4" />
