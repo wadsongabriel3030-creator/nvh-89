@@ -214,7 +214,7 @@ export default function TestimonyRegistration() {
                       rows={5}
                       className="mt-2 resize-none"
                     />
-                    
+
                     <div className="mt-6 p-4 bg-muted/50 rounded-lg border">
                       <p className="text-sm italic text-muted-foreground">
                         "Y ellos le han vencido por medio de la sangre del Cordero y de la palabra del testimonio de ellos."

@@ -159,7 +159,7 @@ export default function CompromisoVNH() {
                       className="mt-0.5"
                     />
                     <Label htmlFor="compromiso-1" className="text-sm leading-relaxed cursor-pointer">
-                      <span className="font-semibold">1.</span> Reunirme regularmente como familia en las reuniones dominicales (adorar, amar, orar unos por otros, escuchar atentamente la palabra y ponerla por obra).
+                      <span className="font-semibold">1.</span> A ser fiel, congregarme de forma regular a nuestras Reuniones dominicales.
                     </Label>
                   </div>
 
@@ -183,7 +183,7 @@ export default function CompromisoVNH() {
                       className="mt-0.5"
                     />
                     <Label htmlFor="compromiso-3" className="text-sm leading-relaxed cursor-pointer">
-                      <span className="font-semibold">3.</span> Crecer espiritualmente — Iniciando este paso de DISCÍPULO de Jesús con Pasos Firmes Nuevos Hechos. (Regístrate hoy mismo)
+                      <span className="font-semibold">3.</span> Crecer Espiritualmente, a través de la Ruta del Discípulo. Iniciando con pasos firmes nuevos hechos …
                     </Label>
                   </div>
                 </div>

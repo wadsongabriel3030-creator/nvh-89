@@ -73,7 +73,7 @@ export default function PrimerosPassos() {
           </div>
           <Button onClick={() => navigate('/inscripcion-primeros-pasos')} className="gap-2">
             <UserPlus className="w-4 h-4" />
-            Invitación
+            INSCRIPCIÓN
           </Button>
         </div>
 

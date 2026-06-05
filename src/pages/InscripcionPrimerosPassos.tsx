@@ -41,7 +41,7 @@ export default function InscripcionPrimerosPassos() {
           </Button>
 
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold text-foreground">Invitación - Pasos Firmes</h1>
+            <h1 className="text-2xl font-bold text-foreground">INSCRIPCIÓN - Pasos Firmes</h1>
             <p className="text-muted-foreground text-sm">Primer paso para crecer espiritualmente en Nuevos Hechos</p>
           </div>
 
