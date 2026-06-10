@@ -122,7 +122,27 @@ const secondaryNavItems: NavItem[] = [
 export function Sidebar() {
   const { isOpen, isMobile, toggle, close } = useSidebarContext();
   const location = useLocation();
+  const perms = usePermissions();
   const navRef = useRef<HTMLElement>(null);
+
+  const filterItems = (items: NavItem[]): NavItem[] => {
+    if (perms.isAdmin || perms.loading || perms.permissions.length === 0) return items;
+    const out: NavItem[] = [];
+    for (const it of items) {
+      if (it.children) {
+        const kids = it.children.filter(c => canAccessPath(perms, c.href));
+        if (kids.length) out.push({ ...it, children: kids });
+      } else if (it.href && canAccessPath(perms, it.href)) {
+        out.push(it);
+      }
+    }
+    return out;
+  };
+
+  const visibleMain = useMemo(() => filterItems(mainNavItems), [perms.isAdmin, perms.loading, perms.permissions]);
+  const visibleSecondary = useMemo(() => filterItems(secondaryNavItems), [perms.isAdmin, perms.loading, perms.permissions]);
+  const showSettings = perms.isAdmin;
+
   const [expandedItems, setExpandedItems] = useState<string[]>(() => {
     // Auto-expand if current route matches a child
     const expanded: string[] = [];
