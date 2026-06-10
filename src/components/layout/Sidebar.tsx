@@ -338,40 +338,47 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav ref={navRef} className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
-          <div className="space-y-0.5">
-            <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest px-3 mb-3 block">
-              Principal
-            </span>
-            {mainNavItems.map((item) => (
-              <NavLink key={item.href} item={item} />
-            ))}
-          </div>
+          {visibleMain.length > 0 && (
+            <div className="space-y-0.5">
+              <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest px-3 mb-3 block">
+                Principal
+              </span>
+              {visibleMain.map((item) => (
+                <NavLink key={item.href} item={item} />
+              ))}
+            </div>
+          )}
 
-          <div className="space-y-0.5">
-            <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest px-3 mb-3 block">
-              Gestión
-            </span>
-            {secondaryNavItems.map((item) => (
-              <NavLink key={item.href || item.label} item={item} />
-            ))}
-          </div>
+          {visibleSecondary.length > 0 && (
+            <div className="space-y-0.5">
+              <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest px-3 mb-3 block">
+                Gestión
+              </span>
+              {visibleSecondary.map((item) => (
+                <NavLink key={item.href || item.label} item={item} />
+              ))}
+            </div>
+          )}
         </nav>
 
         {/* Settings */}
         <div className="p-3 border-t border-border/50 space-y-1">
-          <Link
-            to="/settings"
-            onClick={handleNavClick}
-            className={cn(
-              'group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-              location.pathname === '/settings'
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            )}
-          >
-            <Settings className="w-[18px] h-[18px] shrink-0" strokeWidth={1.5} />
-            <span className="text-sm">Configuración</span>
-          </Link>
+          {showSettings && (
+            <Link
+              to="/settings"
+              onClick={handleNavClick}
+              className={cn(
+                'group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                location.pathname === '/settings'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              )}
+            >
+              <Settings className="w-[18px] h-[18px] shrink-0" strokeWidth={1.5} />
+              <span className="text-sm">Configuración</span>
+            </Link>
+          )}
+
 
           {!isMobile && (
             <Button
