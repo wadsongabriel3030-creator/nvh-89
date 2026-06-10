@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { UserPlus, Users, Trash2, Shield, Eye, EyeOff, Check } from 'lucide-react';
+import { UserPlus, Users, Trash2, Shield, Eye, EyeOff, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,32 +11,48 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import {
-  AVAILABLE_PAGES,
-  getAccounts,
-  saveAccounts,
-  type UserAccount,
-  type UserAccountRole,
-} from '@/lib/permissions';
+import { supabase } from '@/integrations/supabase/client';
+import { AVAILABLE_PAGES } from '@/lib/permissions';
+
+type UiRole = 'admin' | 'lider' | 'servidor';
+
+interface Account {
+  user_id: string;
+  email: string;
+  display_name: string;
+  role: 'admin' | 'pastor' | 'leader' | 'server' | 'member';
+  permissions: string[];
+  created_at: string;
+}
 
 const emptyForm = {
   name: '',
   email: '',
   password: '',
-  role: 'lider' as UserAccountRole,
+  role: 'lider' as UiRole,
   permissions: [] as string[],
 };
 
+const roleLabel = (role: Account['role']) =>
+  role === 'admin' ? 'Administrador (Apóstol)'
+    : role === 'pastor' ? 'Pastor'
+    : role === 'leader' ? 'Líder'
+    : role === 'server' ? 'Servidor'
+    : 'Miembro';
+
+const roleBadgeClass = (role: Account['role']) =>
+  role === 'admin' ? 'bg-primary/15 text-primary'
+    : role === 'leader' || role === 'pastor' ? 'bg-accent/30 text-accent-foreground'
+    : 'bg-muted text-muted-foreground';
+
 export function UserAccountsSection() {
-  const [accounts, setAccounts] = useState<UserAccount[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [showPassword, setShowPassword] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  useEffect(() => {
-    setAccounts(getAccounts());
-  }, []);
+  const [submitting, setSubmitting] = useState(false);
 
   const grouped = useMemo(() => {
     const map = new Map<string, typeof AVAILABLE_PAGES>();
@@ -47,16 +63,29 @@ export function UserAccountsSection() {
     return Array.from(map.entries());
   }, []);
 
-  const togglePermission = (path: string) => {
+  const loadAccounts = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.rpc('admin_list_accounts');
+    if (error) {
+      toast.error(error.message);
+      setAccounts([]);
+    } else {
+      setAccounts((data ?? []) as Account[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadAccounts(); }, []);
+
+  const togglePermission = (path: string) =>
     setForm((f) => ({
       ...f,
       permissions: f.permissions.includes(path)
         ? f.permissions.filter((p) => p !== path)
         : [...f.permissions, path],
     }));
-  };
 
-  const toggleGroup = (paths: string[]) => {
+  const toggleGroup = (paths: string[]) =>
     setForm((f) => {
       const allSelected = paths.every((p) => f.permissions.includes(p));
       return {
@@ -66,13 +95,11 @@ export function UserAccountsSection() {
           : Array.from(new Set([...f.permissions, ...paths])),
       };
     });
-  };
 
-  const selectAll = () =>
-    setForm((f) => ({ ...f, permissions: AVAILABLE_PAGES.map((p) => p.path) }));
+  const selectAll = () => setForm((f) => ({ ...f, permissions: AVAILABLE_PAGES.map((p) => p.path) }));
   const clearAll = () => setForm((f) => ({ ...f, permissions: [] }));
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
       toast.error('Complete nombre, email y contraseña');
       return;
@@ -81,46 +108,39 @@ export function UserAccountsSection() {
       toast.error('La contraseña debe tener al menos 6 caracteres');
       return;
     }
-    if (accounts.some((a) => a.email.toLowerCase() === form.email.toLowerCase())) {
-      toast.error('Ya existe una cuenta con ese email');
+    setSubmitting(true);
+    const permissions = form.role === 'admin' ? AVAILABLE_PAGES.map((p) => p.path) : form.permissions;
+    const { data, error } = await supabase.functions.invoke('admin-create-user', {
+      body: {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        role: form.role,
+        permissions,
+      },
+    });
+    setSubmitting(false);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error ?? error?.message ?? 'Error al crear cuenta');
       return;
     }
-    const newAccount: UserAccount = {
-      id: crypto.randomUUID(),
-      name: form.name.trim(),
-      email: form.email.trim(),
-      password: form.password,
-      role: form.role,
-      permissions:
-        form.role === 'admin' ? AVAILABLE_PAGES.map((p) => p.path) : form.permissions,
-      createdAt: new Date().toISOString(),
-    };
-    const next = [...accounts, newAccount];
-    setAccounts(next);
-    saveAccounts(next);
-    toast.success(`Cuenta creada para ${newAccount.name}`);
+    toast.success(`Cuenta creada para ${form.name.trim()}`);
     setForm(emptyForm);
     setShowPassword(false);
     setOpen(false);
+    loadAccounts();
   };
 
-  const handleDelete = (id: string) => {
-    const next = accounts.filter((a) => a.id !== id);
-    setAccounts(next);
-    saveAccounts(next);
+  const handleDelete = async (id: string) => {
+    const { data, error } = await supabase.functions.invoke('admin-delete-user', { body: { user_id: id } });
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error ?? error?.message ?? 'Error al eliminar');
+      return;
+    }
     setDeleteId(null);
     toast.success('Cuenta eliminada');
+    loadAccounts();
   };
-
-  const roleLabel = (role: UserAccountRole) =>
-    role === 'admin' ? 'Administrador (Apóstol)' : role === 'lider' ? 'Líder' : 'Servidor';
-
-  const roleBadgeClass = (role: UserAccountRole) =>
-    role === 'admin'
-      ? 'bg-primary/15 text-primary'
-      : role === 'lider'
-      ? 'bg-accent/30 text-accent-foreground'
-      : 'bg-muted text-muted-foreground';
 
   return (
     <Card>
@@ -132,7 +152,7 @@ export function UserAccountsSection() {
               <CardTitle>Cuentas de usuario</CardTitle>
             </div>
             <CardDescription>
-              Cree credenciales para líderes y defina a qué páginas pueden acceder. (Almacenado localmente — se migrará a Lovable Cloud)
+              Cree credenciales reales para líderes y defina a qué páginas pueden acceder.
             </CardDescription>
           </div>
           <Button onClick={() => setOpen(true)} className="shrink-0">
@@ -142,7 +162,11 @@ export function UserAccountsSection() {
         </div>
       </CardHeader>
       <CardContent>
-        {accounts.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
+            <Loader2 className="w-4 h-4 animate-spin mr-2" /> Cargando cuentas…
+          </div>
+        ) : accounts.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm border border-dashed border-border rounded-lg">
             Aún no se han creado cuentas. Cree una para comenzar.
           </div>
@@ -150,12 +174,12 @@ export function UserAccountsSection() {
           <div className="space-y-3">
             {accounts.map((a) => (
               <div
-                key={a.id}
+                key={a.user_id}
                 className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-border bg-card"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-foreground">{a.name}</p>
+                    <p className="font-medium text-foreground">{a.display_name}</p>
                     <Badge variant="secondary" className={roleBadgeClass(a.role)}>
                       <Shield className="w-3 h-3 mr-1" />
                       {roleLabel(a.role)}
@@ -171,8 +195,10 @@ export function UserAccountsSection() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setDeleteId(a.id)}
+                  onClick={() => setDeleteId(a.user_id)}
                   className="text-destructive hover:text-destructive shrink-0"
+                  disabled={a.role === 'admin'}
+                  title={a.role === 'admin' ? 'No se puede eliminar un administrador' : 'Eliminar'}
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
                   Eliminar
@@ -189,7 +215,7 @@ export function UserAccountsSection() {
           <DialogHeader>
             <DialogTitle>Crear nueva cuenta</DialogTitle>
             <DialogDescription>
-              Defina las credenciales y los permisos de acceso a páginas.
+              Defina las credenciales y los permisos de acceso a páginas. El usuario podrá iniciar sesión con este email y contraseña.
             </DialogDescription>
           </DialogHeader>
 
@@ -198,20 +224,11 @@ export function UserAccountsSection() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nombre completo</Label>
-                  <Input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="Juan Pérez"
-                  />
+                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Juan Pérez" />
                 </div>
                 <div className="space-y-2">
                   <Label>Email</Label>
-                  <Input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="lider@iglesia.com"
-                  />
+                  <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="lider@iglesia.com" />
                 </div>
               </div>
 
@@ -226,24 +243,15 @@ export function UserAccountsSection() {
                       placeholder="Mínimo 6 caracteres"
                       className="pr-10"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((s) => !s)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
+                    <button type="button" onClick={() => setShowPassword((s) => !s)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Rol</Label>
-                  <Select
-                    value={form.role}
-                    onValueChange={(v: UserAccountRole) => setForm({ ...form, role: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={form.role} onValueChange={(v: UiRole) => setForm({ ...form, role: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Administrador (Apóstol)</SelectItem>
                       <SelectItem value="lider">Líder</SelectItem>
@@ -258,27 +266,18 @@ export function UserAccountsSection() {
               {form.role === 'admin' ? (
                 <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 text-sm flex items-start gap-2">
                   <Shield className="w-4 h-4 text-primary mt-0.5" />
-                  <p>
-                    El rol de <strong>Administrador</strong> tiene acceso total a todas las páginas
-                    de la plataforma.
-                  </p>
+                  <p>El rol de <strong>Administrador</strong> tiene acceso total a todas las páginas de la plataforma.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-base">Permisos de acceso</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Seleccione las páginas que este usuario podrá visualizar.
-                      </p>
+                      <p className="text-xs text-muted-foreground">Seleccione las páginas que este usuario podrá visualizar.</p>
                     </div>
                     <div className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={selectAll}>
-                        <Check className="w-3 h-3 mr-1" /> Todo
-                      </Button>
-                      <Button type="button" variant="outline" size="sm" onClick={clearAll}>
-                        Limpiar
-                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={selectAll}><Check className="w-3 h-3 mr-1" /> Todo</Button>
+                      <Button type="button" variant="outline" size="sm" onClick={clearAll}>Limpiar</Button>
                     </div>
                   </div>
 
@@ -286,36 +285,22 @@ export function UserAccountsSection() {
                     {grouped.map(([group, pages]) => {
                       const paths = pages.map((p) => p.path);
                       const allSelected = paths.every((p) => form.permissions.includes(p));
-                      const someSelected =
-                        !allSelected && paths.some((p) => form.permissions.includes(p));
+                      const someSelected = !allSelected && paths.some((p) => form.permissions.includes(p));
                       return (
-                        <div
-                          key={group}
-                          className="rounded-lg border border-border p-3 space-y-2"
-                        >
+                        <div key={group} className="rounded-lg border border-border p-3 space-y-2">
                           <div className="flex items-center justify-between">
                             <label className="flex items-center gap-2 cursor-pointer">
-                              <Checkbox
-                                checked={allSelected ? true : someSelected ? 'indeterminate' : false}
-                                onCheckedChange={() => toggleGroup(paths)}
-                              />
+                              <Checkbox checked={allSelected ? true : someSelected ? 'indeterminate' : false} onCheckedChange={() => toggleGroup(paths)} />
                               <span className="font-medium text-sm">{group}</span>
                             </label>
                             <span className="text-xs text-muted-foreground">
-                              {paths.filter((p) => form.permissions.includes(p)).length}/
-                              {paths.length}
+                              {paths.filter((p) => form.permissions.includes(p)).length}/{paths.length}
                             </span>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
                             {pages.map((page) => (
-                              <label
-                                key={page.path}
-                                className="flex items-center gap-2 cursor-pointer text-sm"
-                              >
-                                <Checkbox
-                                  checked={form.permissions.includes(page.path)}
-                                  onCheckedChange={() => togglePermission(page.path)}
-                                />
+                              <label key={page.path} className="flex items-center gap-2 cursor-pointer text-sm">
+                                <Checkbox checked={form.permissions.includes(page.path)} onCheckedChange={() => togglePermission(page.path)} />
                                 <span className="text-foreground">{page.label}</span>
                               </label>
                             ))}
@@ -330,10 +315,10 @@ export function UserAccountsSection() {
           </ScrollArea>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>Cancelar</Button>
+            <Button onClick={handleCreate} disabled={submitting}>
+              {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creando…</> : 'Crear cuenta'}
             </Button>
-            <Button onClick={handleCreate}>Crear cuenta</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -343,20 +328,11 @@ export function UserAccountsSection() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Eliminar cuenta</DialogTitle>
-            <DialogDescription>
-              Esta acción no se puede deshacer. La cuenta se eliminará permanentemente.
-            </DialogDescription>
+            <DialogDescription>Esta acción no se puede deshacer. El acceso del usuario se eliminará permanentemente.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => deleteId && handleDelete(deleteId)}
-            >
-              Eliminar
-            </Button>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => deleteId && handleDelete(deleteId)}>Eliminar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
