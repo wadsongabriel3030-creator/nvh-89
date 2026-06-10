@@ -698,6 +698,90 @@ export type Database = {
           },
         ]
       }
+      plc_reports: {
+        Row: {
+          attendee_ids: string[]
+          attendee_names: string[]
+          cantidad_invitados: string | null
+          comentarios: string | null
+          convertidos_info: string | null
+          created_at: string
+          created_by: string | null
+          expected_member_ids: string[]
+          hubo_convertidos: boolean | null
+          hubo_incorporados: boolean | null
+          hubo_reconciliados: boolean | null
+          id: string
+          incorporados_info: string | null
+          leader_id: string | null
+          leader_name: string | null
+          meeting_day: string | null
+          nombres_invitados: string | null
+          ofrenda_recolectada: string | null
+          plc_group_id: string
+          plc_name: string
+          reconciliados_info: string | null
+          report_date: string | null
+          testimonio_milagros: string | null
+          todos_recibieron_anuncios: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          attendee_ids?: string[]
+          attendee_names?: string[]
+          cantidad_invitados?: string | null
+          comentarios?: string | null
+          convertidos_info?: string | null
+          created_at?: string
+          created_by?: string | null
+          expected_member_ids?: string[]
+          hubo_convertidos?: boolean | null
+          hubo_incorporados?: boolean | null
+          hubo_reconciliados?: boolean | null
+          id?: string
+          incorporados_info?: string | null
+          leader_id?: string | null
+          leader_name?: string | null
+          meeting_day?: string | null
+          nombres_invitados?: string | null
+          ofrenda_recolectada?: string | null
+          plc_group_id: string
+          plc_name: string
+          reconciliados_info?: string | null
+          report_date?: string | null
+          testimonio_milagros?: string | null
+          todos_recibieron_anuncios?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          attendee_ids?: string[]
+          attendee_names?: string[]
+          cantidad_invitados?: string | null
+          comentarios?: string | null
+          convertidos_info?: string | null
+          created_at?: string
+          created_by?: string | null
+          expected_member_ids?: string[]
+          hubo_convertidos?: boolean | null
+          hubo_incorporados?: boolean | null
+          hubo_reconciliados?: boolean | null
+          id?: string
+          incorporados_info?: string | null
+          leader_id?: string | null
+          leader_name?: string | null
+          meeting_day?: string | null
+          nombres_invitados?: string | null
+          ofrenda_recolectada?: string | null
+          plc_group_id?: string
+          plc_name?: string
+          reconciliados_info?: string | null
+          report_date?: string | null
+          testimonio_milagros?: string | null
+          todos_recibieron_anuncios?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prayer_guides: {
         Row: {
           created_at: string
@@ -1170,8 +1254,6 @@ export type Database = {
       leader_category: "Adulto" | "Joven Adulto" | "Joven"
       member_status: "active" | "inactive" | "visitor"
       payment_method: "cash" | "transfer" | "pix" | "card"
-      tithe_currency: "GTQ" | "USD"
-      tithe_payment_form: "efectivo" | "transferencia" | "cheque"
       tag_category:
         | "discipleship"
         | "nuevos_comienzos"
@@ -1180,6 +1262,8 @@ export type Database = {
         | "custom"
       testimony_status: "pending" | "approved" | "rejected"
       testimony_visibility: "public" | "internal"
+      tithe_currency: "GTQ" | "USD"
+      tithe_payment_form: "efectivo" | "transferencia" | "cheque"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1323,6 +1407,8 @@ export const Constants = {
       ],
       testimony_status: ["pending", "approved", "rejected"],
       testimony_visibility: ["public", "internal"],
+      tithe_currency: ["GTQ", "USD"],
+      tithe_payment_form: ["efectivo", "transferencia", "cheque"],
     },
   },
 } as const
