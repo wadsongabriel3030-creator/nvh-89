@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Member, Tag } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
 
 interface MembersContextType {
   members: Member[];
@@ -110,8 +112,12 @@ export function MembersProvider({ children }: { children: ReactNode }) {
       .insert(memberToRow(member) as any)
       .select('*')
       .single();
-    if (error || !data) return;
+    if (error || !data) {
+      toast({ title: 'Error al guardar miembro', description: error?.message ?? 'Error desconocido', variant: 'destructive' });
+      return;
+    }
     setMembers((prev) => [memberFromRow(data, member.tags ?? []), ...prev]);
+    toast({ title: '¡Miembro agregado!', description: `${data.first_name} ${data.last_name} fue guardado.` });
   };
 
   const updateMember = async (id: string, data: Partial<Member>) => {
@@ -121,7 +127,10 @@ export function MembersProvider({ children }: { children: ReactNode }) {
       .eq('id', id)
       .select('*')
       .single();
-    if (error || !updated) return;
+    if (error || !updated) {
+      toast({ title: 'Error al actualizar', description: error?.message ?? 'Error desconocido', variant: 'destructive' });
+      return;
+    }
     setMembers((prev) =>
       prev.map((m) => (m.id === id ? memberFromRow(updated, m.tags) : m))
     );
@@ -129,9 +138,13 @@ export function MembersProvider({ children }: { children: ReactNode }) {
 
   const deleteMember = async (id: string) => {
     const { error } = await supabase.from('members').delete().eq('id', id);
-    if (error) return;
+    if (error) {
+      toast({ title: 'Error al eliminar', description: error.message, variant: 'destructive' });
+      return;
+    }
     setMembers((prev) => prev.filter((m) => m.id !== id));
   };
+
 
   const addTagToMember = async (memberId: string, tag: Tag) => {
     const { error } = await supabase
