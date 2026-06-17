@@ -85,6 +85,7 @@ export default function Discipulador() {
   const [relaciones, setRelaciones] = useState<DiscipuloRelation[]>([]);
   const [progreso, setProgreso] = useState<ProgresoStep[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tablesReady, setTablesReady] = useState(true);
 
   // UI state
   const [search, setSearch] = useState('');
@@ -100,13 +101,23 @@ export default function Discipulador() {
   const loadData = async () => {
     setLoading(true);
     const [dRes, rRes, pRes] = await Promise.all([
-      supabase.from('discipuladores').select('*'),
-      supabase.from('discipulador_discipulos').select('*'),
-      supabase.from('discipulo_progreso').select('*'),
+      supabase.from('discipuladores' as any).select('*'),
+      supabase.from('discipulador_discipulos' as any).select('*'),
+      supabase.from('discipulo_progreso' as any).select('*'),
     ]);
-    setDiscipuladores((dRes.data as Discipulador[] | null) ?? []);
-    setRelaciones((rRes.data as DiscipuloRelation[] | null) ?? []);
-    setProgreso((pRes.data as ProgresoStep[] | null) ?? []);
+    // Check if tables exist (Supabase returns error when table not found)
+    const hasError = [dRes, rRes, pRes].some(r => r.error && r.error.message?.includes('not find'));
+    if (hasError) {
+      setTablesReady(false);
+      setDiscipuladores([]);
+      setRelaciones([]);
+      setProgreso([]);
+    } else {
+      setTablesReady(true);
+      setDiscipuladores((dRes.data as Discipulador[] | null) ?? []);
+      setRelaciones((rRes.data as DiscipuloRelation[] | null) ?? []);
+      setProgreso((pRes.data as ProgresoStep[] | null) ?? []);
+    }
     setLoading(false);
   };
 
@@ -311,6 +322,30 @@ export default function Discipulador() {
             </Badge>
           </div>
         </div>
+
+        {/* Tables not ready banner */}
+        {!tablesReady && (
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardContent className="py-6">
+              <div className="flex flex-col items-center text-center space-y-3">
+                <div className="p-3 rounded-full bg-amber-500/10">
+                  <BookOpen className="w-8 h-8 text-amber-500" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg text-foreground">Configuración Requerida</h3>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-lg">
+                    Las tablas de Discipulador aún no están creadas en la base de datos.
+                    Ejecuta el script SQL en el <strong>Supabase SQL Editor</strong> y luego haz clic en "Recargar".
+                  </p>
+                </div>
+                <Button onClick={() => loadData()} variant="outline" className="gap-2 mt-2">
+                  <Loader2 className="w-4 h-4" />
+                  Recargar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tabs */}
         <Tabs defaultValue="discipuladores" className="space-y-5">
