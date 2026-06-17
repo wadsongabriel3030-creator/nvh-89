@@ -38,9 +38,10 @@ interface ReporteDominicalData {
   horaInicio: string;
   horaFin: string;
   asistentes: string;
-  visitantesPrimeraVez: string;
-  regularesNoAsistieron: string[];
   servidores: string;
+  visitantesPrimeraVez: string;
+  totalAsistencia: string;
+  regularesNoAsistieron: string[];
   testimonios: string;
 }
 
@@ -52,7 +53,7 @@ const LIDERES_PREDEFINIDOS = [
   'Carlos Iván López / Ana Beatriz de López',
 ];
 
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 10;
 
 export default function ReporteDominical() {
   const navigate = useNavigate();
@@ -65,9 +66,10 @@ export default function ReporteDominical() {
     horaInicio: '',
     horaFin: '',
     asistentes: '',
-    visitantesPrimeraVez: '',
-    regularesNoAsistieron: [],
     servidores: '',
+    visitantesPrimeraVez: '',
+    totalAsistencia: '',
+    regularesNoAsistieron: [],
     testimonios: '',
   });
 
@@ -93,11 +95,19 @@ export default function ReporteDominical() {
       horaInicio: '',
       horaFin: '',
       asistentes: '',
-      visitantesPrimeraVez: '',
-      regularesNoAsistieron: [],
       servidores: '',
+      visitantesPrimeraVez: '',
+      totalAsistencia: '',
+      regularesNoAsistieron: [],
       testimonios: '',
     });
+  };
+
+  const calcularTotal = () => {
+    const participantes = parseInt(formData.asistentes) || 0;
+    const servidores = parseInt(formData.servidores) || 0;
+    const invitados = parseInt(formData.visitantesPrimeraVez) || 0;
+    return participantes + servidores + invitados;
   };
 
   const isStepValid = () => {
@@ -113,12 +123,14 @@ export default function ReporteDominical() {
       case 5:
         return formData.asistentes.trim().length > 0;
       case 6:
-        return formData.visitantesPrimeraVez.trim().length > 0;
-      case 7:
-        return true;
-      case 8:
         return formData.servidores.trim().length > 0;
+      case 7:
+        return formData.visitantesPrimeraVez.trim().length > 0;
+      case 8:
+        return true; // auto-calculated
       case 9:
+        return true;
+      case 10:
         return true;
       default:
         return false;
@@ -264,11 +276,15 @@ export default function ReporteDominical() {
                 </div>
               )}
 
+              {/* Paso 5 - Participantes */}
               {step === 5 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <Label className="text-base font-semibold">
-                    ¿Cuántas personas asistieron en total a la Reunión Dominical? *
+                    ¿Cuántas participantes asistieron? *
                   </Label>
+                  <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 border border-border/50">
+                    <strong>Nota:</strong> Número de personas que están en la reunión, no tomando en cuenta a los servidores/voluntarios ni a los invitados por primera vez, ya que se contabilizan por separado en los pasos siguientes.
+                  </p>
                   <Input
                     type="number"
                     min={0}
@@ -280,7 +296,25 @@ export default function ReporteDominical() {
                 </div>
               )}
 
+              {/* Paso 6 - Servidores */}
               {step === 6 && (
+                <div className="space-y-4 animate-in fade-in duration-300">
+                  <Label className="text-base font-semibold">
+                    ¿Cuántos servidores o voluntarios estuvieron activos? *
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="Ej: 15"
+                    value={formData.servidores}
+                    onChange={(e) => setFormData({ ...formData, servidores: e.target.value })}
+                    className="mt-3"
+                  />
+                </div>
+              )}
+
+              {/* Paso 7 - Invitados */}
+              {step === 7 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <Label className="text-base font-semibold">
                     ¿Cuántas personas nos visitaron por primera vez? *
@@ -298,7 +332,38 @@ export default function ReporteDominical() {
                 </div>
               )}
 
-              {step === 7 && (
+              {/* Paso 8 - Total */}
+              {step === 8 && (
+                <div className="space-y-4 animate-in fade-in duration-300">
+                  <Label className="text-base font-semibold">
+                    Total de asistencia a la Reunión Dominical
+                  </Label>
+                  <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 border border-border/50">
+                    <strong>Nota:</strong> Este total se calcula automáticamente sumando participantes, servidores e invitados.
+                  </p>
+                  <div className="mt-3 space-y-3">
+                    <div className="flex items-center justify-between text-sm p-2 rounded-md bg-muted/30">
+                      <span className="text-muted-foreground">Participantes:</span>
+                      <span className="font-medium">{parseInt(formData.asistentes) || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm p-2 rounded-md bg-muted/30">
+                      <span className="text-muted-foreground">Servidores:</span>
+                      <span className="font-medium">{parseInt(formData.servidores) || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm p-2 rounded-md bg-muted/30">
+                      <span className="text-muted-foreground">Invitados:</span>
+                      <span className="font-medium">{parseInt(formData.visitantesPrimeraVez) || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-base p-3 rounded-lg bg-primary/10 border border-primary/20 font-semibold">
+                      <span className="text-primary">Total:</span>
+                      <span className="text-primary text-lg">{calcularTotal()}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Paso 9 - Asistentes habituales ausentes */}
+              {step === 9 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <Label className="text-base font-semibold">
                     ¿Qué asistentes habituales estuvieron ausentes?
@@ -343,23 +408,8 @@ export default function ReporteDominical() {
                 </div>
               )}
 
-              {step === 8 && (
-                <div className="space-y-4 animate-in fade-in duration-300">
-                  <Label className="text-base font-semibold">
-                    ¿Cuántos servidores o voluntarios estuvieron activos? *
-                  </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="Ej: 15"
-                    value={formData.servidores}
-                    onChange={(e) => setFormData({ ...formData, servidores: e.target.value })}
-                    className="mt-3"
-                  />
-                </div>
-              )}
-
-              {step === 9 && (
+              {/* Paso 10 - Testimonios */}
+              {step === 10 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <Label className="text-base font-semibold">
                     ¿Qué testimonios o evidencias de ministración ocurrieron?

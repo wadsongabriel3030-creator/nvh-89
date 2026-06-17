@@ -21,6 +21,9 @@ import { PLCGroup } from '@/types';
 import { useMembers } from '@/contexts/MembersContext';
 import { useTestimonies } from '@/contexts/TestimoniesContext';
 import { savePlcReport } from '@/lib/plcReports';
+import { supabase } from '@/integrations/supabase/client';
+import { titheRecordToRow } from '@/lib/titheRecords';
+import { TitheRecord } from '@/components/tithes/AddTitheDialog';
 
 interface ReportePLCData {
   fechaPLC: Date | undefined;
@@ -37,9 +40,13 @@ interface ReportePLCData {
   incorporadosInfo: string;
   testimonioMilagros: string;
   ofrendaRecolectada: string;
+  metodoOfrenda: string;
+  numeroTransferencia: string;
   todosRecibieronAnuncios: boolean | null;
   comentarios: string;
 }
+
+const METODOS_OFRENDA = ['Efectivo', 'Transferencia', 'Cheque'];
 
 const TOTAL_STEPS = 11;
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -92,6 +99,8 @@ export default function ReportePLC() {
     incorporadosInfo: '',
     testimonioMilagros: '',
     ofrendaRecolectada: '',
+    metodoOfrenda: '',
+    numeroTransferencia: '',
     todosRecibieronAnuncios: null,
     comentarios: '',
   });
@@ -157,6 +166,7 @@ export default function ReportePLC() {
       return;
     }
 
+    // Save testimony to /testimonies
     if (formData.testimonioMilagros.trim().length > 0) {
       const liderName = formData.liderNombre && formData.liderNombre !== 'Líder no detectado'
         ? formData.liderNombre
@@ -173,6 +183,54 @@ export default function ReportePLC() {
         status: 'pending',
         visibility: 'internal',
       });
+    }
+
+    // Save ofrenda to /tithes (tithe_records table)
+    if (formData.ofrendaRecolectada.trim().length > 0) {
+      const cleanedAmount = formData.ofrendaRecolectada
+        .replace(/\./g, '')
+        .replace(',', '.');
+      const ofrendaAmount = parseFloat(cleanedAmount) || 0;
+
+      if (ofrendaAmount > 0) {
+        const fechaStr = formData.fechaPLC
+          ? format(formData.fechaPLC, 'yyyy-MM-dd')
+          : new Date().toISOString().split('T')[0];
+
+        const metodoLower = formData.metodoOfrenda.toLowerCase() as 'efectivo' | 'transferencia' | 'cheque';
+
+        const titheRecord: TitheRecord = {
+          id: crypto.randomUUID(),
+          memberName: `PLC ${currentPLC.name} - ${formData.liderNombre}`.trim(),
+          date: fechaStr,
+          currency: 'GTQ',
+          titheAmount: 0,
+          tithePaymentMethod: 'efectivo',
+          offeringAmount: ofrendaAmount,
+          offeringPaymentMethod: metodoLower,
+          offeringTransferNumber: metodoLower === 'transferencia' ? formData.numeroTransferencia.trim() || undefined : undefined,
+          firstFruitsAmount: 0,
+          firstFruitsPaymentMethod: 'efectivo',
+          proTemploAmount: 0,
+          proTemploPaymentMethod: 'efectivo',
+          specialOfferingAmount: 0,
+          specialOfferingPaymentMethod: 'efectivo',
+          notes: `Ofrenda de PLC ${currentPLC.name}`,
+          createdAt: new Date().toISOString(),
+          amount: ofrendaAmount,
+          paymentMethod: metodoLower === 'transferencia' ? 'transfer' : 'cash',
+          reference: metodoLower === 'transferencia' ? formData.numeroTransferencia.trim() || undefined : undefined,
+        };
+
+        const { error: titheError } = await supabase
+          .from('tithe_records')
+          .insert(titheRecordToRow(titheRecord));
+
+        if (titheError) {
+          console.error('Error saving ofrenda to tithes:', titheError);
+          toast.error('Reporte guardado, pero no se pudo registrar la ofrenda en Diezmos.');
+        }
+      }
     }
     toast.success('¡Reporte PLC enviado con éxito!');
     setSubmitted(true);
@@ -196,6 +254,8 @@ export default function ReportePLC() {
       incorporadosInfo: '',
       testimonioMilagros: '',
       ofrendaRecolectada: '',
+      metodoOfrenda: '',
+      numeroTransferencia: '',
       todosRecibieronAnuncios: null,
       comentarios: '',
     });
@@ -229,7 +289,7 @@ export default function ReportePLC() {
       case 8:
         return true; // Testimony is optional
       case 9:
-        return formData.ofrendaRecolectada.trim().length > 0;
+        return formData.ofrendaRecolectada.trim().length > 0 && formData.metodoOfrenda.trim().length > 0;
       case 10:
         return formData.todosRecibieronAnuncios !== null;
       case 11:
@@ -577,7 +637,7 @@ export default function ReportePLC() {
                 <div>
                   <Label className="text-base font-semibold">Ofrenda presentada *</Label>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Ingrese el monto total de la ofrenda
+                    Ingrese el monto total de la ofrenda y seleccione el método
                   </p>
                   <div className="relative mt-2">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">Q</span>
@@ -608,6 +668,37 @@ export default function ReportePLC() {
                       className="pl-8"
                     />
                   </div>
+
+                  <Label className="text-sm font-semibold mt-5 block">Método de ofrenda *</Label>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Seleccione cómo fue entregada la ofrenda
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {METODOS_OFRENDA.map((metodo) => (
+                      <div
+                        key={metodo}
+                        className={`flex items-center justify-center p-3 rounded-lg border cursor-pointer transition-colors ${formData.metodoOfrenda === metodo ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                        onClick={() => setFormData({ ...formData, metodoOfrenda: metodo, ...(metodo !== 'Transferencia' ? { numeroTransferencia: '' } : {}) })}
+                      >
+                        <Label className="cursor-pointer font-medium text-sm">{metodo}</Label>
+                      </div>
+                    ))}
+                  </div>
+
+                  {formData.metodoOfrenda === 'Transferencia' && (
+                    <div className="mt-4 animate-in fade-in duration-200">
+                      <Label className="text-sm font-semibold">Número de transferencia</Label>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Ingrese el número o referencia de la transferencia
+                      </p>
+                      <Input
+                        value={formData.numeroTransferencia}
+                        onChange={(e) => setFormData({ ...formData, numeroTransferencia: e.target.value })}
+                        placeholder="Ej: 123456789"
+                        maxLength={100}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
