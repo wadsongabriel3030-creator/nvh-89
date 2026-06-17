@@ -359,9 +359,10 @@ export function MembersProgressTable() {
     const ids = new Set<string>();
     const groups = plcRes.data?.value;
     if (Array.isArray(groups)) {
-      for (const g of groups) {
+      for (const raw of groups) {
+        const g = raw as { leaderId?: unknown; members?: unknown } | null;
         if (g?.leaderId) ids.add(String(g.leaderId));
-        if (Array.isArray(g?.members)) g.members.forEach((id: string) => ids.add(String(id)));
+        if (Array.isArray(g?.members)) g.members.forEach((id) => ids.add(String(id)));
       }
     }
     setPlcMemberIds(ids);
