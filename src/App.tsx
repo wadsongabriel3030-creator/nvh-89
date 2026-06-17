@@ -59,6 +59,7 @@ import ReporteAbrirLosOjos from "./pages/ReporteAbrirLosOjos";
 import CursoVidaEnLibertad from "./pages/CursoVidaEnLibertad";
 import RetiroVidaEnLibertad from "./pages/RetiroVidaEnLibertad";
 import InscripcionRetiroVidaLibertad from "./pages/InscripcionRetiroVidaLibertad";
+import Discipulador from "./pages/Discipulador";
 import Recursos from "./pages/reunion-dominical/Recursos";
 import Programa from "./pages/reunion-dominical/Programa";
 import FrasesInstitucionales from "./pages/reunion-dominical/FrasesInstitucionales";
@@ -139,6 +140,7 @@ const App = () => (
                 <Route path="/curso-vida-libertad" element={<P><CursoVidaEnLibertad /></P>} />
                 <Route path="/retiro-vida-libertad" element={<P><RetiroVidaEnLibertad /></P>} />
                 <Route path="/calendar-2026" element={<P><CalendarTaskPage /></P>} />
+                <Route path="/discipulador" element={<P><Discipulador /></P>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

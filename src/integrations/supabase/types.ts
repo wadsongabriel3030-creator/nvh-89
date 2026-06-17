@@ -228,6 +228,133 @@ export type Database = {
           },
         ]
       }
+      discipuladores: {
+        Row: {
+          id: string
+          member_id: string
+          assigned_at: string
+          assigned_by: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          member_id: string
+          assigned_at?: string
+          assigned_by?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          member_id?: string
+          assigned_at?: string
+          assigned_by?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discipuladores_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discipulador_discipulos: {
+        Row: {
+          id: string
+          discipulador_id: string
+          discipulo_member_id: string
+          assigned_at: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          discipulador_id: string
+          discipulo_member_id: string
+          assigned_at?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          discipulador_id?: string
+          discipulo_member_id?: string
+          assigned_at?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discipulador_discipulos_discipulador_id_fkey"
+            columns: ["discipulador_id"]
+            isOneToOne: false
+            referencedRelation: "discipuladores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discipulador_discipulos_discipulo_member_id_fkey"
+            columns: ["discipulo_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discipulo_progreso: {
+        Row: {
+          id: string
+          discipulo_member_id: string
+          step_key: string
+          completed: boolean
+          completed_at: string | null
+          notes: string | null
+          marked_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          discipulo_member_id: string
+          step_key: string
+          completed?: boolean
+          completed_at?: string | null
+          notes?: string | null
+          marked_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          discipulo_member_id?: string
+          step_key?: string
+          completed?: boolean
+          completed_at?: string | null
+          notes?: string | null
+          marked_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discipulo_progreso_discipulo_member_id_fkey"
+            columns: ["discipulo_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discipleship_students: {
         Row: {
           completion_date: string | null

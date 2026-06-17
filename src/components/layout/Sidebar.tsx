@@ -116,6 +116,7 @@ const secondaryNavItems: NavItem[] = [
       { icon: BookOpen, label: 'Proceso de Discipular', href: '/proceso-discipular' },
     ]
   },
+  { icon: HandHeart, label: 'Discipulador', href: '/discipulador' },
   { icon: BarChart3, label: 'Informes', href: '/reports' },
 ];
 
