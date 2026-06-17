@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useMembers } from '@/contexts/MembersContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { fetchClassReports, type ClassReportRow } from '@/lib/classReports';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +53,24 @@ const RUTA_STEPS = [
   { key: 'leccion_6', label: 'Lección 6 — Abrir los ojos', icon: Eye, group: 'Finalización' },
 ];
 
+// Maps each RUTA step key to the reporteKey + reporteLeccion used by class_reports / Desempeño
+const STEP_REPORT_MAP: Record<string, { reporteKey: string; reporteLeccion: string }> = {
+  leccion_1: { reporteKey: 'arrepentimiento', reporteLeccion: 'Arrepentimiento de Obras Muertas' },
+  leccion_2: { reporteKey: 'cambio-de-reino', reporteLeccion: 'Cambio de Reino' },
+  leccion_3: { reporteKey: 'encuentro-diario', reporteLeccion: '¿Cómo Hacer Tú Encuentro Diario?' },
+  leccion_4: { reporteKey: 'disciplinas-espirituales', reporteLeccion: 'Semana 0 – Video de Introducción' },
+  semana_0:  { reporteKey: 'disciplinas-espirituales', reporteLeccion: 'Semana 0 – Video de Introducción' },
+  semana_1:  { reporteKey: 'disciplinas-espirituales', reporteLeccion: 'Semana 1 – Oración y Ayuno' },
+  semana_2:  { reporteKey: 'disciplinas-espirituales', reporteLeccion: 'Semana 2 – Leer, Predicar y Practicar' },
+  semana_3:  { reporteKey: 'disciplinas-espirituales', reporteLeccion: 'Semana 3 – Adoración' },
+  semana_4:  { reporteKey: 'disciplinas-espirituales', reporteLeccion: 'Semana 4 – Mayordomía' },
+  semana_5:  { reporteKey: 'disciplinas-espirituales', reporteLeccion: 'Semana 5 – Testificar' },
+  semana_6:  { reporteKey: 'disciplinas-espirituales', reporteLeccion: 'Semana 6 – Sencillez' },
+  semana_7:  { reporteKey: 'disciplinas-espirituales', reporteLeccion: 'Semana 7 – Servicio' },
+  leccion_5: { reporteKey: 'dia-antes', reporteLeccion: 'Día Antes' },
+  leccion_6: { reporteKey: 'abrir-los-ojos', reporteLeccion: 'Abrir los Ojos' },
+};
+
 interface Discipulador {
   id: string;
   member_id: string;
@@ -84,6 +103,7 @@ export default function Discipulador() {
   const [discipuladores, setDiscipuladores] = useState<Discipulador[]>([]);
   const [relaciones, setRelaciones] = useState<DiscipuloRelation[]>([]);
   const [progreso, setProgreso] = useState<ProgresoStep[]>([]);
+  const [classReports, setClassReports] = useState<ClassReportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [tablesReady, setTablesReady] = useState(true);
 
@@ -98,12 +118,13 @@ export default function Discipulador() {
   const [savingProgress, setSavingProgress] = useState<string | null>(null);
 
   // ── Load data ──────────────────────────────────────────────
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
-    const [dRes, rRes, pRes] = await Promise.all([
+    const [dRes, rRes, pRes, reports] = await Promise.all([
       supabase.from('discipuladores' as any).select('*'),
       supabase.from('discipulador_discipulos' as any).select('*'),
       supabase.from('discipulo_progreso' as any).select('*'),
+      fetchClassReports(),
     ]);
     // Check if tables exist (Supabase returns error when table not found)
     const hasError = [dRes, rRes, pRes].some(r => r.error && r.error.message?.includes('not find'));
@@ -118,8 +139,9 @@ export default function Discipulador() {
       setRelaciones((rRes.data as DiscipuloRelation[] | null) ?? []);
       setProgreso((pRes.data as ProgresoStep[] | null) ?? []);
     }
+    setClassReports(reports);
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => { loadData(); }, []);
 
@@ -139,6 +161,27 @@ export default function Discipulador() {
     });
     return map;
   }, [relaciones]);
+
+  // Build a set of member IDs per step from class_reports
+  const reportCompletedByStep = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const [stepKey, mapping] of Object.entries(STEP_REPORT_MAP)) {
+      const ids = new Set<string>();
+      for (const r of classReports) {
+        if (r.area === mapping.reporteKey && r.leccion === mapping.reporteLeccion) {
+          (r.attendee_ids || []).forEach(id => ids.add(String(id)));
+          // Also match by name
+          const names = new Set((r.attendee_names || []).map(n => String(n).trim().toLowerCase()));
+          members.forEach(m => {
+            const full = `${m.firstName} ${m.lastName}`.trim().toLowerCase();
+            if (names.has(full)) ids.add(m.id);
+          });
+        }
+      }
+      map.set(stepKey, ids);
+    }
+    return map;
+  }, [classReports, members]);
 
   const progresoByDiscipulo = useMemo(() => {
     const map = new Map<string, Map<string, ProgresoStep>>();
@@ -253,10 +296,16 @@ export default function Discipulador() {
 
   const getMember = (id: string) => members.find(m => m.id === id);
 
+  const isStepCompleted = (memberId: string, stepKey: string): boolean => {
+    // Check manual progress in discipulo_progreso
+    const manualStep = progresoByDiscipulo.get(memberId)?.get(stepKey);
+    if (manualStep?.completed) return true;
+    // Check class_reports
+    return reportCompletedByStep.get(stepKey)?.has(memberId) ?? false;
+  };
+
   const getCompletedCount = (memberId: string) => {
-    const steps = progresoByDiscipulo.get(memberId);
-    if (!steps) return 0;
-    return Array.from(steps.values()).filter(s => s.completed).length;
+    return RUTA_STEPS.reduce((acc, step) => acc + (isStepCompleted(memberId, step.key) ? 1 : 0), 0);
   };
 
   const getProgressPercent = (memberId: string) => {
@@ -725,9 +774,8 @@ export default function Discipulador() {
                   {(() => {
                     let lastGroup = '';
                     return RUTA_STEPS.map((step, idx) => {
-                      const stepsMap = progresoByDiscipulo.get(selectedDiscipuloMemberId);
-                      const stepProgress = stepsMap?.get(step.key);
-                      const isCompleted = stepProgress?.completed ?? false;
+                      const stepProgress = progresoByDiscipulo.get(selectedDiscipuloMemberId)?.get(step.key);
+                      const isCompleted = isStepCompleted(selectedDiscipuloMemberId, step.key);
                       const StepIcon = step.icon;
                       const showGroup = step.group !== lastGroup;
                       lastGroup = step.group;

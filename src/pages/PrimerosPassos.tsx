@@ -3,26 +3,35 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, FileText, BookOpen, Footprints, Sparkles, HeartHandshake } from 'lucide-react';
+import { UserPlus, FileText, BookOpen, Footprints, Sparkles, HeartHandshake, RefreshCw, Sun, Eye, CalendarCheck } from 'lucide-react';
 import type { CursoPasosFirmes } from '@/components/pasos-firmes/PasosFirmesReporteDialog';
 
 const CURSOS: (CursoPasosFirmes & { icon: typeof BookOpen; descripcion: string; totalLabel: string })[] = [
   {
     id: 'arrepentimiento',
-    nombre: 'Arrepentimiento',
-    descripcion: 'Lección de Arrepentimiento de Obras Muertas',
+    nombre: 'Lección 1 – Arrepentimiento',
+    descripcion: 'Arrepentimiento de Obras Muertas',
     totalLabel: '1 LECCIÓN',
     color: 'text-primary',
     icon: HeartHandshake,
-    lecciones: ['Lección de Arrepentimiento de Obras Muertas'],
+    lecciones: ['Arrepentimiento de Obras Muertas'],
+  },
+  {
+    id: 'cambio-de-reino',
+    nombre: 'Lección 2 – Cambio de Reino',
+    descripcion: 'Enseñanza sobre el Cambio de Reino',
+    totalLabel: '1 LECCIÓN',
+    color: 'text-orange-500',
+    icon: RefreshCw,
+    lecciones: ['Cambio de Reino'],
   },
   {
     id: 'encuentro-diario',
-    nombre: 'Encuentro Diario',
+    nombre: 'Lección 3 – Encuentro Diario',
     descripcion: 'Enseñanza de cómo hacer tu Encuentro Diario y Plan Bíblico Nuevos Hechos',
-    totalLabel: '1 LECCIÓN',
+    totalLabel: '2 LECCIONES',
     color: 'text-accent',
-    icon: Sparkles,
+    icon: Sun,
     lecciones: [
       '¿Cómo Hacer Tú Encuentro Diario?',
       'Plan Bíblico Nuevos Hechos',
@@ -30,23 +39,39 @@ const CURSOS: (CursoPasosFirmes & { icon: typeof BookOpen; descripcion: string; 
   },
   {
     id: 'disciplinas-espirituales',
-    nombre: 'Disciplinas Espirituales',
-    descripcion: '10 lecciones sobre las disciplinas que sostienen la vida cristiana',
-    totalLabel: '10 LECCIONES',
+    nombre: 'Lección 4 – Disciplinas Espirituales',
+    descripcion: '8 semanas sobre las disciplinas que sostienen la vida cristiana',
+    totalLabel: '8 SEMANAS',
     color: 'text-success',
     icon: BookOpen,
     lecciones: [
-      'Semana 1 – Introducción',
-      'Semana 2 – Oración',
-      'Semana 3 – Leer, Meditar y Practicar',
-      'Semana 4 – Ayuno',
-      'Semana 5 – Mayordomía',
-      'Semana 6 – Adoración',
-      'Semana 7 – Sencillez',
-      'Semana 8 – Servicio',
-      'Semana 9 – Testificar',
-      'Semana 10 – Epílogo',
+      'Semana 0 – Video de Introducción',
+      'Semana 1 – Oración y Ayuno',
+      'Semana 2 – Leer, Predicar y Practicar',
+      'Semana 3 – Adoración',
+      'Semana 4 – Mayordomía',
+      'Semana 5 – Testificar',
+      'Semana 6 – Sencillez',
+      'Semana 7 – Servicio',
     ],
+  },
+  {
+    id: 'dia-antes',
+    nombre: 'Lección 5 – Día Antes',
+    descripcion: 'Preparación para el siguiente paso en la vida cristiana',
+    totalLabel: '1 LECCIÓN',
+    color: 'text-violet-500',
+    icon: CalendarCheck,
+    lecciones: ['Día Antes'],
+  },
+  {
+    id: 'abrir-los-ojos',
+    nombre: 'Lección 6 – Abrir los Ojos',
+    descripcion: 'Abrir los ojos a la visión de Dios',
+    totalLabel: '1 LECCIÓN',
+    color: 'text-sky-500',
+    icon: Eye,
+    lecciones: ['Abrir los Ojos'],
   },
 ];
 
