@@ -134,7 +134,7 @@ export default function ReporteMembresia() {
             </div>
 
             <div className="space-y-2">
-              <Label>¿Quién dio la clase? *</Label>
+              <Label>Impartido por: *</Label>
               <Input value={quienDio} onChange={(e) => setQuienDio(e.target.value)} placeholder="Nombre del instructor" />
             </div>
 

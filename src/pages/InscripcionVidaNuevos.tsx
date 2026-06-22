@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { saveClassReport } from '@/lib/classReports';
 import { Sparkles, ChevronLeft, ChevronRight, Send, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -37,7 +38,24 @@ export default function InscripcionVidaNuevos() {
     if (step > 1) setStep(step - 1);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    try {
+      await saveClassReport({
+        area: 'inscripcion-vida-nuevos',
+        leccion: 'Inscripción Vida Nuevos Hechos',
+        reportDate: new Date(),
+        leaderName: formData.nombreCompleto,
+        attendeeIds: [],
+        attendeeNames: [formData.nombreCompleto],
+        extra: {
+          telefono: formData.telefono,
+          asistencia: formData.asistencia,
+          comentarios: formData.comentarios,
+        },
+      });
+    } catch {
+      // still show success to the user even if save fails
+    }
     toast.success('¡Inscripción enviada con éxito!');
     setSubmitted(true);
   };

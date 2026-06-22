@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,10 +35,20 @@ import {
   UserCheck,
   Users,
   FileText,
+  ClipboardList,
+  Calendar,
+  User,
+  CheckCircle,
+  Phone,
+  MessageSquare,
+  Heart
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { PasosFirmesReporteDialog, CursoPasosFirmes } from '@/components/pasos-firmes/PasosFirmesReporteDialog';
+import { fetchClassReports, type ClassReportRow } from '@/lib/classReports';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const CURSO_ABRIR_LOS_OJOS: CursoPasosFirmes & { descripcion: string; totalLabel: string } = {
   id: 'abrir-los-ojos',
@@ -81,6 +91,125 @@ export default function AbrirLosOjos() {
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [reporteOpen, setReporteOpen] = useState(false);
+
+  const [allReports, setAllReports] = useState<ClassReportRow[]>([]);
+  const [loadingReports, setLoadingReports] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setLoadingReports(true);
+      const reports = await fetchClassReports();
+      if (!active) return;
+      
+      const filtered = reports.filter(r => r.area === 'abrir-los-ojos');
+      
+      filtered.sort((a, b) => {
+        const dateA = a.report_date || '';
+        const dateB = b.report_date || '';
+        return dateB.localeCompare(dateA);
+      });
+      setAllReports(filtered);
+      setLoadingReports(false);
+    })();
+    return () => { active = false; };
+  }, []);
+
+  const getReportTypeBadge = () => {
+    return (
+      <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20">
+        <FileText className="w-3 h-3 mr-1" />
+        Reporte de Clase
+      </Badge>
+    );
+  };
+
+  const renderReportCard = (report: ClassReportRow) => {
+    const extra = (report.extra || {}) as Record<string, unknown>;
+    const reportDate = report.report_date
+      ? format(new Date(report.report_date + 'T12:00:00'), 'PPP', { locale: es })
+      : 'Sin fecha';
+
+    return (
+      <Card key={report.id} className="border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            {getReportTypeBadge()}
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              {reportDate}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">Impartido por</p>
+                <p className="text-sm font-medium text-foreground">{report.leader_name || '—'}</p>
+              </div>
+            </div>
+            {extra.diaReunion && (
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Día de reunión</p>
+                  <p className="text-sm font-medium text-foreground">{extra.diaReunion as string}</p>
+                </div>
+              </div>
+            )}
+            {report.attendee_names && report.attendee_names.length > 0 && (
+              <div className="flex items-start gap-2 sm:col-span-2">
+                <Users className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Asistentes ({report.attendee_names.length})</p>
+                  <p className="text-sm text-foreground">{report.attendee_names.join(', ')}</p>
+                </div>
+              </div>
+            )}
+            {extra.cantidadInvitados && (
+              <div className="flex items-start gap-2">
+                <Users className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Invitados ({extra.cantidadInvitados as string})</p>
+                  <p className="text-sm text-foreground">{(extra.nombresInvitados as string) || '—'}</p>
+                </div>
+              </div>
+            )}
+            {extra.huboDecisiones !== null && extra.huboDecisiones !== undefined && (
+              <div className="flex items-start gap-2 sm:col-span-2">
+                <Heart className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Decisiones</p>
+                  <p className="text-sm text-foreground">
+                    {extra.huboDecisiones ? 'Sí' : 'No'}
+                    {extra.huboDecisiones && extra.decisionesInfo ? ` - ${extra.decisionesInfo}` : ''}
+                  </p>
+                </div>
+              </div>
+            )}
+            {extra.testimonios && (
+              <div className="flex items-start gap-2 sm:col-span-2">
+                <MessageSquare className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Testimonios</p>
+                  <p className="text-sm text-foreground">{extra.testimonios as string}</p>
+                </div>
+              </div>
+            )}
+            {extra.comentarios && (
+              <div className="flex items-start gap-2 sm:col-span-2">
+                <MessageSquare className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Comentarios finales</p>
+                  <p className="text-sm text-foreground">{extra.comentarios as string}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const handleAddClass = () => {
     if (!newClassName.trim()) return;
@@ -189,6 +318,37 @@ export default function AbrirLosOjos() {
               </Button>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Reports Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <ClipboardList className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground">Reportes</h2>
+              <p className="text-sm text-muted-foreground">Reportes de Clase</p>
+            </div>
+          </div>
+
+          {loadingReports ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : allReports.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="p-8 text-center">
+                <FileText className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-muted-foreground">No hay reportes registrados aún</p>
+                <p className="text-sm text-muted-foreground/70 mt-1">Los reportes aparecerán aquí cuando se envíen reportes de clase.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {allReports.map((report) => renderReportCard(report))}
+            </div>
+          )}
         </div>
 
       </div>

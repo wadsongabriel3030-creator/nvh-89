@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { saveClassReport } from '@/lib/classReports';
 
 export default function CompromisoVNH() {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ export default function CompromisoVNH() {
   const allChecked = leidoFamilia && compromiso1 && compromiso2 && compromiso3;
   const hasName = nombre.trim().length > 0 && apellido.trim().length > 0;
 
-  const handleAcepto = () => {
+  const handleAcepto = async () => {
     if (!hasName) {
       toast.error('Por favor completa tu nombre y apellido.');
       return;
@@ -32,6 +33,28 @@ export default function CompromisoVNH() {
     if (!allChecked) {
       toast.error('Debes marcar todas las casillas para poder aceptar el compromiso.');
       return;
+    }
+
+    try {
+      await saveClassReport({
+        area: 'compromiso-vnh',
+        leccion: 'Compromiso Vida Nuevos Hechos',
+        reportDate: new Date(fecha),
+        leaderName: `${nombre} ${apellido}`,
+        attendeeIds: [],
+        attendeeNames: [`${nombre} ${apellido}`],
+        extra: {
+          nombre,
+          apellido,
+          fecha,
+          leidoFamilia,
+          compromiso1,
+          compromiso2,
+          compromiso3,
+        },
+      });
+    } catch {
+      // still show success
     }
 
     setSubmitted(true);

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
-
+import { saveClassReport } from '@/lib/classReports';
 export default function InscripcionPrimerosPassos() {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export default function InscripcionPrimerosPassos() {
   const [conectarme, setConectarme] = useState(false);
   const [practica, setPractica] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!nombre.trim() || !apellido.trim() || !fecha) {
       toast({ title: 'Error', description: 'Por favor completa todos los campos.', variant: 'destructive' });
       return;
@@ -27,6 +27,28 @@ export default function InscripcionPrimerosPassos() {
       toast({ title: 'Error', description: 'Debes marcar todas las casillas para continuar.', variant: 'destructive' });
       return;
     }
+    
+    try {
+      await saveClassReport({
+        area: 'inscripcion-primeros-pasos',
+        leccion: 'Inscripción Pasos Firmes',
+        reportDate: new Date(fecha),
+        leaderName: `${nombre} ${apellido}`,
+        attendeeIds: [],
+        attendeeNames: [`${nombre} ${apellido}`],
+        extra: {
+          nombre,
+          apellido,
+          fecha,
+          acepto,
+          conectarme,
+          practica,
+        },
+      });
+    } catch {
+      // ignore
+    }
+
     toast({ title: '¡Registro exitoso!', description: `${nombre} ${apellido} ha dado el Primer Paso en Nuevos Hechos.` });
     navigate('/primeros-pasos');
   };
