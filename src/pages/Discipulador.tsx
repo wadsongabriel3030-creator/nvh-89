@@ -477,7 +477,7 @@ export default function Discipulador() {
                                     {dm?.firstName?.charAt(0)}{dm?.lastName?.charAt(0)}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">
+                                    <p className="text-sm font-medium truncate text-foreground">
                                       {dm ? `${dm.firstName} ${dm.lastName}` : 'Desconocido'}
                                     </p>
                                     <div className="flex items-center gap-2 mt-0.5">
@@ -609,7 +609,7 @@ export default function Discipulador() {
                                   {m.firstName?.charAt(0)}{m.lastName?.charAt(0)}
                                 </div>
                                 <div>
-                                  <p className="font-medium text-sm">{m.firstName} {m.lastName}</p>
+                                  <p className="font-medium text-sm text-foreground">{m.firstName} {m.lastName}</p>
                                   {m.email && (
                                     <p className="text-xs text-muted-foreground">{m.email}</p>
                                   )}
@@ -719,7 +719,7 @@ export default function Discipulador() {
                       {m.firstName?.charAt(0)}{m.lastName?.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{m.firstName} {m.lastName}</p>
+                      <p className="text-sm font-medium truncate text-foreground">{m.firstName} {m.lastName}</p>
                       <p className="text-xs text-muted-foreground">{m.phone || m.email || ''}</p>
                     </div>
                     <UserPlus className="w-4 h-4 text-muted-foreground shrink-0" />
