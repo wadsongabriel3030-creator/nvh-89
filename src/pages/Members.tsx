@@ -16,6 +16,8 @@ export default function Members() {
   const { members, addMember, updateMember, deleteMember } = useMembers();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [etapaFilter, setEtapaFilter] = useState('all');
+  const [sexoFilter, setSexoFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -30,23 +32,27 @@ export default function Members() {
         member.email?.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
+      const matchesEtapa = etapaFilter === 'all' || member.etapa === etapaFilter;
+      const matchesSexo = sexoFilter === 'all' || member.sexo === sexoFilter;
 
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesStatus && matchesEtapa && matchesSexo;
     });
-  }, [members, searchQuery, statusFilter]);
+  }, [members, searchQuery, statusFilter, etapaFilter, sexoFilter]);
 
   const handleAddMember = (data: any) => {
     const newMember: Member = {
       id: Date.now().toString(),
       firstName: data.firstName,
       lastName: data.lastName,
-      phone: data.phone,
+      phone: data.phone || '',
       email: data.email || undefined,
       birthDate: data.birthDate || undefined,
       status: data.status,
       role: data.role,
       tags: [],
       notes: data.notes,
+      etapa: data.etapa || undefined,
+      sexo: data.sexo || undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -57,13 +63,15 @@ export default function Members() {
     updateMember(id, {
       firstName: data.firstName,
       lastName: data.lastName,
-      phone: data.phone,
+      phone: data.phone || '',
       email: data.email || undefined,
       birthDate: data.birthDate || undefined,
       conversionDate: data.conversionDate || undefined,
       baptismDate: data.baptismDate || undefined,
       status: data.status,
       role: data.role,
+      etapa: data.etapa || undefined,
+      sexo: data.sexo || undefined,
       notes: data.notes,
     });
     toast({
@@ -97,7 +105,7 @@ export default function Members() {
   const handleViewMember = (member: Member) => {
     toast({
       title: `Perfil: ${member.firstName} ${member.lastName}`,
-      description: `Telefone: ${member.phone}${member.email ? ` | Email: ${member.email}` : ''}`,
+      description: `Telefone: ${member.phone}${member.email ? ` | Email: ${member.email}` : ''}${member.etapa ? ` | Etapa: ${member.etapa}` : ''}`,
     });
   };
 
@@ -113,7 +121,8 @@ export default function Members() {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Miembros</h1>
               <p className="text-muted-foreground">
-                Administre todos los miembros de la iglesia ({members.length} total)
+                Administre todos los miembros de la iglesia ({members.length} total
+                {filteredMembers.length !== members.length ? `, ${filteredMembers.length} filtrados` : ''})
               </p>
             </div>
           </div>
@@ -131,6 +140,10 @@ export default function Members() {
           onSearchChange={setSearchQuery}
           statusFilter={statusFilter}
           onStatusChange={setStatusFilter}
+          etapaFilter={etapaFilter}
+          onEtapaChange={setEtapaFilter}
+          sexoFilter={sexoFilter}
+          onSexoChange={setSexoFilter}
           onAddMember={() => setIsAddDialogOpen(true)}
         />
 

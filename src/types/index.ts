@@ -31,6 +31,9 @@ export interface Tag {
   area?: ServerArea;
 }
 
+export type MemberEtapa = 'Adulto' | 'Joven Adulto' | 'Joven' | 'Niño';
+export type MemberSexo = 'Hombre' | 'Mujer';
+
 export interface Member {
   id: string;
   firstName: string;
@@ -47,6 +50,8 @@ export interface Member {
   photoUrl?: string;
   address?: string;
   notes?: string;
+  etapa?: MemberEtapa;
+  sexo?: MemberSexo;
   createdAt: string;
   updatedAt: string;
 }

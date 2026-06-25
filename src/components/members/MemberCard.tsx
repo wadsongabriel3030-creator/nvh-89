@@ -2,7 +2,7 @@ import { Member } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Phone, Mail, Calendar, Edit2, Trash2, Eye } from 'lucide-react';
+import { MoreHorizontal, Phone, Mail, Calendar, Edit2, Trash2, Eye, Cake, User } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,31 @@ interface MemberCardProps {
   onDelete?: (member: Member) => void;
   onView?: (member: Member) => void;
 }
+
+const getEtapaColor = (etapa?: string) => {
+  switch (etapa) {
+    case 'Adulto':
+      return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+    case 'Joven Adulto':
+      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400';
+    case 'Joven':
+      return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
+    case 'Niño':
+      return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+    default:
+      return 'bg-muted text-muted-foreground';
+  }
+};
+
+const formatBirthday = (birthDate?: string) => {
+  if (!birthDate) return null;
+  try {
+    const date = new Date(birthDate + 'T00:00:00');
+    return date.toLocaleDateString('es-GT', { day: 'numeric', month: 'long' });
+  } catch {
+    return null;
+  }
+};
 
 export function MemberCard({ member, onEdit, onDelete, onView }: MemberCardProps) {
   const getStatusColor = (status: string) => {
@@ -46,6 +71,8 @@ export function MemberCard({ member, onEdit, onDelete, onView }: MemberCardProps
     }
   };
 
+  const birthday = formatBirthday(member.birthDate);
+
   return (
     <div className="bg-card rounded-xl p-5 border border-border shadow-card hover:shadow-soft transition-all duration-300 group">
       <div className="flex items-start gap-4">
@@ -62,9 +89,21 @@ export function MemberCard({ member, onEdit, onDelete, onView }: MemberCardProps
               <h3 className="font-semibold text-foreground text-lg">
                 {member.firstName} {member.lastName}
               </h3>
-              <Badge className={cn('mt-1 border-0', getStatusColor(member.status))}>
-                {getStatusLabel(member.status)}
-              </Badge>
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                <Badge className={cn('border-0', getStatusColor(member.status))}>
+                  {getStatusLabel(member.status)}
+                </Badge>
+                {member.etapa && (
+                  <Badge className={cn('border-0', getEtapaColor(member.etapa))}>
+                    {member.etapa}
+                  </Badge>
+                )}
+                {member.sexo && (
+                  <Badge variant="outline" className="text-xs">
+                    {member.sexo}
+                  </Badge>
+                )}
+              </div>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -94,14 +133,22 @@ export function MemberCard({ member, onEdit, onDelete, onView }: MemberCardProps
           </div>
 
           <div className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Phone className="w-4 h-4" />
-              <span>{member.phone}</span>
-            </div>
+            {member.phone && (
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                <span>{member.phone}</span>
+              </div>
+            )}
             {member.email && (
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
                 <span className="truncate">{member.email}</span>
+              </div>
+            )}
+            {birthday && (
+              <div className="flex items-center gap-2">
+                <Cake className="w-4 h-4" />
+                <span>{birthday}</span>
               </div>
             )}
             {member.conversionDate && (
@@ -133,4 +180,4 @@ export function MemberCard({ member, onEdit, onDelete, onView }: MemberCardProps
       </div>
     </div>
   );
-}
+}

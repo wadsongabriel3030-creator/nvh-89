@@ -26,11 +26,13 @@ import { toast } from '@/hooks/use-toast';
 const memberSchema = z.object({
   firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
-  phone: z.string().min(10, 'Teléfono inválido'),
+  phone: z.string().optional().or(z.literal('')),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   birthDate: z.string().optional(),
   status: z.enum(['active', 'inactive', 'visitor']),
   role: z.enum(['pastor', 'leader', 'server', 'member']),
+  etapa: z.enum(['Adulto', 'Joven Adulto', 'Joven', 'Niño']).optional(),
+  sexo: z.enum(['Hombre', 'Mujer']).optional(),
   notes: z.string().optional(),
 });
 
@@ -52,8 +54,10 @@ export function AddMemberDialog({ open, onOpenChange, onSubmit }: AddMemberDialo
   } = useForm<MemberFormData>({
     resolver: zodResolver(memberSchema),
     defaultValues: {
-      status: 'visitor',
+      status: 'active',
       role: 'member',
+      etapa: 'Adulto',
+      sexo: 'Hombre',
     },
   });
 
@@ -69,7 +73,7 @@ export function AddMemberDialog({ open, onOpenChange, onSubmit }: AddMemberDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nuevo Miembro</DialogTitle>
           <DialogDescription>
@@ -105,7 +109,7 @@ export function AddMemberDialog({ open, onOpenChange, onSubmit }: AddMemberDialo
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono *</Label>
+              <Label htmlFor="phone">Teléfono</Label>
               <Input
                 id="phone"
                 {...register('phone')}
@@ -139,17 +143,52 @@ export function AddMemberDialog({ open, onOpenChange, onSubmit }: AddMemberDialo
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status">Estado</Label>
+              <Label htmlFor="etapa">Etapa</Label>
               <Select
-                onValueChange={(value) => setValue('status', value as any)}
-                defaultValue="visitor"
+                onValueChange={(value) => setValue('etapa', value as any)}
+                defaultValue="Adulto"
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccione" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="visitor">Visitante</SelectItem>
+                  <SelectItem value="Adulto">Adulto</SelectItem>
+                  <SelectItem value="Joven Adulto">Joven Adulto</SelectItem>
+                  <SelectItem value="Joven">Joven</SelectItem>
+                  <SelectItem value="Niño">Niño</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="sexo">Sexo</Label>
+              <Select
+                onValueChange={(value) => setValue('sexo', value as any)}
+                defaultValue="Hombre"
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Hombre">Hombre</SelectItem>
+                  <SelectItem value="Mujer">Mujer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Estado</Label>
+              <Select
+                onValueChange={(value) => setValue('status', value as any)}
+                defaultValue="active"
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione" />
+                </SelectTrigger>
+                <SelectContent>
                   <SelectItem value="active">Activo</SelectItem>
+                  <SelectItem value="visitor">Visitante</SelectItem>
                   <SelectItem value="inactive">Inactivo</SelectItem>
                 </SelectContent>
               </Select>

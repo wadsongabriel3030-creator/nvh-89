@@ -609,6 +609,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           email: string | null
+          etapa: string | null
           first_name: string
           id: string
           last_name: string
@@ -617,6 +618,7 @@ export type Database = {
           photo_url: string | null
           plc_group_id: string | null
           role: Database["public"]["Enums"]["app_role"]
+          sexo: string | null
           status: Database["public"]["Enums"]["member_status"]
           updated_at: string
         }
@@ -628,6 +630,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email?: string | null
+          etapa?: string | null
           first_name: string
           id?: string
           last_name: string
@@ -636,6 +639,7 @@ export type Database = {
           photo_url?: string | null
           plc_group_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          sexo?: string | null
           status?: Database["public"]["Enums"]["member_status"]
           updated_at?: string
         }
@@ -647,6 +651,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email?: string | null
+          etapa?: string | null
           first_name?: string
           id?: string
           last_name?: string
@@ -655,6 +660,7 @@ export type Database = {
           photo_url?: string | null
           plc_group_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          sexo?: string | null
           status?: Database["public"]["Enums"]["member_status"]
           updated_at?: string
         }

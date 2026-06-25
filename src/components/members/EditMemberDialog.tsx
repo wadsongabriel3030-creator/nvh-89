@@ -26,13 +26,15 @@ import { useEffect } from 'react';
 const memberSchema = z.object({
   firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
-  phone: z.string().min(10, 'Teléfono inválido'),
+  phone: z.string().optional().or(z.literal('')),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   birthDate: z.string().optional(),
   conversionDate: z.string().optional(),
   baptismDate: z.string().optional(),
   status: z.enum(['active', 'inactive', 'visitor']),
   role: z.enum(['admin', 'pastor', 'leader', 'server', 'member']),
+  etapa: z.enum(['Adulto', 'Joven Adulto', 'Joven', 'Niño']).optional(),
+  sexo: z.enum(['Hombre', 'Mujer']).optional(),
   notes: z.string().optional(),
 });
 
@@ -68,6 +70,8 @@ export function EditMemberDialog({ member, open, onOpenChange, onSubmit }: EditM
         baptismDate: member.baptismDate || '',
         status: member.status,
         role: member.role,
+        etapa: member.etapa || 'Adulto',
+        sexo: member.sexo || 'Hombre',
         notes: member.notes || '',
       });
     }
@@ -118,7 +122,7 @@ export function EditMemberDialog({ member, open, onOpenChange, onSubmit }: EditM
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono *</Label>
+              <Label htmlFor="phone">Teléfono</Label>
               <Input
                 id="phone"
                 {...register('phone')}
@@ -150,6 +154,41 @@ export function EditMemberDialog({ member, open, onOpenChange, onSubmit }: EditM
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="etapa">Etapa</Label>
+              <Select
+                onValueChange={(value) => setValue('etapa', value as any)}
+                defaultValue={member.etapa || 'Adulto'}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Adulto">Adulto</SelectItem>
+                  <SelectItem value="Joven Adulto">Joven Adulto</SelectItem>
+                  <SelectItem value="Joven">Joven</SelectItem>
+                  <SelectItem value="Niño">Niño</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="sexo">Sexo</Label>
+              <Select
+                onValueChange={(value) => setValue('sexo', value as any)}
+                defaultValue={member.sexo || 'Hombre'}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Hombre">Hombre</SelectItem>
+                  <SelectItem value="Mujer">Mujer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="status">Estado</Label>
               <Select
                 onValueChange={(value) => setValue('status', value as any)}
@@ -159,8 +198,8 @@ export function EditMemberDialog({ member, open, onOpenChange, onSubmit }: EditM
                   <SelectValue placeholder="Seleccione" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="visitor">Visitante</SelectItem>
                   <SelectItem value="active">Activo</SelectItem>
+                  <SelectItem value="visitor">Visitante</SelectItem>
                   <SelectItem value="inactive">Inactivo</SelectItem>
                 </SelectContent>
               </Select>
