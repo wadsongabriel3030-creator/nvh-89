@@ -25,13 +25,6 @@ interface CourseData {
   studentList: CourseStudent[];
 }
 
-const makeStudents = (names: string[]): CourseStudent[] =>
-  names.map((name, i) => ({
-    id: `${i + 1}`,
-    name,
-    email: `${name.toLowerCase().replace(/\s+/g, '.')}@email.com`,
-    attendanceRate: Math.floor(60 + Math.random() * 40),
-  }));
 
 const makeLessons = (titles: string[]): CourseLesson[] =>
   titles.map((name, i) => ({ id: `l${i + 1}`, name }));
@@ -44,19 +37,13 @@ const courses: CourseData[] = [
     description: 'Mayordomía y administración de recursos',
     level: 'intermediate',
     duration: '10 semanas',
-    students: 18,
-    progress: 45,
+    students: 0,
+    progress: 0,
     lessons: makeLessons([
       'La Administración',
       'Práctica',
     ]),
-    studentList: makeStudents([
-      'Ana Martínez', 'Carlos Rivera', 'María González', 'Juan Pérez',
-      'Laura Sánchez', 'Pedro Ramírez', 'Sofía Torres', 'Diego López',
-      'Valeria Cruz', 'Miguel Herrera', 'Camila Vargas', 'Andrés Castro',
-      'Lucía Morales', 'Javier Ruiz', 'Daniela Flores', 'Roberto Díaz',
-      'Patricia Núñez', 'Fernando Silva',
-    ]),
+    studentList: [],
   },
   {
     id: '4',
@@ -65,18 +52,13 @@ const courses: CourseData[] = [
     description: 'Principios bíblicos para la familia',
     level: 'advanced',
     duration: '12 semanas',
-    students: 10,
-    progress: 30,
+    students: 0,
+    progress: 0,
     lessons: makeLessons([
       'La Familia',
       'Seminario Familiar',
     ]),
-    studentList: makeStudents([
-      'Eduardo y Marta Ríos', 'Pablo y Sara López', 'Luis y Carmen Díaz',
-      'José y Elena Pérez', 'Antonio y Rosa Vega', 'Manuel y Inés Soto',
-      'Rafael y Lucía Mora', 'Alberto y Pilar Cruz', 'Francisco y Eva Ruiz',
-      'Ricardo y Beatriz Lara',
-    ]),
+    studentList: [],
   },
   {
     id: '5',
@@ -113,10 +95,14 @@ export default function Discipleship() {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const saved = JSON.parse(raw) as Record<string, CourseStudent[]>;
+        // Filter out old mock students that had fake @email.com addresses
+        const isMockStudent = (s: CourseStudent) =>
+          s.email?.endsWith('@email.com') && /^[a-záéíóúñü.]+@email\.com$/i.test(s.email);
         return courses.map((c) => {
           const savedList = saved[c.id];
           if (Array.isArray(savedList)) {
-            return { ...c, studentList: savedList, students: savedList.length };
+            const cleanList = savedList.filter((s) => !isMockStudent(s));
+            return { ...c, studentList: cleanList, students: cleanList.length };
           }
           return c;
         });
@@ -124,6 +110,13 @@ export default function Discipleship() {
     } catch {}
     return courses;
   });
+
+  // Dynamic stats computed from current course state
+  const totalClasses = coursesState.length;
+  const totalStudents = coursesState.reduce((sum, c) => sum + c.studentList.length, 0);
+  const avgProgress = totalStudents > 0
+    ? Math.round(coursesState.reduce((sum, c) => sum + c.progress, 0) / coursesState.length)
+    : 0;
 
   useEffect(() => {
     try {
@@ -186,7 +179,7 @@ export default function Discipleship() {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats - Dynamic */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <Card className="bg-purple-500/5 border-purple-500/20">
             <CardContent className="p-4 flex items-center gap-4">
@@ -194,7 +187,7 @@ export default function Discipleship() {
                 <BookOpen className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">5</p>
+                <p className="text-2xl font-bold text-foreground">{totalClasses}</p>
                 <p className="text-sm text-muted-foreground">Clases activas</p>
               </div>
             </CardContent>
@@ -205,7 +198,7 @@ export default function Discipleship() {
                 <Users className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">65</p>
+                <p className="text-2xl font-bold text-foreground">{totalStudents}</p>
                 <p className="text-sm text-muted-foreground">Alumnos</p>
               </div>
             </CardContent>
@@ -216,7 +209,7 @@ export default function Discipleship() {
                 <Clock className="w-5 h-5 text-accent" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">52%</p>
+                <p className="text-2xl font-bold text-foreground">{avgProgress}%</p>
                 <p className="text-sm text-muted-foreground">Progreso promedio</p>
               </div>
             </CardContent>

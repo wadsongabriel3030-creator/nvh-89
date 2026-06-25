@@ -18,9 +18,15 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  // Admins or users with no permissions row yet pass through; others must have explicit access.
+  // Check if user has access to the current path
   const path = location.pathname;
   if (!perms.isAdmin && perms.permissions.length > 0 && !canAccessPath(perms, path)) {
+    // Redirect to the first permitted page instead of showing error
+    const firstPermitted = perms.permissions[0];
+    if (firstPermitted && firstPermitted !== path) {
+      return <Navigate to={firstPermitted} replace />;
+    }
+    // If no permitted pages or already on that page, show error
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-background p-6">
         <div className="max-w-md text-center space-y-3">
@@ -35,3 +41,4 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
+

@@ -32,6 +32,8 @@ export const AVAILABLE_PAGES: PagePermission[] = [
   { path: '/abrir-los-ojos', label: 'Abrir Los Ojos', group: 'Discipulado' },
   { path: '/curso-vida-libertad', label: 'Curso Vida en Libertad', group: 'Discipulado' },
   { path: '/retiro-vida-libertad', label: 'Retiro Vida en Libertad', group: 'Discipulado' },
+  { path: '/compromiso-vnh', label: 'Compromiso VNH', group: 'Discipulado' },
+  { path: '/discipulador', label: 'Discipulador', group: 'Discipulado' },
 
   { path: '/batismos', label: 'Bautismos', group: 'Bautismos' },
 

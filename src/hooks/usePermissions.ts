@@ -40,5 +40,10 @@ export function usePermissions(): UserPermissionsState {
 
 export function canAccessPath(state: UserPermissionsState, path: string): boolean {
   if (state.isAdmin) return true;
-  return state.permissions.includes(path);
+  // Exact match
+  if (state.permissions.includes(path)) return true;
+  // Dynamic sub-routes: e.g. /reporte-pasos-firmes/xyz → check if /primeros-pasos is permitted
+  // Or /reporte-abrir-los-ojos → check if /abrir-los-ojos is permitted
+  // Generic prefix match: allow access if any permitted path is a prefix of the current path
+  return state.permissions.some(p => p !== '/' && path.startsWith(p + '/'));
 }

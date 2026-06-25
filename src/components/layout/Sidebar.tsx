@@ -127,7 +127,9 @@ export function Sidebar() {
   const navRef = useRef<HTMLElement>(null);
 
   const filterItems = (items: NavItem[]): NavItem[] => {
-    if (perms.isAdmin || perms.loading || perms.permissions.length === 0) return items;
+    // Admins always see everything; while loading, show all to avoid flicker
+    if (perms.isAdmin || perms.loading) return items;
+    // Non-admin users: only show pages they have explicit permission for
     const out: NavItem[] = [];
     for (const it of items) {
       if (it.children) {
@@ -142,7 +144,7 @@ export function Sidebar() {
 
   const visibleMain = useMemo(() => filterItems(mainNavItems), [perms.isAdmin, perms.loading, perms.permissions]);
   const visibleSecondary = useMemo(() => filterItems(secondaryNavItems), [perms.isAdmin, perms.loading, perms.permissions]);
-  const showSettings = perms.isAdmin;
+  const showSettings = perms.isAdmin || canAccessPath(perms, '/settings');
 
   const [expandedItems, setExpandedItems] = useState<string[]>(() => {
     // Auto-expand if current route matches a child
