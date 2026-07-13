@@ -65,6 +65,7 @@ import Programa from "./pages/reunion-dominical/Programa";
 import FrasesInstitucionales from "./pages/reunion-dominical/FrasesInstitucionales";
 import Versiculos from "./pages/reunion-dominical/Versiculos";
 import Anuncios from "./pages/reunion-dominical/Anuncios";
+import ReporteDominicalSubpage from "./pages/reunion-dominical/ReporteDominicalSubpage";
 
 const queryClient = new QueryClient();
 
@@ -132,6 +133,7 @@ const App = () => (
                 <Route path="/reunion-dominical/frases" element={<P><FrasesInstitucionales /></P>} />
                 <Route path="/reunion-dominical/versiculos" element={<P><Versiculos /></P>} />
                 <Route path="/reunion-dominical/anuncios" element={<P><Anuncios /></P>} />
+                <Route path="/reunion-dominical/reporte-dominical" element={<P><ReporteDominicalSubpage /></P>} />
                 <Route path="/compromiso-vnh" element={<P><CompromisoVNH /></P>} />
                 <Route path="/primeros-pasos" element={<P><PrimerosPassos /></P>} />
                 <Route path="/reporte-pasos-firmes/:cursoId" element={<P><ReportePasosFirmes /></P>} />

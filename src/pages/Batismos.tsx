@@ -61,7 +61,7 @@ export default function Batismos() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">Batismos</h1>
-              <p className="text-muted-foreground">Gerencie os batismos da igreja</p>
+              <p className="text-muted-foreground">Administre los bautismos de la iglesia</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -71,8 +71,8 @@ export default function Batismos() {
               onClick={() => navigate('/inscripcion-bautismo')}
             >
               <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Formulário de Inscrição</span>
-              <span className="sm:hidden">Inscrição</span>
+              <span className="hidden sm:inline">Formulario de Inscripción</span>
+              <span className="sm:hidden">Inscripción</span>
             </Button>
             <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
               <Plus className="w-4 h-4" />
@@ -125,8 +125,8 @@ export default function Batismos() {
                 <Droplets className="w-8 h-8 text-muted-foreground" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Nenhum batismo cadastrado</h3>
-                <p className="text-muted-foreground mt-1">Clique em "Agendar Batismo" para começar.</p>
+                <h3 className="text-lg font-semibold text-foreground">Ningún bautismo registrado</h3>
+                <p className="text-muted-foreground mt-1">Haga clic en "Agendar Bautismo" para comenzar.</p>
               </div>
               <Button onClick={() => setAddDialogOpen(true)} className="mt-2">
                 <Plus className="w-4 h-4 mr-2" />

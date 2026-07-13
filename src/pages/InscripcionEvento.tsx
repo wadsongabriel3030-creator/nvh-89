@@ -40,6 +40,19 @@ export default function InscripcionEvento() {
   };
 
   const handleSubmit = () => {
+    const registro = {
+      id: Date.now().toString(),
+      eventSlug: eventSlug || 'unknown',
+      eventName,
+      nombre: formData.nombre,
+      apellido: formData.apellido,
+      telefono: formData.telefono,
+      observaciones: formData.observaciones,
+      fechaRegistro: new Date().toISOString(),
+    };
+    const saved = JSON.parse(localStorage.getItem('inscripciones_eventos') || '[]');
+    saved.unshift(registro);
+    localStorage.setItem('inscripciones_eventos', JSON.stringify(saved));
     toast.success('¡Inscripción enviada con éxito!');
     setSubmitted(true);
   };

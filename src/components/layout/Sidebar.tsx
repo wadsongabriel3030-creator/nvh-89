@@ -71,6 +71,7 @@ const secondaryNavItems: NavItem[] = [
       { icon: MessageCircle, label: 'Frases Institucionales', href: '/reunion-dominical/frases' },
       { icon: BookMarked, label: 'Versículos', href: '/reunion-dominical/versiculos' },
       { icon: Megaphone, label: 'Anuncios', href: '/reunion-dominical/anuncios' },
+      { icon: BookOpenCheck, label: 'Reporte Dominical', href: '/reunion-dominical/reporte-dominical' },
     ]
   },
   {

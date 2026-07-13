@@ -1,11 +1,20 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Search, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Plus, Pencil, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isToday, isSameDay, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AddActivityDialog, Activity } from '@/components/calendar/AddActivityDialog';
 import { Button } from '@/components/ui/button';
 import { calendarActivities2026, CalendarActivity } from '@/lib/calendar-activities-2026';
+import { usePermissions } from '@/hooks/usePermissions';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const colorClasses = {
   purple: 'bg-purple-500/90 text-purple-100',
@@ -35,6 +44,14 @@ export default function CalendarTaskPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
+  // Edit & delete state
+  const [editActivity, setEditActivity] = useState<CalendarActivity | null>(null);
+  const [deleteActivity, setDeleteActivity] = useState<CalendarActivity | null>(null);
+
+  // Role-based access: admin or leader can manage activities
+  const { isAdmin, permissions } = usePermissions();
+  const canManage = isAdmin || permissions.includes('/calendar-2026');
+
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -49,9 +66,19 @@ export default function CalendarTaskPage() {
   };
 
   const getUpcomingActivities = () => {
-    const monthActivities = activities
+    let monthActivities = activities
       .filter(a => isSameMonth(a.date, currentDate))
       .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    // Filter by search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      monthActivities = monthActivities.filter(a =>
+        a.title.toLowerCase().includes(q) ||
+        a.comments?.toLowerCase().includes(q) ||
+        a.cycles?.toLowerCase().includes(q)
+      );
+    }
 
     if (selectedDate) {
       const selected = monthActivities.filter(a => isSameDay(a.date, selectedDate));
@@ -67,8 +94,44 @@ export default function CalendarTaskPage() {
       title: activity.title,
       color: activity.color,
       date: activity.date,
+      comments: activity.comments || activity.observaciones,
+      cycles: activity.cycles,
     };
     setActivities([...activities, newTask]);
+  };
+
+  const handleEditActivity = (activity: Activity) => {
+    setActivities(prev =>
+      prev.map(a =>
+        a.id === activity.id
+          ? {
+              ...a,
+              title: activity.title,
+              color: activity.color,
+              date: activity.date,
+              comments: activity.comments || activity.observaciones,
+              cycles: activity.cycles,
+            }
+          : a
+      )
+    );
+    setEditActivity(null);
+  };
+
+  const handleDeleteActivity = () => {
+    if (!deleteActivity) return;
+    setActivities(prev => prev.filter(a => a.id !== deleteActivity.id));
+    setDeleteActivity(null);
+  };
+
+  const openEditDialog = (activity: CalendarActivity) => {
+    setEditActivity(activity);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleOpenAddDialog = () => {
+    setEditActivity(null);
+    setIsAddDialogOpen(true);
   };
 
   const handlePrevMonth = () => {
@@ -82,6 +145,13 @@ export default function CalendarTaskPage() {
 
   const upcomingActivities = getUpcomingActivities();
 
+  // Compute stats dynamically
+  const allMonthActivities = activities.filter(a => isSameMonth(a.date, currentDate));
+  const statServices = allMonthActivities.filter(a => a.color === 'purple').length;
+  const statMeetings = allMonthActivities.filter(a => a.color === 'blue').length;
+  const statTrainings = allMonthActivities.filter(a => a.color === 'green').length;
+  const statEvents = allMonthActivities.filter(a => ['orange', 'yellow', 'pink'].includes(a.color)).length;
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-background text-foreground p-3 sm:p-6 lg:p-10">
@@ -94,14 +164,16 @@ export default function CalendarTaskPage() {
               </h1>
               <p className="text-muted-foreground mt-1 text-sm">2026</p>
             </div>
-            <Button
-              onClick={() => setIsAddDialogOpen(true)}
-              className="gap-2 w-full sm:w-auto"
-              size="default"
-            >
-              <Plus className="w-4 h-4" />
-              Agregar
-            </Button>
+            {canManage && (
+              <Button
+                onClick={handleOpenAddDialog}
+                className="gap-2 w-full sm:w-auto"
+                size="default"
+              >
+                <Plus className="w-4 h-4" />
+                Agregar
+              </Button>
+            )}
           </div>
 
           {/* Calendar Controls */}
@@ -259,7 +331,7 @@ export default function CalendarTaskPage() {
                 upcomingActivities.map((activity) => (
                   <div
                     key={activity.id}
-                    className="bg-card border border-border rounded-xl p-3 sm:p-4 flex items-start gap-3 hover:bg-muted/30 transition-colors"
+                    className="bg-card border border-border rounded-xl p-3 sm:p-4 flex items-start gap-3 hover:bg-muted/30 transition-colors group"
                   >
                     <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${dotColors[activity.color]}`} />
                     <div className="flex-1 min-w-0">
@@ -280,6 +352,32 @@ export default function CalendarTaskPage() {
                         </span>
                       )}
                     </div>
+
+                    {/* Edit & Delete buttons - visible only for users with manage access */}
+                    {canManage && (
+                      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditDialog(activity);
+                          }}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          title="Editar actividad"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteActivity(activity);
+                          }}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          title="Eliminar actividad"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
@@ -300,29 +398,70 @@ export default function CalendarTaskPage() {
           {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
             <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded-xl p-3 sm:p-4">
-              <div className="text-xl sm:text-2xl font-bold text-purple-400">12</div>
+              <div className="text-xl sm:text-2xl font-bold text-purple-400">{statServices}</div>
               <div className="text-xs text-muted-foreground mt-1">Servicios</div>
             </div>
             <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 rounded-xl p-3 sm:p-4">
-              <div className="text-xl sm:text-2xl font-bold text-blue-400">8</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-400">{statMeetings}</div>
               <div className="text-xs text-muted-foreground mt-1">Reuniones</div>
             </div>
             <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 rounded-xl p-3 sm:p-4">
-              <div className="text-xl sm:text-2xl font-bold text-emerald-400">5</div>
+              <div className="text-xl sm:text-2xl font-bold text-emerald-400">{statTrainings}</div>
               <div className="text-xs text-muted-foreground mt-1">Capacitaciones</div>
             </div>
             <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20 rounded-xl p-3 sm:p-4">
-              <div className="text-xl sm:text-2xl font-bold text-orange-400">4</div>
+              <div className="text-xl sm:text-2xl font-bold text-orange-400">{statEvents}</div>
               <div className="text-xs text-muted-foreground mt-1">Eventos</div>
             </div>
           </div>
         </div>
 
+        {/* Add / Edit Activity Dialog */}
         <AddActivityDialog
           open={isAddDialogOpen}
-          onOpenChange={setIsAddDialogOpen}
-          onSubmit={handleAddActivity}
+          onOpenChange={(open) => {
+            setIsAddDialogOpen(open);
+            if (!open) setEditActivity(null);
+          }}
+          onSubmit={editActivity ? handleEditActivity : handleAddActivity}
+          editActivity={editActivity ? {
+            id: editActivity.id,
+            title: editActivity.title,
+            color: editActivity.color,
+            date: editActivity.date,
+            comments: editActivity.comments,
+            cycles: editActivity.cycles,
+          } : null}
         />
+
+        {/* Delete confirmation dialog */}
+        <Dialog open={!!deleteActivity} onOpenChange={(o) => !o && setDeleteActivity(null)}>
+          <DialogContent className="max-w-sm bg-[#1a1a1a] border-[#2a2a2a] text-white">
+            <DialogHeader>
+              <DialogTitle>Eliminar actividad</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                ¿Está seguro que desea eliminar <strong className="text-white">{deleteActivity?.title}</strong>?
+                Esta acción no se puede deshacer.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteActivity(null)}
+                className="bg-transparent border-[#2a2a2a] text-white hover:bg-[#2a2a2a]"
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteActivity}
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Eliminar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

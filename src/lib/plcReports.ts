@@ -104,3 +104,10 @@ export async function fetchPlcReports(): Promise<PlcReportRow[]> {
   if (error) return [];
   return (data ?? []) as PlcReportRow[];
 }
+
+export async function deletePlcReport(id: string): Promise<boolean> {
+  const { error } = await supabase.from('plc_reports').delete().eq('id', id);
+  if (error) return false;
+  notifyMemberProgressUpdated();
+  return true;
+}

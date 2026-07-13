@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { UserPlus, Users, Trash2, Shield, Eye, EyeOff, Check, Loader2 } from 'lucide-react';
+import { UserPlus, Users, Trash2, Shield, Eye, EyeOff, Check, Loader2, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -45,6 +45,15 @@ const roleBadgeClass = (role: Account['role']) =>
     : role === 'leader' || role === 'pastor' ? 'bg-accent/30 text-accent-foreground'
     : 'bg-muted text-muted-foreground';
 
+/** Resolve permission paths to their human-readable labels */
+const permissionLabels = (paths: string[]): { group: string; label: string }[] => {
+  const lookup = new Map(AVAILABLE_PAGES.map((p) => [p.path, p]));
+  return paths
+    .map((p) => lookup.get(p))
+    .filter(Boolean)
+    .map((p) => ({ group: p!.group, label: p!.label }));
+};
+
 export function UserAccountsSection() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +62,14 @@ export function UserAccountsSection() {
   const [showPassword, setShowPassword] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Edit permissions state
+  const [editAccount, setEditAccount] = useState<Account | null>(null);
+  const [editPermissions, setEditPermissions] = useState<string[]>([]);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
+  // Expanded permissions view per account
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
     const map = new Map<string, typeof AVAILABLE_PAGES>();
@@ -77,6 +94,7 @@ export function UserAccountsSection() {
 
   useEffect(() => { loadAccounts(); }, []);
 
+  // --- Create form helpers ---
   const togglePermission = (path: string) =>
     setForm((f) => ({
       ...f,
@@ -98,6 +116,45 @@ export function UserAccountsSection() {
 
   const selectAll = () => setForm((f) => ({ ...f, permissions: AVAILABLE_PAGES.map((p) => p.path) }));
   const clearAll = () => setForm((f) => ({ ...f, permissions: [] }));
+
+  // --- Edit form helpers ---
+  const editTogglePermission = (path: string) =>
+    setEditPermissions((prev) =>
+      prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]
+    );
+
+  const editToggleGroup = (paths: string[]) =>
+    setEditPermissions((prev) => {
+      const allSelected = paths.every((p) => prev.includes(p));
+      return allSelected
+        ? prev.filter((p) => !paths.includes(p))
+        : Array.from(new Set([...prev, ...paths]));
+    });
+
+  const editSelectAll = () => setEditPermissions(AVAILABLE_PAGES.map((p) => p.path));
+  const editClearAll = () => setEditPermissions([]);
+
+  const openEditDialog = (account: Account) => {
+    setEditAccount(account);
+    setEditPermissions([...account.permissions]);
+  };
+
+  const handleEditSave = async () => {
+    if (!editAccount) return;
+    setEditSubmitting(true);
+    const { error } = await supabase
+      .from('user_permissions')
+      .update({ permissions: editPermissions })
+      .eq('user_id', editAccount.user_id);
+    setEditSubmitting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`Permisos actualizados para ${editAccount.display_name}`);
+    setEditAccount(null);
+    loadAccounts();
+  };
 
   const handleCreate = async () => {
     if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
@@ -142,6 +199,57 @@ export function UserAccountsSection() {
     loadAccounts();
   };
 
+  /** Renders the grouped permission checkboxes (reused in both create & edit dialogs) */
+  const renderPermissionCheckboxes = (
+    perms: string[],
+    onToggle: (path: string) => void,
+    onToggleGroup: (paths: string[]) => void,
+    onSelectAll: () => void,
+    onClearAll: () => void,
+  ) => (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <Label className="text-base">Permisos de acceso</Label>
+          <p className="text-xs text-muted-foreground">Seleccione las páginas que este usuario podrá visualizar.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={onSelectAll}><Check className="w-3 h-3 mr-1" /> Todo</Button>
+          <Button type="button" variant="outline" size="sm" onClick={onClearAll}>Limpiar</Button>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {grouped.map(([group, pages]) => {
+          const paths = pages.map((p) => p.path);
+          const allSelected = paths.every((p) => perms.includes(p));
+          const someSelected = !allSelected && paths.some((p) => perms.includes(p));
+          return (
+            <div key={group} className="rounded-lg border border-border p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={allSelected ? true : someSelected ? 'indeterminate' : false} onCheckedChange={() => onToggleGroup(paths)} />
+                  <span className="font-medium text-sm">{group}</span>
+                </label>
+                <span className="text-xs text-muted-foreground">
+                  {paths.filter((p) => perms.includes(p)).length}/{paths.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
+                {pages.map((page) => (
+                  <label key={page.path} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <Checkbox checked={perms.includes(page.path)} onCheckedChange={() => onToggle(page.path)} />
+                    <span className="text-foreground">{page.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -172,39 +280,95 @@ export function UserAccountsSection() {
           </div>
         ) : (
           <div className="space-y-3">
-            {accounts.map((a) => (
-              <div
-                key={a.user_id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-border bg-card"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-foreground">{a.display_name}</p>
-                    <Badge variant="secondary" className={roleBadgeClass(a.role)}>
-                      <Shield className="w-3 h-3 mr-1" />
-                      {roleLabel(a.role)}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{a.email}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {a.role === 'admin'
-                      ? 'Acceso total a todas las páginas'
-                      : `${a.permissions.length} página(s) permitidas`}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setDeleteId(a.user_id)}
-                  className="text-destructive hover:text-destructive shrink-0"
-                  disabled={a.role === 'admin'}
-                  title={a.role === 'admin' ? 'No se puede eliminar un administrador' : 'Eliminar'}
+            {accounts.map((a) => {
+              const isExpanded = expandedId === a.user_id;
+              const labels = a.role !== 'admin' ? permissionLabels(a.permissions) : [];
+              // Group labels by group name for display
+              const groupedLabels = new Map<string, string[]>();
+              for (const l of labels) {
+                if (!groupedLabels.has(l.group)) groupedLabels.set(l.group, []);
+                groupedLabels.get(l.group)!.push(l.label);
+              }
+              return (
+                <div
+                  key={a.user_id}
+                  className="rounded-lg border border-border bg-card overflow-hidden transition-all"
                 >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Eliminar
-                </Button>
-              </div>
-            ))}
+                  {/* Main row */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-foreground">{a.display_name}</p>
+                        <Badge variant="secondary" className={roleBadgeClass(a.role)}>
+                          <Shield className="w-3 h-3 mr-1" />
+                          {roleLabel(a.role)}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{a.email}</p>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isExpanded ? null : a.user_id)}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 mt-0.5"
+                      >
+                        {a.role === 'admin'
+                          ? 'Acceso total a todas las páginas'
+                          : `${a.permissions.length} página(s) permitidas`}
+                        {a.role !== 'admin' && a.permissions.length > 0 && (
+                          isExpanded
+                            ? <ChevronUp className="w-3 h-3" />
+                            : <ChevronDown className="w-3 h-3" />
+                        )}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(a)}
+                        className="text-primary hover:text-primary"
+                        disabled={a.role === 'admin'}
+                        title={a.role === 'admin' ? 'Administradores tienen acceso total' : 'Editar permisos'}
+                      >
+                        <Pencil className="w-4 h-4 mr-1" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteId(a.user_id)}
+                        className="text-destructive hover:text-destructive shrink-0"
+                        disabled={a.role === 'admin'}
+                        title={a.role === 'admin' ? 'No se puede eliminar un administrador' : 'Eliminar'}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Eliminar
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Expanded permissions detail */}
+                  {isExpanded && a.role !== 'admin' && a.permissions.length > 0 && (
+                    <div className="px-4 pb-4 pt-0">
+                      <Separator className="mb-3" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {Array.from(groupedLabels.entries()).map(([group, pageLabels]) => (
+                          <div key={group} className="rounded-md bg-muted/40 border border-border/50 p-2.5">
+                            <p className="text-xs font-semibold text-foreground mb-1.5">{group}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {pageLabels.map((label) => (
+                                <Badge key={label} variant="outline" className="text-[10px] px-1.5 py-0.5 font-normal">
+                                  {label}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>
@@ -269,47 +433,7 @@ export function UserAccountsSection() {
                   <p>El rol de <strong>Administrador</strong> tiene acceso total a todas las páginas de la plataforma.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-base">Permisos de acceso</Label>
-                      <p className="text-xs text-muted-foreground">Seleccione las páginas que este usuario podrá visualizar.</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={selectAll}><Check className="w-3 h-3 mr-1" /> Todo</Button>
-                      <Button type="button" variant="outline" size="sm" onClick={clearAll}>Limpiar</Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {grouped.map(([group, pages]) => {
-                      const paths = pages.map((p) => p.path);
-                      const allSelected = paths.every((p) => form.permissions.includes(p));
-                      const someSelected = !allSelected && paths.some((p) => form.permissions.includes(p));
-                      return (
-                        <div key={group} className="rounded-lg border border-border p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <Checkbox checked={allSelected ? true : someSelected ? 'indeterminate' : false} onCheckedChange={() => toggleGroup(paths)} />
-                              <span className="font-medium text-sm">{group}</span>
-                            </label>
-                            <span className="text-xs text-muted-foreground">
-                              {paths.filter((p) => form.permissions.includes(p)).length}/{paths.length}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
-                            {pages.map((page) => (
-                              <label key={page.path} className="flex items-center gap-2 cursor-pointer text-sm">
-                                <Checkbox checked={form.permissions.includes(page.path)} onCheckedChange={() => togglePermission(page.path)} />
-                                <span className="text-foreground">{page.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                renderPermissionCheckboxes(form.permissions, togglePermission, toggleGroup, selectAll, clearAll)
               )}
             </div>
           </ScrollArea>
@@ -318,6 +442,39 @@ export function UserAccountsSection() {
             <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>Cancelar</Button>
             <Button onClick={handleCreate} disabled={submitting}>
               {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creando…</> : 'Crear cuenta'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit permissions dialog */}
+      <Dialog open={!!editAccount} onOpenChange={(o) => !o && setEditAccount(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Editar permisos</DialogTitle>
+            <DialogDescription>
+              Modifique los permisos de acceso para <strong>{editAccount?.display_name}</strong> ({editAccount?.email}).
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="-mx-6 px-6 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-4 py-2">
+              {/* Summary of current state */}
+              <div className="p-3 rounded-lg bg-muted/50 border border-border text-sm flex items-center gap-2">
+                <Shield className="w-4 h-4 text-primary shrink-0" />
+                <span>
+                  Actualmente tiene <strong>{editPermissions.length}</strong> de {AVAILABLE_PAGES.length} páginas permitidas.
+                </span>
+              </div>
+
+              {renderPermissionCheckboxes(editPermissions, editTogglePermission, editToggleGroup, editSelectAll, editClearAll)}
+            </div>
+          </ScrollArea>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditAccount(null)} disabled={editSubmitting}>Cancelar</Button>
+            <Button onClick={handleEditSave} disabled={editSubmitting}>
+              {editSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Guardando…</> : 'Guardar permisos'}
             </Button>
           </DialogFooter>
         </DialogContent>

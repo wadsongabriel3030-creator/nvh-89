@@ -82,6 +82,23 @@ export default function ReporteDominical() {
   };
 
   const handleSubmit = () => {
+    const total = calcularTotal();
+    const reporte = {
+      id: Date.now().toString(),
+      fecha: formData.fecha ? formData.fecha.toISOString() : new Date().toISOString(),
+      liderId: formData.liderId,
+      horaInicio: formData.horaInicio,
+      horaFin: formData.horaFin,
+      asistentes: parseInt(formData.asistentes) || 0,
+      servidores: parseInt(formData.servidores) || 0,
+      visitantesPrimeraVez: parseInt(formData.visitantesPrimeraVez) || 0,
+      totalAsistencia: total,
+      regularesNoAsistieron: formData.regularesNoAsistieron,
+      testimonios: formData.testimonios,
+    };
+    const saved = JSON.parse(localStorage.getItem('reportes_dominicales') || '[]');
+    saved.unshift(reporte);
+    localStorage.setItem('reportes_dominicales', JSON.stringify(saved));
     toast.success('¡Reporte dominical guardado con éxito!');
     setSubmitted(true);
   };

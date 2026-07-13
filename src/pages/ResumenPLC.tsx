@@ -10,6 +10,7 @@ import {
   Filter,
   HandHeart,
   Search,
+  Trash2,
   UserX,
   Users,
 } from 'lucide-react';
@@ -37,6 +38,7 @@ import { PLCGroup } from '@/types';
 import {
   fetchPlcReports,
   getAbsentMemberIds,
+  deletePlcReport,
   type PlcReportRow,
 } from '@/lib/plcReports';
 import { MEMBER_PROGRESS_EVENT } from '@/lib/memberProgressEvents';
@@ -57,6 +59,16 @@ export default function ResumenPLC() {
     const data = await fetchPlcReports();
     setReports(data);
     setLoading(false);
+  };
+
+  const handleDeleteReport = async (id: string) => {
+    const ok = await deletePlcReport(id);
+    if (ok) {
+      toast.success('Reporte eliminado exitosamente');
+      loadReports();
+    } else {
+      toast.error('No se pudo eliminar el reporte');
+    }
   };
 
   useEffect(() => {
@@ -428,13 +440,24 @@ export default function ResumenPLC() {
                       </div>
                     )}
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/reporte-plc?plc=${report.plc_group_id}`)}
-                    >
-                      Nuevo reporte para este PLC
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/reporte-plc?plc=${report.plc_group_id}`)}
+                      >
+                        Nuevo reporte para este PLC
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                        onClick={() => handleDeleteReport(report.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar
+                      </Button>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               );

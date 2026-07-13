@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Calendar, Plus, MapPin, Clock, Users, Search, ClipboardList, Repeat, ExternalLink } from 'lucide-react';
+import { Calendar, Plus, MapPin, Clock, Users, Search, ClipboardList, Repeat, ExternalLink, Phone, MessageSquare, Trash2, CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -111,6 +111,35 @@ export default function Events() {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+
+  interface InscripcionEvento {
+    id: string;
+    eventSlug: string;
+    eventName: string;
+    nombre: string;
+    apellido: string;
+    telefono: string;
+    observaciones: string;
+    fechaRegistro: string;
+  }
+  const [inscripciones, setInscripciones] = useState<InscripcionEvento[]>([]);
+
+  const loadInscripciones = () => {
+    try {
+      const raw = localStorage.getItem('inscripciones_eventos');
+      if (raw) setInscripciones(JSON.parse(raw));
+      else setInscripciones([]);
+    } catch {
+      setInscripciones([]);
+    }
+  };
+
+  const handleDeleteInscripcion = (id: string) => {
+    const updated = inscripciones.filter((i) => i.id !== id);
+    localStorage.setItem('inscripciones_eventos', JSON.stringify(updated));
+    setInscripciones(updated);
+    toast.success('Inscripción eliminada');
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
 
@@ -142,6 +171,7 @@ export default function Events() {
 
   useEffect(() => {
     loadEvents();
+    loadInscripciones();
   }, [loadEvents]);
 
   const filteredEvents = events.filter((event) => {
@@ -350,6 +380,109 @@ export default function Events() {
             ))
           )}
         </div>
+
+        {/* Inscripciones de Eventos */}
+        {inscripciones.length > 0 && (
+          <div className="space-y-4 mt-8">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-emerald-500/10">
+                <CalendarCheck className="w-5 h-5 text-emerald-500" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-foreground">Inscripciones Recibidas</h2>
+                <p className="text-sm text-muted-foreground">{inscripciones.length} inscripciones registradas</p>
+              </div>
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+              <Card>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border/50">
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Nombre Completo</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Evento</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Teléfono</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Observaciones</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Fecha de Registro</th>
+                        <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {inscripciones.map((insc) => (
+                        <tr key={insc.id} className="border-b border-border/30 hover:bg-muted/30 transition-colors">
+                          <td className="p-4">
+                            <p className="font-medium text-foreground">{insc.nombre} {insc.apellido}</p>
+                          </td>
+                          <td className="p-4">
+                            <Badge className="bg-primary/10 text-primary border-0 capitalize">{insc.eventName}</Badge>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                              <Phone className="w-3.5 h-3.5" />
+                              {insc.telefono}
+                            </div>
+                          </td>
+                          <td className="p-4 max-w-[200px]">
+                            <p className="text-sm text-muted-foreground truncate">{insc.observaciones || '—'}</p>
+                          </td>
+                          <td className="p-4">
+                            <p className="text-sm text-muted-foreground">
+                              {(() => { try { return new Date(insc.fechaRegistro).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch { return insc.fechaRegistro; } })()}
+                            </p>
+                          </td>
+                          <td className="p-4 text-right">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteInscripcion(insc.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="grid grid-cols-1 gap-3 md:hidden">
+              {inscripciones.map((insc, index) => (
+                <Card key={insc.id} className="animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold text-foreground">{insc.nombre} {insc.apellido}</p>
+                        <Badge className="bg-primary/10 text-primary border-0 capitalize mt-1">{insc.eventName}</Badge>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteInscripcion(insc.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="space-y-1.5 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5 shrink-0" />
+                        <span>{insc.telefono}</span>
+                      </div>
+                      {insc.observaciones && (
+                        <div className="flex items-start gap-2">
+                          <MessageSquare className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span className="line-clamp-2">{insc.observaciones}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          {(() => { try { return new Date(insc.fechaRegistro).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch { return insc.fechaRegistro; } })()}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Dialogs */}

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MemberCard } from '@/components/members/MemberCard';
 import { MemberFilters } from '@/components/members/MemberFilters';
@@ -8,8 +8,8 @@ import { EditMemberDialog } from '@/components/members/EditMemberDialog';
 import { DeleteMemberDialog } from '@/components/members/DeleteMemberDialog';
 import { useMembers } from '@/contexts/MembersContext';
 import { Member } from '@/types';
-import { Users, ClipboardList } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Users } from 'lucide-react';
+
 import { toast } from '@/hooks/use-toast';
 
 export default function Members() {
@@ -126,12 +126,6 @@ export default function Members() {
               </p>
             </div>
           </div>
-          <Button asChild className="gap-2">
-            <Link to="/reporte-dominical">
-              <ClipboardList className="w-4 h-4" />
-              Reporte Dominical
-            </Link>
-          </Button>
         </div>
 
         {/* Filters */}
