@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { saveClassReport } from '@/lib/classReports';
 
 interface BaptismRegistrationData {
   fullName: string;
@@ -42,9 +43,25 @@ export default function BaptismRegistration() {
     }
   };
 
-  const handleSubmit = () => {
-    toast.success('¡Inscripción enviada con éxito!');
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    try {
+      await saveClassReport({
+        area: 'inscripcion-bautismo',
+        leaderName: formData.fullName,
+        reportDate: new Date(),
+        extra: {
+          fullName: formData.fullName,
+          phone: formData.phone,
+          email: formData.email,
+          receivedChrist: formData.receivedChrist,
+          attendedMembership: formData.attendedMembership,
+        },
+      });
+      toast.success('¡Inscripción enviada con éxito!');
+      setSubmitted(true);
+    } catch {
+      toast.error('Error al enviar la inscripción');
+    }
   };
 
   const handleReset = () => {
@@ -274,7 +291,7 @@ export default function BaptismRegistration() {
                   disabled={!isStepValid()}
                   className="gap-2"
                 >
-                  Seguinte
+                  Siguiente
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               ) : (
