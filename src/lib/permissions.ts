@@ -9,7 +9,7 @@ export const AVAILABLE_PAGES: PagePermission[] = [
   { path: '/members', label: 'Miembros', group: 'Personas' },
   { path: '/guests', label: 'Visitantes', group: 'Personas' },
   { path: '/tags', label: 'Etiquetas', group: 'Personas' },
-  { path: '/primera-vez', label: 'Primera Vez', group: 'Personas' },
+
   { path: '/listado-lideres', label: 'Listado de Maestros', group: 'Personas' },
 
   { path: '/events', label: 'Eventos', group: 'Eventos' },

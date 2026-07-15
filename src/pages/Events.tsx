@@ -124,20 +124,39 @@ export default function Events() {
   }
   const [inscripciones, setInscripciones] = useState<InscripcionEvento[]>([]);
 
-  const loadInscripciones = () => {
-    try {
-      const raw = localStorage.getItem('inscripciones_eventos');
-      if (raw) setInscripciones(JSON.parse(raw));
-      else setInscripciones([]);
-    } catch {
+  const loadInscripciones = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('event_registrations')
+      .select('id, full_name, phone, extra, created_at, status, event_id, events(title)')
+      .order('created_at', { ascending: false });
+    if (error || !data) {
       setInscripciones([]);
+      return;
     }
-  };
+    const mapped: InscripcionEvento[] = data.map((r: any) => {
+      const extra = (r.extra || {}) as Record<string, any>;
+      const eventTitle = r.events?.title || '';
+      return {
+        id: r.id,
+        eventSlug: eventTitle.toLowerCase().replace(/\s+/g, '-'),
+        eventName: eventTitle,
+        nombre: extra.nombre || r.full_name?.split(' ')[0] || '',
+        apellido: extra.apellido || r.full_name?.split(' ').slice(1).join(' ') || '',
+        telefono: r.phone || '',
+        observaciones: extra.observaciones || '',
+        fechaRegistro: r.created_at,
+      };
+    });
+    setInscripciones(mapped);
+  }, []);
 
-  const handleDeleteInscripcion = (id: string) => {
-    const updated = inscripciones.filter((i) => i.id !== id);
-    localStorage.setItem('inscripciones_eventos', JSON.stringify(updated));
-    setInscripciones(updated);
+  const handleDeleteInscripcion = async (id: string) => {
+    const { error } = await supabase.from('event_registrations').delete().eq('id', id);
+    if (error) {
+      toast.error('Error al eliminar inscripción');
+      return;
+    }
+    setInscripciones((prev) => prev.filter((i) => i.id !== id));
     toast.success('Inscripción eliminada');
   };
   const [searchQuery, setSearchQuery] = useState('');
@@ -172,7 +191,7 @@ export default function Events() {
   useEffect(() => {
     loadEvents();
     loadInscripciones();
-  }, [loadEvents]);
+  }, [loadEvents, loadInscripciones]);
 
   const filteredEvents = events.filter((event) => {
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

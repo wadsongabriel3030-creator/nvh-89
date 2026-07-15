@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InscripcionEventoFormData {
   nombre: string;
@@ -24,6 +25,7 @@ export default function InscripcionEvento() {
   const eventName = eventSlug ? decodeURIComponent(eventSlug).replace(/-/g, ' ') : 'Evento';
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<InscripcionEventoFormData>({
     nombre: '',
     apellido: '',
@@ -39,22 +41,44 @@ export default function InscripcionEvento() {
     if (step > 1) setStep(step - 1);
   };
 
-  const handleSubmit = () => {
-    const registro = {
-      id: Date.now().toString(),
-      eventSlug: eventSlug || 'unknown',
-      eventName,
-      nombre: formData.nombre,
-      apellido: formData.apellido,
-      telefono: formData.telefono,
-      observaciones: formData.observaciones,
-      fechaRegistro: new Date().toISOString(),
-    };
-    const saved = JSON.parse(localStorage.getItem('inscripciones_eventos') || '[]');
-    saved.unshift(registro);
-    localStorage.setItem('inscripciones_eventos', JSON.stringify(saved));
-    toast.success('¡Inscripción enviada con éxito!');
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      // Find the event by matching the slug back to a title
+      const { data: eventsData } = await supabase.from('events').select('id, title');
+      const slug = eventSlug || '';
+      const matchedEvent = (eventsData || []).find(
+        (e) => e.title.toLowerCase().replace(/\s+/g, '-') === slug
+      );
+
+      if (!matchedEvent) {
+        toast.error('No se encontró el evento asociado.');
+        setSubmitting(false);
+        return;
+      }
+
+      const fullName = `${formData.nombre} ${formData.apellido}`.trim();
+      const { error } = await supabase.from('event_registrations').insert({
+        event_id: matchedEvent.id,
+        full_name: fullName,
+        phone: formData.telefono || null,
+        extra: { observaciones: formData.observaciones, nombre: formData.nombre, apellido: formData.apellido } as any,
+        status: 'registered',
+      });
+
+      if (error) {
+        toast.error('Error al registrar inscripción');
+        setSubmitting(false);
+        return;
+      }
+
+      toast.success('¡Inscripción enviada con éxito!');
+      setSubmitted(true);
+    } catch {
+      toast.error('Error inesperado al enviar inscripción');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -217,10 +241,11 @@ export default function InscripcionEvento() {
               ) : (
                 <Button
                   onClick={handleSubmit}
+                  disabled={submitting}
                   className="gap-2"
                 >
                   <Send className="w-4 h-4" />
-                  Enviar
+                  {submitting ? 'Enviando...' : 'Enviar'}
                 </Button>
               )}
             </div>

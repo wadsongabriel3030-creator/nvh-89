@@ -33,41 +33,22 @@ function readGuests(): Entry[] {
   }
 }
 
-function readPrimeraVez(): Entry[] {
-  try {
-    const raw = localStorage.getItem('primera-vez-submissions');
-    if (!raw) return [];
-    const list = JSON.parse(raw);
-    if (!Array.isArray(list)) return [];
-    return list.map((p: any) => ({
-      id: String(p.id),
-      name: p.nombre,
-      subtitle: p.telefono,
-      createdAt: p.submittedAt,
-    }));
-  } catch {
-    return [];
-  }
-}
+
 
 export function RecentMembers() {
   const { members } = useMembers();
   const [guests, setGuests] = useState<Entry[]>([]);
-  const [primeraVez, setPrimeraVez] = useState<Entry[]>([]);
 
   useEffect(() => {
     const reload = () => {
       setGuests(readGuests());
-      setPrimeraVez(readPrimeraVez());
     };
     reload();
     window.addEventListener('storage', reload);
     window.addEventListener('guests-updated', reload);
-    window.addEventListener('primera-vez-updated', reload);
     return () => {
       window.removeEventListener('storage', reload);
       window.removeEventListener('guests-updated', reload);
-      window.removeEventListener('primera-vez-updated', reload);
     };
   }, []);
 
@@ -80,7 +61,6 @@ export function RecentMembers() {
     status: m.status,
   }));
   const recentGuests = guests.slice(0, 5);
-  const recentPrimera = primeraVez.slice(0, 5);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -113,7 +93,7 @@ export function RecentMembers() {
     return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?';
   };
 
-  const renderList = (items: Entry[], emptyText: string, viewAllHref?: string, kind?: 'member' | 'guest' | 'primera') => (
+  const renderList = (items: Entry[], emptyText: string, viewAllHref?: string, kind?: 'member' | 'guest') => (
     <>
       {items.length === 0 ? (
         <div className="py-10 text-center text-sm text-muted-foreground">
@@ -146,9 +126,7 @@ export function RecentMembers() {
                 {kind === 'guest' && item.status && (
                   <Badge variant="secondary" className="capitalize">{item.status}</Badge>
                 )}
-                {kind === 'primera' && (
-                  <Badge className="bg-accent/10 text-accent hover:bg-accent/20 border-0">Primera vez</Badge>
-                )}
+
               </div>
             </div>
           ))}
@@ -162,14 +140,13 @@ export function RecentMembers() {
       <div className="flex items-center justify-between mb-4 gap-3">
         <div>
           <h3 className="text-lg font-semibold text-foreground">Registros Recientes</h3>
-          <p className="text-sm text-muted-foreground">Miembros, invitados y primera vez</p>
+          <p className="text-sm text-muted-foreground">Miembros e invitados</p>
         </div>
       </div>
       <Tabs defaultValue="members">
-        <TabsList className="grid grid-cols-3 w-full">
+        <TabsList className="grid grid-cols-2 w-full">
           <TabsTrigger value="members">Miembros</TabsTrigger>
           <TabsTrigger value="guests">Invitados</TabsTrigger>
-          <TabsTrigger value="primera">Primera vez</TabsTrigger>
         </TabsList>
         <TabsContent value="members" className="mt-4">
           <div className="flex justify-end mb-2">
@@ -183,12 +160,7 @@ export function RecentMembers() {
           </div>
           {renderList(recentGuests, 'Sin invitados registrados', '/guests', 'guest')}
         </TabsContent>
-        <TabsContent value="primera" className="mt-4">
-          <div className="flex justify-end mb-2">
-            <a href="/primera-vez" className="text-sm font-medium text-primary hover:underline">Abrir formulario</a>
-          </div>
-          {renderList(recentPrimera, 'Sin registros de primera vez', '/primera-vez', 'primera')}
-        </TabsContent>
+
       </Tabs>
     </div>
   );

@@ -40,7 +40,6 @@ import RegistroDiezmos from "./pages/RegistroDiezmos";
 import ReciboDonacion from "./pages/ReciboDonacion";
 import Testimonies from "./pages/Testimonies";
 import TestimonyRegistration from "./pages/TestimonyRegistration";
-import PrimeraVez from "./pages/PrimeraVez";
 import ReporteDominical from "./pages/ReporteDominical";
 import InscripcionEvento from "./pages/InscripcionEvento";
 import NotFound from "./pages/NotFound";
@@ -124,7 +123,6 @@ const App = () => (
                 <Route path="/registro-diezmos" element={<P><RegistroDiezmos /></P>} />
                 <Route path="/recibo-donacion" element={<P><ReciboDonacion /></P>} />
                 <Route path="/testimonies" element={<P><Testimonies /></P>} />
-                <Route path="/primera-vez" element={<P><PrimeraVez /></P>} />
                 <Route path="/reporte-dominical" element={<P><ReporteDominical /></P>} />
                 <Route path="/reports" element={<P><Reports /></P>} />
                 <Route path="/settings" element={<P><Settings /></P>} />

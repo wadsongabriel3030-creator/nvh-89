@@ -1,7 +1,6 @@
-import { Search, Filter, Plus, Heart } from 'lucide-react';
+import { Search, Filter, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
 import {
   Select,
   SelectContent,
@@ -33,7 +32,6 @@ export function MemberFilters({
   onSexoChange,
   onAddMember,
 }: MemberFiltersProps) {
-  const navigate = useNavigate();
 
   return (
     <div className="flex flex-col gap-4 mb-6">
@@ -86,11 +84,6 @@ export function MemberFilters({
               <SelectItem value="Mujer">Mujer</SelectItem>
             </SelectContent>
           </Select>
-
-          <Button onClick={() => navigate('/primera-vez')} variant="outline" className="gap-2">
-            <Heart className="w-4 h-4" />
-            <span className="hidden sm:inline">Invitados</span>
-          </Button>
 
           <Button onClick={onAddMember} className="gap-2">
             <Plus className="w-4 h-4" />
