@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Sparkles, Plus, Users, CheckCircle, Clock, FileText, BookOpen, ClipboardList, Heart, Calendar, Phone, MessageSquare, User } from 'lucide-react';
+import { Sparkles, Plus, Users, CheckCircle, Clock, FileText, BookOpen, ClipboardList, Heart, Calendar, Phone, MessageSquare, User, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -44,10 +44,15 @@ export default function NuevosComienzos() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState<NuevosComienzosParticipant | null>(null);
   const [reporteOpen, setReporteOpen] = useState(false);
+  const [reportFilter, setReportFilter] = useState<'all' | 'inscripcion-vida-nuevos' | 'compromiso-vnh' | 'membresia'>('all');
 
   // Fetch reports
   const [allReports, setAllReports] = useState<ClassReportRow[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
+
+  const filteredReports = reportFilter === 'all'
+    ? allReports
+    : allReports.filter((r) => r.area === reportFilter);
 
   useEffect(() => {
     let active = true;
@@ -322,13 +327,13 @@ export default function NuevosComienzos() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">Vida Nuevos Hechos</h1>
-              <p className="text-muted-foreground">Acompanhe os novos convertidos</p>
+              <p className="text-muted-foreground">Acompaña a los nuevos convertidos</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
               <Plus className="w-4 h-4" />
-              Adicionar Participante
+              Agregar Participante
             </Button>
             <Button variant="outline" className="gap-2" onClick={() => window.open('/inscripcion-vida-nuevos', '_blank')}>
               <Sparkles className="w-4 h-4" />
@@ -360,7 +365,7 @@ export default function NuevosComienzos() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{inProgressCount}</p>
-                <p className="text-sm text-muted-foreground">Em andamento</p>
+                <p className="text-sm text-muted-foreground">En progreso</p>
               </div>
             </CardContent>
           </Card>
@@ -371,7 +376,7 @@ export default function NuevosComienzos() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{completedCount}</p>
-                <p className="text-sm text-muted-foreground">Concluídos</p>
+                <p className="text-sm text-muted-foreground">Completados</p>
               </div>
             </CardContent>
           </Card>
@@ -420,31 +425,77 @@ export default function NuevosComienzos() {
 
         {/* Reports Section */}
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <ClipboardList className="w-5 h-5 text-primary" />
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <ClipboardList className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-foreground">Reportes</h2>
+                <p className="text-sm text-muted-foreground">Inscripciones, Compromisos y Reportes de Clase</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-foreground">Reportes</h2>
-              <p className="text-sm text-muted-foreground">Inscripciones, Compromisos y Reportes de Clase</p>
-            </div>
+          </div>
+
+          {/* Filter buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <Button
+              size="sm"
+              variant={reportFilter === 'all' ? 'default' : 'outline'}
+              onClick={() => setReportFilter('all')}
+              className="gap-1.5"
+            >
+              Todos ({allReports.length})
+            </Button>
+            <Button
+              size="sm"
+              variant={reportFilter === 'inscripcion-vida-nuevos' ? 'default' : 'outline'}
+              onClick={() => setReportFilter('inscripcion-vida-nuevos')}
+              className="gap-1.5 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+            >
+              <ClipboardList className="w-3.5 h-3.5" />
+              Inscripción ({allReports.filter(r => r.area === 'inscripcion-vida-nuevos').length})
+            </Button>
+            <Button
+              size="sm"
+              variant={reportFilter === 'compromiso-vnh' ? 'default' : 'outline'}
+              onClick={() => setReportFilter('compromiso-vnh')}
+              className="gap-1.5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+            >
+              <Heart className="w-3.5 h-3.5" />
+              Compromiso ({allReports.filter(r => r.area === 'compromiso-vnh').length})
+            </Button>
+            <Button
+              size="sm"
+              variant={reportFilter === 'membresia' ? 'default' : 'outline'}
+              onClick={() => setReportFilter('membresia')}
+              className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Reporte de Clase ({allReports.filter(r => r.area === 'membresia').length})
+            </Button>
           </div>
 
           {loadingReports ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
             </div>
-          ) : allReports.length === 0 ? (
+          ) : filteredReports.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="p-8 text-center">
                 <FileText className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-                <p className="text-muted-foreground">No hay reportes registrados aún</p>
+                <p className="text-muted-foreground">
+                  {reportFilter === 'all'
+                    ? 'No hay reportes registrados aún'
+                    : `No hay reportes de tipo "${reportFilter === 'inscripcion-vida-nuevos' ? 'Inscripción' : reportFilter === 'compromiso-vnh' ? 'Compromiso' : 'Reporte de Clase'}" aún`}
+                </p>
                 <p className="text-sm text-muted-foreground/70 mt-1">Los reportes aparecerán aquí cuando se envíen inscripciones, compromisos o reportes de clase.</p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {allReports.map((report) => renderReportCard(report))}
+              {filteredReports.map((report) => renderReportCard(report))}
             </div>
           )}
         </div>

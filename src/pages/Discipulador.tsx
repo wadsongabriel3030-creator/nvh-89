@@ -733,8 +733,8 @@ export default function Discipulador() {
 
       {/* ── Modal: Progreso del Discípulo (Ruta) ─────────── */}
       <Dialog open={showProgresoModal} onOpenChange={(open) => { setShowProgresoModal(open); if (!open) setSelectedDiscipuloMemberId(null); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-purple-500" />
               Ruta del Discípulo
@@ -757,7 +757,7 @@ export default function Discipulador() {
           {selectedDiscipuloMemberId && (
             <>
               {/* Progress bar */}
-              <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
+              <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden shrink-0">
                 <div
                   className="h-full rounded-full transition-all duration-700 ease-out"
                   style={{
@@ -769,7 +769,7 @@ export default function Discipulador() {
                 />
               </div>
 
-              <ScrollArea className="flex-1 pr-3 -mr-3">
+              <div className="flex-1 min-h-0 overflow-y-auto pr-1" style={{ maxHeight: 'calc(85vh - 180px)' }}>
                 <div className="space-y-1 py-2">
                   {(() => {
                     let lastGroup = '';
@@ -813,11 +813,6 @@ export default function Discipulador() {
                               )}
                             </div>
 
-                            {/* Connector line */}
-                            {idx < RUTA_STEPS.length - 1 && (
-                              <div className="absolute left-[2.15rem] mt-[3.5rem] w-0.5 h-4 bg-border/40" style={{ display: 'none' }} />
-                            )}
-
                             {/* Label */}
                             <div className="flex-1 min-w-0">
                               <p className={`text-sm font-medium transition-colors ${
@@ -852,7 +847,7 @@ export default function Discipulador() {
                     });
                   })()}
                 </div>
-              </ScrollArea>
+              </div>
             </>
           )}
         </DialogContent>
