@@ -23,7 +23,7 @@ interface AddEventDialogProps {
 }
 
 const eventTypes = [
-  { value: 'worship', label: 'Culto' },
+  { value: 'worship', label: 'Reunión' },
   { value: 'special', label: 'Especial' },
   { value: 'ceremony', label: 'Ceremonia' },
   { value: 'retreat', label: 'Retiro' },

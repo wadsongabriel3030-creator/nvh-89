@@ -26,7 +26,7 @@ const typeColors: Record<string, string> = {
 };
 
 const typeLabels: Record<string, string> = {
-  worship: 'Culto',
+  worship: 'Reunión',
   special: 'Especial',
   ceremony: 'Ceremonia',
   retreat: 'Retiro',
@@ -294,7 +294,7 @@ export default function Events() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los tipos</SelectItem>
-              <SelectItem value="worship">Culto</SelectItem>
+              <SelectItem value="worship">Reunión</SelectItem>
               <SelectItem value="special">Especial</SelectItem>
               <SelectItem value="ceremony">Ceremonia</SelectItem>
               <SelectItem value="retreat">Retiro</SelectItem>

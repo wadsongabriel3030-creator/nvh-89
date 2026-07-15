@@ -31,7 +31,7 @@ const typeColors: Record<string, string> = {
 };
 
 const typeLabels: Record<string, string> = {
-  worship: 'Culto',
+  worship: 'Reunión',
   special: 'Especial',
   ceremony: 'Ceremonia',
   retreat: 'Retiro',
