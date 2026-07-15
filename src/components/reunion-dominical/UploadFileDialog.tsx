@@ -7,19 +7,22 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Upload, FileText, X, Image as ImageIcon, Download } from 'lucide-react';
+import { Upload, FileText, X, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ReunionFile {
   id: string;
   name: string;
   type: string;
+  /** For Supabase Storage files this is the public URL; for legacy it may be a data URL */
   data: string;
   size: number;
   uploadedAt: string;
 }
 
 const ACCEPTED = ['application/pdf', 'image/png', 'image/jpeg'];
+const BUCKET = 'reunion-files';
 
 export function formatFileSize(bytes: number) {
   if (bytes === 0) return '0 Bytes';
@@ -33,15 +36,26 @@ export function downloadReunionFile(file: ReunionFile) {
   const link = document.createElement('a');
   link.href = file.data;
   link.download = file.name;
+  link.target = '_blank';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+/** Ensure the bucket exists (creates it if needed) */
+async function ensureBucket() {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  if (!buckets?.find((b) => b.name === BUCKET)) {
+    await supabase.storage.createBucket(BUCKET, { public: true });
+  }
 }
 
 interface UploadFileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaveFile: (file: ReunionFile) => void;
+  /** Subfolder inside the bucket to organise uploads (e.g. 'recursos', 'programa') */
+  folder?: string;
   title?: string;
 }
 
@@ -49,6 +63,7 @@ export function UploadFileDialog({
   open,
   onOpenChange,
   onSaveFile,
+  folder = 'general',
   title = 'Subir Archivo',
 }: UploadFileDialogProps) {
   const [file, setFile] = useState<File | null>(null);
@@ -80,30 +95,76 @@ export function UploadFileDialog({
     else if (selected) toast({ title: 'Formato no permitido', description: 'Sube PDF, PNG o JPG.', variant: 'destructive' });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!file) return;
     setIsUploading(true);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const item: ReunionFile = {
-        id: crypto.randomUUID(),
-        name: file.name,
-        type: file.type,
-        data: reader.result as string,
-        size: file.size,
-        uploadedAt: new Date().toISOString(),
-      };
-      onSaveFile(item);
-      toast({ title: 'Archivo guardado', description: `"${file.name}" se ha guardado correctamente.` });
+
+    try {
+      // Try Supabase Storage upload first
+      await ensureBucket();
+      const fileId = crypto.randomUUID();
+      const ext = file.name.split('.').pop() || 'bin';
+      const storagePath = `${folder}/${fileId}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(storagePath, file, { contentType: file.type, upsert: true });
+
+      if (!uploadError) {
+        // Get public URL
+        const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+        const publicUrl = urlData?.publicUrl || '';
+
+        const item: ReunionFile = {
+          id: fileId,
+          name: file.name,
+          type: file.type,
+          data: publicUrl,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+        };
+        onSaveFile(item);
+        toast({ title: 'Archivo guardado', description: `"${file.name}" se ha guardado correctamente.` });
+      } else {
+        console.warn('[UploadFileDialog] Storage upload failed, falling back to base64:', uploadError.message);
+        // Fallback: store as base64 data URL (for small files or when Storage is not available)
+        const dataUrl = await readFileAsDataUrl(file);
+        const item: ReunionFile = {
+          id: fileId,
+          name: file.name,
+          type: file.type,
+          data: dataUrl,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+        };
+        onSaveFile(item);
+        toast({ title: 'Archivo guardado', description: `"${file.name}" se ha guardado correctamente.` });
+      }
+
       setFile(null);
-      setIsUploading(false);
       onOpenChange(false);
-    };
-    reader.onerror = () => {
-      toast({ title: 'Error', description: 'No se pudo leer el archivo.', variant: 'destructive' });
+    } catch (err) {
+      console.error('[UploadFileDialog] Upload error:', err);
+      // Ultimate fallback: base64
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        const item: ReunionFile = {
+          id: crypto.randomUUID(),
+          name: file.name,
+          type: file.type,
+          data: dataUrl,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+        };
+        onSaveFile(item);
+        toast({ title: 'Archivo guardado', description: `"${file.name}" se ha guardado (modo local).` });
+        onOpenChange(false);
+      } catch {
+        toast({ title: 'Error', description: 'No se pudo guardar el archivo.', variant: 'destructive' });
+      }
+    } finally {
       setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const handleClose = (v: boolean) => {
@@ -176,6 +237,15 @@ export function UploadFileDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 interface FilesListProps {

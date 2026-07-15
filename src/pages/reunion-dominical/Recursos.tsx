@@ -65,6 +65,7 @@ export default function Recursos() {
           open={open}
           onOpenChange={setOpen}
           onSaveFile={handleSaveFile}
+          folder="recursos"
           title="Subir Recurso"
         />
       </div>

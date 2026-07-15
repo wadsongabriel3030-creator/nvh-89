@@ -65,6 +65,7 @@ export default function Programa() {
           open={open}
           onOpenChange={setOpen}
           onSaveFile={handleSaveFile}
+          folder="programa"
           title="Subir Programa"
         />
       </div>

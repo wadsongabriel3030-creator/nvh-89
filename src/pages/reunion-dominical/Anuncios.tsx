@@ -5,13 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { useDbStorage } from '@/hooks/useDbStorage';
+import { supabase } from '@/integrations/supabase/client';
 
-interface PdfFile {
+interface UploadedFile {
   id: string;
   name: string;
   size: number;
+  type: string;
   uploadedAt: string;
-  dataUrl: string;
+  /** Public URL from Supabase Storage, or base64 data URL as fallback */
+  url: string;
 }
 
 function formatSize(bytes: number) {
@@ -20,16 +23,34 @@ function formatSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+const BUCKET = 'reunion-files';
+
+async function ensureBucket() {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  if (!buckets?.find((b) => b.name === BUCKET)) {
+    await supabase.storage.createBucket(BUCKET, { public: true });
+  }
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function Anuncios() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { value: pdfs, setValue: setPdfs, loading } = useDbStorage<PdfFile[]>('anuncios-pdfs', [], 'reunion-dominical');
+  const { value: files, setValue: setFiles, loading } = useDbStorage<UploadedFile[]>('anuncios-pdfs', [], 'reunion-dominical');
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    const inputFiles = e.target.files;
+    if (!inputFiles || inputFiles.length === 0) return;
 
-    const newPdfs: PdfFile[] = [];
-    for (const file of Array.from(files)) {
+    const newFiles: UploadedFile[] = [];
+    for (const file of Array.from(inputFiles)) {
       if (!['application/pdf', 'image/png', 'image/jpeg'].includes(file.type)) {
         toast({
           title: 'Archivo inválido',
@@ -38,26 +59,43 @@ export default function Anuncios() {
         });
         continue;
       }
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      newPdfs.push({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+
+      const fileId = crypto.randomUUID();
+      const ext = file.name.split('.').pop() || 'bin';
+      let url = '';
+
+      try {
+        await ensureBucket();
+        const storagePath = `anuncios/${fileId}.${ext}`;
+        const { error } = await supabase.storage.from(BUCKET).upload(storagePath, file, { contentType: file.type, upsert: true });
+        if (!error) {
+          const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+          url = urlData?.publicUrl || '';
+        }
+      } catch {
+        // Storage not available, fall through
+      }
+
+      // Fallback to base64
+      if (!url) {
+        url = await readFileAsDataUrl(file);
+      }
+
+      newFiles.push({
+        id: fileId,
         name: file.name,
         size: file.size,
+        type: file.type,
         uploadedAt: new Date().toISOString(),
-        dataUrl,
+        url,
       });
     }
 
-    if (newPdfs.length > 0) {
-      setPdfs((prev) => [...prev, ...newPdfs]);
+    if (newFiles.length > 0) {
+      setFiles((prev) => [...prev, ...newFiles]);
       toast({
         title: 'Archivo subido',
-        description: `${newPdfs.length} archivo(s) agregado(s).`,
+        description: `${newFiles.length} archivo(s) agregado(s).`,
       });
     }
 
@@ -65,14 +103,15 @@ export default function Anuncios() {
   };
 
   const handleDelete = (id: string) => {
-    setPdfs((prev) => prev.filter((p) => p.id !== id));
+    setFiles((prev) => prev.filter((p) => p.id !== id));
     toast({ title: 'Archivo eliminado' });
   };
 
-  const handleDownload = (pdf: PdfFile) => {
+  const handleDownload = (file: UploadedFile) => {
     const a = document.createElement('a');
-    a.href = pdf.dataUrl;
-    a.download = pdf.name;
+    a.href = file.url;
+    a.download = file.name;
+    a.target = '_blank';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -121,18 +160,18 @@ export default function Anuncios() {
           </Card>
         ) : (
           <>
-            {pdfs.length > 0 && (
+            {files.length > 0 && (
               <Card className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <FileText className="w-5 h-5 text-primary" />
                   <h2 className="text-lg font-semibold text-foreground">
-                    Archivos disponibles ({pdfs.length})
+                    Archivos disponibles ({files.length})
                   </h2>
                 </div>
                 <ul className="space-y-2">
-                  {pdfs.map((pdf) => (
+                  {files.map((file) => (
                     <li
-                      key={pdf.id}
+                      key={file.id}
                       className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/40 border border-border/60"
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -140,10 +179,10 @@ export default function Anuncios() {
                           <FileText className="w-4 h-4 text-primary" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-foreground truncate">{pdf.name}</p>
+                          <p className="font-medium text-foreground truncate">{file.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {formatSize(pdf.size)} ·{' '}
-                            {new Date(pdf.uploadedAt).toLocaleDateString('es-GT')}
+                            {formatSize(file.size)} ·{' '}
+                            {new Date(file.uploadedAt).toLocaleDateString('es-GT')}
                           </p>
                         </div>
                       </div>
@@ -152,7 +191,7 @@ export default function Anuncios() {
                           size="sm"
                           variant="ghost"
                           className="gap-2"
-                          onClick={() => handleDownload(pdf)}
+                          onClick={() => handleDownload(file)}
                         >
                           <Download className="w-4 h-4" />
                           Descargar
@@ -161,7 +200,7 @@ export default function Anuncios() {
                           size="sm"
                           variant="ghost"
                           className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(pdf.id)}
+                          onClick={() => handleDelete(file.id)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
