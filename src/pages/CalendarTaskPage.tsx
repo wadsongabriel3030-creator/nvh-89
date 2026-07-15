@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Search, Plus, Pencil, Trash2 } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isToday, isSameDay, addMonths, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isToday, isSameDay, addMonths, subMonths, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AddActivityDialog, Activity } from '@/components/calendar/AddActivityDialog';
 import { Button } from '@/components/ui/button';
-import { calendarActivities2026, CalendarActivity } from '@/lib/calendar-activities-2026';
+import { CalendarActivity } from '@/lib/calendar-activities-2026';
+import { calendarActivities2026 } from '@/lib/calendar-activities-2026';
 import { usePermissions } from '@/hooks/usePermissions';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -34,13 +37,26 @@ const dotColors: Record<string, string> = {
   pink: 'bg-pink-500',
 };
 
+// Map Supabase row to CalendarActivity
+function rowToActivity(row: any): CalendarActivity {
+  return {
+    id: row.id,
+    title: row.title,
+    color: (row.color || 'purple') as CalendarActivity['color'],
+    date: parseISO(row.activity_date),
+    comments: row.description || undefined,
+    cycles: row.type || undefined,
+  };
+}
+
 export default function CalendarTaskPage() {
   const [currentDate, setCurrentDate] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [searchQuery, setSearchQuery] = useState('');
-  const [activities, setActivities] = useState<CalendarActivity[]>(calendarActivities2026);
+  const [activities, setActivities] = useState<CalendarActivity[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -51,6 +67,64 @@ export default function CalendarTaskPage() {
   // Role-based access: admin or leader can manage activities
   const { isAdmin, permissions } = usePermissions();
   const canManage = isAdmin || permissions.includes('/calendar-2026');
+
+  // Load activities from Supabase
+  const loadActivities = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('calendar_activities')
+      .select('*')
+      .order('activity_date', { ascending: true });
+
+    if (error) {
+      toast.error('Error al cargar actividades del calendario');
+      setLoading(false);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      setActivities(data.map(rowToActivity));
+    } else {
+      // Seed database with hardcoded activities on first use
+      await seedActivities();
+    }
+    setLoading(false);
+  }, []);
+
+  // Seed the database with the hardcoded 2026 activities
+  const seedActivities = async () => {
+    const rows = calendarActivities2026.map((a) => ({
+      id: a.id,
+      title: a.title,
+      color: a.color,
+      activity_date: format(a.date, 'yyyy-MM-dd'),
+      description: a.comments || null,
+      type: a.cycles || null,
+      is_recurring: false,
+    }));
+
+    const { error } = await supabase.from('calendar_activities').insert(rows);
+    if (error) {
+      // If seeding fails (e.g. duplicates), just load whatever is there
+      const { data } = await supabase
+        .from('calendar_activities')
+        .select('*')
+        .order('activity_date', { ascending: true });
+      if (data) setActivities(data.map(rowToActivity));
+      return;
+    }
+
+    // Re-load after seeding
+    const { data } = await supabase
+      .from('calendar_activities')
+      .select('*')
+      .order('activity_date', { ascending: true });
+    if (data) setActivities(data.map(rowToActivity));
+  };
+
+  useEffect(() => {
+    loadActivities();
+  }, [loadActivities]);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -88,40 +162,62 @@ export default function CalendarTaskPage() {
     return monthActivities;
   };
 
-  const handleAddActivity = (activity: Activity) => {
-    const newTask: CalendarActivity = {
-      id: activity.id,
+  const handleAddActivity = async (activity: Activity) => {
+    const row = {
       title: activity.title,
       color: activity.color,
-      date: activity.date,
-      comments: activity.comments || activity.observaciones,
-      cycles: activity.cycles,
+      activity_date: format(activity.date, 'yyyy-MM-dd'),
+      description: activity.comments || activity.observaciones || null,
+      type: activity.cycles || null,
+      start_time: activity.time || null,
+      is_recurring: false,
     };
-    setActivities([...activities, newTask]);
+
+    const { error } = await supabase.from('calendar_activities').insert(row);
+    if (error) {
+      toast.error('Error al agregar actividad');
+      return;
+    }
+    toast.success('Actividad agregada');
+    loadActivities();
   };
 
-  const handleEditActivity = (activity: Activity) => {
-    setActivities(prev =>
-      prev.map(a =>
-        a.id === activity.id
-          ? {
-              ...a,
-              title: activity.title,
-              color: activity.color,
-              date: activity.date,
-              comments: activity.comments || activity.observaciones,
-              cycles: activity.cycles,
-            }
-          : a
-      )
-    );
+  const handleEditActivity = async (activity: Activity) => {
+    const { error } = await supabase
+      .from('calendar_activities')
+      .update({
+        title: activity.title,
+        color: activity.color,
+        activity_date: format(activity.date, 'yyyy-MM-dd'),
+        description: activity.comments || activity.observaciones || null,
+        type: activity.cycles || null,
+        start_time: activity.time || null,
+      })
+      .eq('id', activity.id);
+
+    if (error) {
+      toast.error('Error al actualizar actividad');
+      return;
+    }
+    toast.success('Actividad actualizada');
     setEditActivity(null);
+    loadActivities();
   };
 
-  const handleDeleteActivity = () => {
+  const handleDeleteActivity = async () => {
     if (!deleteActivity) return;
-    setActivities(prev => prev.filter(a => a.id !== deleteActivity.id));
+    const { error } = await supabase
+      .from('calendar_activities')
+      .delete()
+      .eq('id', deleteActivity.id);
+
+    if (error) {
+      toast.error('Error al eliminar actividad');
+      return;
+    }
+    toast.success('Actividad eliminada');
     setDeleteActivity(null);
+    loadActivities();
   };
 
   const openEditDialog = (activity: CalendarActivity) => {
@@ -240,70 +336,76 @@ export default function CalendarTaskPage() {
 
             {/* Days Grid */}
             <div className="grid grid-cols-7">
-              {calendarDays.map((day, idx) => {
-                const tasksForDay = getTasksForDate(day);
-                const isCurrentMonth = isSameMonth(day, currentDate);
-                const isTodayDate = isToday(day);
-                const isSelected = selectedDate && isSameDay(day, selectedDate);
-                const uniqueColors = [...new Set(tasksForDay.map(t => t.color))];
+              {loading ? (
+                <div className="col-span-7 py-20 text-center text-muted-foreground">
+                  Cargando actividades...
+                </div>
+              ) : (
+                calendarDays.map((day, idx) => {
+                  const tasksForDay = getTasksForDate(day);
+                  const isCurrentMonth = isSameMonth(day, currentDate);
+                  const isTodayDate = isToday(day);
+                  const isSelected = selectedDate && isSameDay(day, selectedDate);
+                  const uniqueColors = [...new Set(tasksForDay.map(t => t.color))];
 
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => setSelectedDate(day)}
-                    className={`
-                      min-h-[52px] sm:min-h-[80px] lg:min-h-[130px] p-1 sm:p-2 
-                      border-b border-r border-border transition-colors 
-                      hover:bg-muted/50 cursor-pointer
-                      ${!isCurrentMonth ? 'opacity-30' : ''}
-                      ${isSelected ? 'bg-primary/10 ring-1 ring-primary/30' : ''}
-                    `}
-                  >
-                    <div className="flex items-center justify-center sm:justify-start mb-0.5 sm:mb-2">
-                      <span
-                        className={`text-xs sm:text-sm font-medium flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full transition-colors ${
-                          isTodayDate
-                            ? 'bg-primary text-primary-foreground'
-                            : isSelected
-                            ? 'bg-accent text-accent-foreground'
-                            : isCurrentMonth
-                            ? 'text-foreground'
-                            : 'text-muted-foreground'
-                        }`}
-                      >
-                        {format(day, 'd')}
-                      </span>
-                    </div>
-
-                    {/* Mobile: colored dots */}
-                    <div className="flex flex-wrap justify-center gap-0.5 sm:hidden">
-                      {uniqueColors.slice(0, 4).map((color, i) => (
-                        <div
-                          key={i}
-                          className={`w-1.5 h-1.5 rounded-full ${dotColors[color]}`}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Tablet+: task labels */}
-                    <div className="hidden sm:block space-y-0.5 lg:space-y-1">
-                      {tasksForDay.slice(0, window.innerWidth >= 1024 ? 3 : 2).map((task) => (
-                        <div
-                          key={task.id}
-                          className={`px-1.5 lg:px-2 py-0.5 lg:py-1 text-[10px] lg:text-xs rounded-md truncate cursor-pointer hover:opacity-80 transition-opacity ${colorClasses[task.color]}`}
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => setSelectedDate(day)}
+                      className={`
+                        min-h-[52px] sm:min-h-[80px] lg:min-h-[130px] p-1 sm:p-2 
+                        border-b border-r border-border transition-colors 
+                        hover:bg-muted/50 cursor-pointer
+                        ${!isCurrentMonth ? 'opacity-30' : ''}
+                        ${isSelected ? 'bg-primary/10 ring-1 ring-primary/30' : ''}
+                      `}
+                    >
+                      <div className="flex items-center justify-center sm:justify-start mb-0.5 sm:mb-2">
+                        <span
+                          className={`text-xs sm:text-sm font-medium flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full transition-colors ${
+                            isTodayDate
+                              ? 'bg-primary text-primary-foreground'
+                              : isSelected
+                              ? 'bg-accent text-accent-foreground'
+                              : isCurrentMonth
+                              ? 'text-foreground'
+                              : 'text-muted-foreground'
+                          }`}
                         >
-                          {task.title}
-                        </div>
-                      ))}
-                      {tasksForDay.length > (window.innerWidth >= 1024 ? 3 : 2) && (
-                        <div className="text-[10px] lg:text-xs text-muted-foreground pl-1">
-                          +{tasksForDay.length - (window.innerWidth >= 1024 ? 3 : 2)} más
-                        </div>
-                      )}
+                          {format(day, 'd')}
+                        </span>
+                      </div>
+
+                      {/* Mobile: colored dots */}
+                      <div className="flex flex-wrap justify-center gap-0.5 sm:hidden">
+                        {uniqueColors.slice(0, 4).map((color, i) => (
+                          <div
+                            key={i}
+                            className={`w-1.5 h-1.5 rounded-full ${dotColors[color]}`}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Tablet+: task labels */}
+                      <div className="hidden sm:block space-y-0.5 lg:space-y-1">
+                        {tasksForDay.slice(0, window.innerWidth >= 1024 ? 3 : 2).map((task) => (
+                          <div
+                            key={task.id}
+                            className={`px-1.5 lg:px-2 py-0.5 lg:py-1 text-[10px] lg:text-xs rounded-md truncate cursor-pointer hover:opacity-80 transition-opacity ${colorClasses[task.color]}`}
+                          >
+                            {task.title}
+                          </div>
+                        ))}
+                        {tasksForDay.length > (window.innerWidth >= 1024 ? 3 : 2) && (
+                          <div className="text-[10px] lg:text-xs text-muted-foreground pl-1">
+                            +{tasksForDay.length - (window.innerWidth >= 1024 ? 3 : 2)} más
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 
