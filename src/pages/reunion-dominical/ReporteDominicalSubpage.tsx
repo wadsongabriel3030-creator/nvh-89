@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ClipboardList, Plus, Calendar, Users, Clock, UserX, MessageSquare, Trash2 } from 'lucide-react';
@@ -7,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { useDbStorage } from '@/hooks/useDbStorage';
 
 interface ReporteSaved {
   id: string;
@@ -22,29 +22,11 @@ interface ReporteSaved {
   testimonios: string;
 }
 
-const STORAGE_KEY = 'reportes_dominicales';
-
 export default function ReporteDominicalSubpage() {
-  const [reportes, setReportes] = useState<ReporteSaved[]>([]);
-
-  const loadReportes = () => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setReportes(JSON.parse(raw));
-      else setReportes([]);
-    } catch {
-      setReportes([]);
-    }
-  };
-
-  useEffect(() => {
-    loadReportes();
-  }, []);
+  const { value: reportes, setValue: setReportes, loading } = useDbStorage<ReporteSaved[]>('reportes_dominicales', [], 'reunion-dominical');
 
   const handleDelete = (id: string) => {
-    const updated = reportes.filter((r) => r.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    setReportes(updated);
+    setReportes((prev) => prev.filter((r) => r.id !== id));
     toast.success('Reporte eliminado');
   };
 
@@ -73,7 +55,11 @@ export default function ReporteDominicalSubpage() {
         </div>
 
         {/* Results */}
-        {reportes.length === 0 ? (
+        {loading ? (
+          <Card className="p-12 text-center">
+            <p className="text-muted-foreground">Cargando reportes...</p>
+          </Card>
+        ) : reportes.length === 0 ? (
           <Card className="p-12 text-center">
             <div className="flex flex-col items-center gap-4">
               <div className="p-4 rounded-full bg-muted">

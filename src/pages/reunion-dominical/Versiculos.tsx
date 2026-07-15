@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { BookMarked, Plus, Trash2, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { useDbStorage } from '@/hooks/useDbStorage';
 
 interface Versiculo {
   id: string;
@@ -16,26 +17,12 @@ interface Versiculo {
   createdAt: string;
 }
 
-const STORAGE_KEY = 'versiculos-reunion-dominical';
-
 export default function Versiculos() {
-  const [versiculos, setVersiculos] = useState<Versiculo[]>([]);
+  const { value: versiculos, setValue: setVersiculos, loading } = useDbStorage<Versiculo[]>('versiculos-reunion-dominical', [], 'reunion-dominical');
   const [showForm, setShowForm] = useState(false);
   const [referencia, setReferencia] = useState('');
   const [texto, setTexto] = useState('');
   const [observaciones, setObservaciones] = useState('');
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setVersiculos(JSON.parse(raw));
-    } catch {}
-  }, []);
-
-  const persist = (list: Versiculo[]) => {
-    setVersiculos(list);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  };
 
   const resetForm = () => {
     setReferencia('');
@@ -56,13 +43,13 @@ export default function Versiculos() {
       observaciones: observaciones.trim() || undefined,
       createdAt: new Date().toISOString(),
     };
-    persist([nuevo, ...versiculos]);
+    setVersiculos((prev) => [nuevo, ...prev]);
     toast({ title: 'Versículo agregado', description: nuevo.referencia });
     resetForm();
   };
 
   const handleDelete = (id: string) => {
-    persist(versiculos.filter((v) => v.id !== id));
+    setVersiculos((prev) => prev.filter((v) => v.id !== id));
     toast({ title: 'Versículo eliminado' });
   };
 
@@ -134,7 +121,11 @@ export default function Versiculos() {
           </Card>
         )}
 
-        {versiculos.length > 0 ? (
+        {loading ? (
+          <Card className="p-12 text-center">
+            <p className="text-muted-foreground">Cargando versículos...</p>
+          </Card>
+        ) : versiculos.length > 0 ? (
           <div className="space-y-4">
             {versiculos.map((v) => (
               <Card key={v.id}>

@@ -1,32 +1,25 @@
-import { useEffect, useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { FileText, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useState } from 'react';
 import {
   UploadFileDialog,
   ReunionFilesList,
-  getReunionFiles,
-  saveReunionFiles,
   type ReunionFile,
 } from '@/components/reunion-dominical/UploadFileDialog';
-
-const STORAGE_KEY = 'reunion_dominical_programa';
+import { useDbStorage } from '@/hooks/useDbStorage';
 
 export default function Programa() {
   const [open, setOpen] = useState(false);
-  const [files, setFiles] = useState<ReunionFile[]>([]);
+  const { value: files, setValue: setFiles, loading } = useDbStorage<ReunionFile[]>('reunion_dominical_programa', [], 'reunion-dominical');
 
-  const refresh = () => setFiles(getReunionFiles(STORAGE_KEY));
-
-  useEffect(() => {
-    refresh();
-  }, []);
+  const handleSaveFile = (file: ReunionFile) => {
+    setFiles((prev) => [file, ...prev]);
+  };
 
   const handleDelete = (id: string) => {
-    const updated = files.filter((f) => f.id !== id);
-    saveReunionFiles(STORAGE_KEY, updated);
-    setFiles(updated);
+    setFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
   return (
@@ -48,7 +41,11 @@ export default function Programa() {
           </Button>
         </div>
 
-        {files.length === 0 ? (
+        {loading ? (
+          <Card className="p-12 text-center">
+            <p className="text-muted-foreground">Cargando programas...</p>
+          </Card>
+        ) : files.length === 0 ? (
           <Card className="p-12 text-center">
             <div className="flex flex-col items-center gap-4">
               <div className="p-4 rounded-full bg-muted">
@@ -67,8 +64,7 @@ export default function Programa() {
         <UploadFileDialog
           open={open}
           onOpenChange={setOpen}
-          onUploaded={refresh}
-          storageKey={STORAGE_KEY}
+          onSaveFile={handleSaveFile}
           title="Subir Programa"
         />
       </div>

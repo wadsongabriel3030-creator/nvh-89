@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Megaphone, Plus, Upload, FileText, Download, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
+import { useDbStorage } from '@/hooks/useDbStorage';
 
 interface PdfFile {
   id: string;
@@ -13,8 +14,6 @@ interface PdfFile {
   dataUrl: string;
 }
 
-const STORAGE_KEY = 'anuncios-pdfs';
-
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -23,29 +22,7 @@ function formatSize(bytes: number) {
 
 export default function Anuncios() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [pdfs, setPdfs] = useState<PdfFile[]>([]);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setPdfs(JSON.parse(raw));
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const persist = (next: PdfFile[]) => {
-    setPdfs(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      toast({
-        title: 'Error al guardar',
-        description: 'No se pudo guardar el PDF (almacenamiento lleno).',
-        variant: 'destructive',
-      });
-    }
-  };
+  const { value: pdfs, setValue: setPdfs, loading } = useDbStorage<PdfFile[]>('anuncios-pdfs', [], 'reunion-dominical');
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -53,10 +30,10 @@ export default function Anuncios() {
 
     const newPdfs: PdfFile[] = [];
     for (const file of Array.from(files)) {
-      if (file.type !== 'application/pdf') {
+      if (!['application/pdf', 'image/png', 'image/jpeg'].includes(file.type)) {
         toast({
           title: 'Archivo inválido',
-          description: `${file.name} no es un PDF.`,
+          description: `${file.name} no es un archivo permitido (PDF, PNG o JPG).`,
           variant: 'destructive',
         });
         continue;
@@ -77,9 +54,9 @@ export default function Anuncios() {
     }
 
     if (newPdfs.length > 0) {
-      persist([...pdfs, ...newPdfs]);
+      setPdfs((prev) => [...prev, ...newPdfs]);
       toast({
-        title: 'PDF subido',
+        title: 'Archivo subido',
         description: `${newPdfs.length} archivo(s) agregado(s).`,
       });
     }
@@ -88,8 +65,8 @@ export default function Anuncios() {
   };
 
   const handleDelete = (id: string) => {
-    persist(pdfs.filter((p) => p.id !== id));
-    toast({ title: 'PDF eliminado' });
+    setPdfs((prev) => prev.filter((p) => p.id !== id));
+    toast({ title: 'Archivo eliminado' });
   };
 
   const handleDownload = (pdf: PdfFile) => {
@@ -118,7 +95,7 @@ export default function Anuncios() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="application/pdf"
+              accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg"
               multiple
               className="hidden"
               onChange={handleFileChange}
@@ -129,7 +106,7 @@ export default function Anuncios() {
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload className="w-4 h-4" />
-              Subir PDF
+              Subir Archivo
             </Button>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
@@ -138,68 +115,76 @@ export default function Anuncios() {
           </div>
         </div>
 
-        {pdfs.length > 0 && (
-          <Card className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-semibold text-foreground">
-                Archivos PDF disponibles ({pdfs.length})
-              </h2>
-            </div>
-            <ul className="space-y-2">
-              {pdfs.map((pdf) => (
-                <li
-                  key={pdf.id}
-                  className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/40 border border-border/60"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-                      <FileText className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-foreground truncate">{pdf.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatSize(pdf.size)} ·{' '}
-                        {new Date(pdf.uploadedAt).toLocaleDateString('es-GT')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="gap-2"
-                      onClick={() => handleDownload(pdf)}
-                    >
-                      <Download className="w-4 h-4" />
-                      Descargar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(pdf.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+        {loading ? (
+          <Card className="p-12 text-center">
+            <p className="text-muted-foreground">Cargando anuncios...</p>
           </Card>
-        )}
+        ) : (
+          <>
+            {pdfs.length > 0 && (
+              <Card className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="w-5 h-5 text-primary" />
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Archivos disponibles ({pdfs.length})
+                  </h2>
+                </div>
+                <ul className="space-y-2">
+                  {pdfs.map((pdf) => (
+                    <li
+                      key={pdf.id}
+                      className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/40 border border-border/60"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                          <FileText className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground truncate">{pdf.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatSize(pdf.size)} ·{' '}
+                            {new Date(pdf.uploadedAt).toLocaleDateString('es-GT')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="gap-2"
+                          onClick={() => handleDownload(pdf)}
+                        >
+                          <Download className="w-4 h-4" />
+                          Descargar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(pdf.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
 
-        <Card className="p-12 text-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="p-4 rounded-full bg-muted">
-              <Megaphone className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">Sin anuncios aún</h3>
-              <p className="text-muted-foreground mt-1">Crea anuncios para compartir durante la reunión.</p>
-            </div>
-          </div>
-        </Card>
+            <Card className="p-12 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-4 rounded-full bg-muted">
+                  <Megaphone className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Sin anuncios aún</h3>
+                  <p className="text-muted-foreground mt-1">Crea anuncios para compartir durante la reunión.</p>
+                </div>
+              </div>
+            </Card>
+          </>
+        )}
       </div>
     </MainLayout>
   );

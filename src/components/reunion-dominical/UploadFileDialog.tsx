@@ -7,7 +7,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Upload, FileText, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, FileText, X, Image as ImageIcon, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface ReunionFile {
@@ -21,17 +21,12 @@ export interface ReunionFile {
 
 const ACCEPTED = ['application/pdf', 'image/png', 'image/jpeg'];
 
-export function getReunionFiles(storageKey: string): ReunionFile[] {
-  try {
-    const stored = localStorage.getItem(storageKey);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveReunionFiles(storageKey: string, files: ReunionFile[]) {
-  localStorage.setItem(storageKey, JSON.stringify(files));
+export function formatFileSize(bytes: number) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 export function downloadReunionFile(file: ReunionFile) {
@@ -43,27 +38,17 @@ export function downloadReunionFile(file: ReunionFile) {
   document.body.removeChild(link);
 }
 
-export function formatFileSize(bytes: number) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
 interface UploadFileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUploaded: () => void;
-  storageKey: string;
+  onSaveFile: (file: ReunionFile) => void;
   title?: string;
 }
 
 export function UploadFileDialog({
   open,
   onOpenChange,
-  onUploaded,
-  storageKey,
+  onSaveFile,
   title = 'Subir Archivo',
 }: UploadFileDialogProps) {
   const [file, setFile] = useState<File | null>(null);
@@ -108,12 +93,10 @@ export function UploadFileDialog({
         size: file.size,
         uploadedAt: new Date().toISOString(),
       };
-      const existing = getReunionFiles(storageKey);
-      saveReunionFiles(storageKey, [item, ...existing]);
+      onSaveFile(item);
       toast({ title: 'Archivo guardado', description: `"${file.name}" se ha guardado correctamente.` });
       setFile(null);
       setIsUploading(false);
-      onUploaded();
       onOpenChange(false);
     };
     reader.onerror = () => {

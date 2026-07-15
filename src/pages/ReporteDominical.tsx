@@ -31,6 +31,7 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useMembers } from '@/contexts/MembersContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ReporteDominicalData {
   fecha: Date | undefined;
@@ -81,7 +82,7 @@ export default function ReporteDominical() {
     if (step > 1) setStep(step - 1);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const total = calcularTotal();
     const reporte = {
       id: Date.now().toString(),
@@ -96,9 +97,29 @@ export default function ReporteDominical() {
       regularesNoAsistieron: formData.regularesNoAsistieron,
       testimonios: formData.testimonios,
     };
-    const saved = JSON.parse(localStorage.getItem('reportes_dominicales') || '[]');
+
+    // Load existing from Supabase, prepend, and save back
+    const { data: existing } = await supabase
+      .from('app_storage')
+      .select('value')
+      .eq('key', 'reportes_dominicales')
+      .maybeSingle();
+
+    const saved = Array.isArray(existing?.value) ? (existing.value as any[]) : [];
     saved.unshift(reporte);
-    localStorage.setItem('reportes_dominicales', JSON.stringify(saved));
+
+    const { data: userData } = await supabase.auth.getUser();
+    await supabase.from('app_storage').upsert(
+      {
+        key: 'reportes_dominicales',
+        value: saved as never,
+        category: 'reunion-dominical',
+        created_by: userData.user?.id ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'key' }
+    );
+
     toast.success('¡Reporte dominical guardado con éxito!');
     setSubmitted(true);
   };
