@@ -27,7 +27,6 @@ export default function ReporteMembresia() {
   const [quienDio, setQuienDio] = useState('');
   const [leccion, setLeccion] = useState('');
   const [asistentes, setAsistentes] = useState<string[]>([]);
-  const [invitados, setInvitados] = useState('');
   const [decisiones, setDecisiones] = useState('');
   const [observaciones, setObservaciones] = useState('');
 
@@ -36,7 +35,6 @@ export default function ReporteMembresia() {
     setQuienDio('');
     setLeccion('');
     setAsistentes([]);
-    setInvitados('');
     setDecisiones('');
     setObservaciones('');
     setSubmitted(false);
@@ -62,7 +60,7 @@ export default function ReporteMembresia() {
         leaderName: quienDio,
         attendeeIds: asistentes,
         attendeeNames,
-        extra: { invitados, decisiones, observaciones },
+        extra: { decisiones, observaciones },
       });
     } catch {
       toast.error('No se pudo guardar el reporte');
@@ -169,11 +167,6 @@ export default function ReporteMembresia() {
                   </label>
                 ))}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Invitados</Label>
-              <Textarea value={invitados} onChange={(e) => setInvitados(e.target.value)} placeholder="Nombres de invitados (separados por coma)" rows={2} />
             </div>
 
             <div className="space-y-2">
