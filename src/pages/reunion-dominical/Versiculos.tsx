@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { BookMarked, Plus, Trash2, Save, X } from 'lucide-react';
+import { BookMarked, Plus, Trash2, Save, X, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ interface Versiculo {
 export default function Versiculos() {
   const { value: versiculos, setValue: setVersiculos, loading } = useDbStorage<Versiculo[]>('versiculos-reunion-dominical', [], 'reunion-dominical');
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [referencia, setReferencia] = useState('');
   const [texto, setTexto] = useState('');
   const [observaciones, setObservaciones] = useState('');
@@ -28,6 +29,7 @@ export default function Versiculos() {
     setReferencia('');
     setTexto('');
     setObservaciones('');
+    setEditingId(null);
     setShowForm(false);
   };
 
@@ -36,16 +38,37 @@ export default function Versiculos() {
       toast({ title: 'Completa los campos requeridos', description: 'Referencia y Texto son obligatorios.', variant: 'destructive' });
       return;
     }
-    const nuevo: Versiculo = {
-      id: Date.now().toString(),
-      referencia: referencia.trim(),
-      texto: texto.trim(),
-      observaciones: observaciones.trim() || undefined,
-      createdAt: new Date().toISOString(),
-    };
-    setVersiculos((prev) => [nuevo, ...prev]);
-    toast({ title: 'Versículo agregado', description: nuevo.referencia });
+    if (editingId) {
+      // Update existing
+      setVersiculos((prev) =>
+        prev.map((v) =>
+          v.id === editingId
+            ? { ...v, referencia: referencia.trim(), texto: texto.trim(), observaciones: observaciones.trim() || undefined }
+            : v
+        )
+      );
+      toast({ title: 'Versículo actualizado', description: referencia.trim() });
+    } else {
+      // Create new
+      const nuevo: Versiculo = {
+        id: Date.now().toString(),
+        referencia: referencia.trim(),
+        texto: texto.trim(),
+        observaciones: observaciones.trim() || undefined,
+        createdAt: new Date().toISOString(),
+      };
+      setVersiculos((prev) => [nuevo, ...prev]);
+      toast({ title: 'Versículo agregado', description: nuevo.referencia });
+    }
     resetForm();
+  };
+
+  const handleEdit = (v: Versiculo) => {
+    setEditingId(v.id);
+    setReferencia(v.referencia);
+    setTexto(v.texto);
+    setObservaciones(v.observaciones || '');
+    setShowForm(true);
   };
 
   const handleDelete = (id: string) => {
@@ -75,7 +98,7 @@ export default function Versiculos() {
         {showForm && (
           <Card>
             <CardHeader>
-              <CardTitle>Agregar Versículo</CardTitle>
+              <CardTitle>{editingId ? 'Editar Versículo' : 'Agregar Versículo'}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -114,7 +137,7 @@ export default function Versiculos() {
                 </Button>
                 <Button onClick={handleSave} className="gap-2">
                   <Save className="w-4 h-4" />
-                  Guardar
+                  {editingId ? 'Actualizar' : 'Guardar'}
                 </Button>
               </div>
             </CardContent>
@@ -131,9 +154,14 @@ export default function Versiculos() {
               <Card key={v.id}>
                 <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
                   <CardTitle className="text-lg text-primary">{v.referencia}</CardTitle>
-                  <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(v.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(v)} title="Editar versículo">
+                      <Pencil className="w-4 h-4 text-muted-foreground hover:text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(v.id)} title="Eliminar versículo">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-foreground leading-relaxed italic">"{v.texto}"</p>
