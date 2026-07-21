@@ -236,7 +236,7 @@ export default function BaptismRegistration() {
               {step === 5 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div>
-                    <Label className="text-base font-semibold">¿Asististe al curso de Membrecía SOY NUEVOS HECHOS? *</Label>
+                    <Label className="text-base font-semibold">¿Asististe al curso de Membrecía Vida Nuevos Hechos? *</Label>
                     <p className="text-sm text-muted-foreground mb-4">
                       Selecciona una opción
                     </p>

@@ -55,9 +55,9 @@ export function MemberFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="active">Activos</SelectItem>
+              <SelectItem value="active">Miembros</SelectItem>
+              <SelectItem value="visitor">Invitados</SelectItem>
               <SelectItem value="inactive">Inactivos</SelectItem>
-              <SelectItem value="visitor">Visitantes</SelectItem>
             </SelectContent>
           </Select>
 

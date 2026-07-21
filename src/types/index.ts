@@ -52,6 +52,7 @@ export interface Member {
   notes?: string;
   etapa?: MemberEtapa;
   sexo?: MemberSexo;
+  zona?: string;
   createdAt: string;
   updatedAt: string;
 }

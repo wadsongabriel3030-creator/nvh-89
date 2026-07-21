@@ -35,6 +35,7 @@ const memberSchema = z.object({
   role: z.enum(['admin', 'pastor', 'leader', 'server', 'member']),
   etapa: z.enum(['Adulto', 'Joven Adulto', 'Joven', 'Niño']).optional(),
   sexo: z.enum(['Hombre', 'Mujer']).optional(),
+  zona: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -73,6 +74,7 @@ export function EditMemberDialog({ member, open, onOpenChange, onSubmit }: EditM
         etapa: member.etapa || 'Adulto',
         sexo: member.sexo || 'Hombre',
         notes: member.notes || '',
+        zona: member.zona || '',
       });
     }
   }, [member, open, reset]);
@@ -198,12 +200,20 @@ export function EditMemberDialog({ member, open, onOpenChange, onSubmit }: EditM
                   <SelectValue placeholder="Seleccione" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Activo</SelectItem>
-                  <SelectItem value="visitor">Visitante</SelectItem>
-                  <SelectItem value="inactive">Inactivo</SelectItem>
+                  <SelectItem value="active">Miembro</SelectItem>
+                  <SelectItem value="visitor">Invitado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="zona">Zona y/o Municipio donde vive</Label>
+            <Input
+              id="zona"
+              {...register('zona')}
+              placeholder="Ej: Zona 1, Mixco, Villa Nueva..."
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -59,9 +59,15 @@ const CURSOS: CursoPasosFirmes[] = [
   },
   {
     id: 'abrir-los-ojos',
-    nombre: 'Lección 6 – Abrir los Ojos',
+    nombre: 'Lección 7 – Abrir los Ojos',
     color: 'text-sky-500',
     lecciones: ['Abrir los Ojos'],
+  },
+  {
+    id: 'curso-vida-libertad',
+    nombre: 'Curso Vida en Libertad',
+    color: 'text-primary',
+    lecciones: ['Vida en Libertad'],
   },
 ];
 
@@ -70,6 +76,7 @@ export default function ReportePasosFirmes() {
   const navigate = useNavigate();
   const { members } = useMembers();
   const curso = useMemo(() => CURSOS.find(c => c.id === cursoId) ?? null, [cursoId]);
+  const backPath = cursoId === 'curso-vida-libertad' ? '/curso-vida-libertad' : '/primeros-pasos';
 
   const [submitted, setSubmitted] = useState(false);
   const [fecha, setFecha] = useState<Date | undefined>(new Date());
@@ -127,7 +134,7 @@ export default function ReportePasosFirmes() {
         <div className="min-h-[80vh] flex items-center justify-center px-4">
           <div className="text-center space-y-4">
             <h2 className="text-xl font-bold">Curso no encontrado</h2>
-            <Button onClick={() => navigate('/primeros-pasos')}>Volver</Button>
+            <Button onClick={() => navigate(backPath)}>Volver</Button>
           </div>
         </div>
       </MainLayout>
@@ -148,7 +155,7 @@ export default function ReportePasosFirmes() {
                 Gracias por enviar el reporte de {curso.nombre}. La información ha sido registrada correctamente.
               </p>
               <div className="flex gap-2 mt-4">
-                <Button variant="outline" onClick={() => navigate('/primeros-pasos')}>Volver</Button>
+                <Button variant="outline" onClick={() => navigate(backPath)}>Volver</Button>
                 <Button onClick={reset}>Nuevo Reporte</Button>
               </div>
             </div>
@@ -162,7 +169,7 @@ export default function ReportePasosFirmes() {
     <MainLayout hideSidebar>
       <div className="min-h-[80vh] py-8 px-4">
         <div className="w-full max-w-2xl mx-auto">
-          <Button variant="ghost" size="sm" className="mb-4 gap-2" onClick={() => navigate('/primeros-pasos')}>
+          <Button variant="ghost" size="sm" className="mb-4 gap-2" onClick={() => navigate(backPath)}>
             <ArrowLeft className="w-4 h-4" /> Volver
           </Button>
 
@@ -249,7 +256,7 @@ export default function ReportePasosFirmes() {
             </div>
 
             <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button variant="outline" onClick={() => navigate('/primeros-pasos')}>Cancelar</Button>
+              <Button variant="outline" onClick={() => navigate(backPath)}>Cancelar</Button>
               <Button onClick={handleSubmit} className="gap-2">
                 <Send className="w-4 h-4" />
                 Enviar reporte

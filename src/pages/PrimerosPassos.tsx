@@ -4,9 +4,20 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, FileText, BookOpen, Footprints, Sparkles, HeartHandshake, RefreshCw, Sun, Eye, CalendarCheck, ClipboardList, Calendar, User, CheckCircle, Phone, MessageSquare, Users, Heart } from 'lucide-react';
+import { UserPlus, FileText, BookOpen, Footprints, Sparkles, HeartHandshake, RefreshCw, Sun, Eye, CalendarCheck, ClipboardList, Calendar, User, CheckCircle, Phone, MessageSquare, Users, Heart, Trash2 } from 'lucide-react';
 import type { CursoPasosFirmes } from '@/components/pasos-firmes/PasosFirmesReporteDialog';
-import { fetchClassReports, type ClassReportRow } from '@/lib/classReports';
+import { fetchClassReports, deleteClassReport, type ClassReportRow } from '@/lib/classReports';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 const CURSOS: (CursoPasosFirmes & { icon: typeof BookOpen; descripcion: string; totalLabel: string })[] = [
@@ -69,7 +80,7 @@ const CURSOS: (CursoPasosFirmes & { icon: typeof BookOpen; descripcion: string; 
   },
   {
     id: 'abrir-los-ojos',
-    nombre: 'Lección 6 – Abrir los Ojos',
+    nombre: 'Lección 7 – Abrir los Ojos',
     descripcion: 'Abrir los ojos a la visión de Dios',
     totalLabel: '1 LECCIÓN',
     color: 'text-sky-500',
@@ -86,6 +97,19 @@ export default function PrimerosPassos() {
 
   const [allReports, setAllReports] = useState<ClassReportRow[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
+  const [deleteReportId, setDeleteReportId] = useState<string | null>(null);
+
+  const handleDeleteReport = async () => {
+    if (!deleteReportId) return;
+    try {
+      await deleteClassReport(deleteReportId);
+      setAllReports(prev => prev.filter(r => r.id !== deleteReportId));
+      toast.success('Reporte eliminado con éxito');
+    } catch {
+      toast.error('No se pudo eliminar el reporte');
+    }
+    setDeleteReportId(null);
+  };
 
   useEffect(() => {
     let active = true;
@@ -140,11 +164,22 @@ export default function PrimerosPassos() {
         <Card key={report.id} className="border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              {getReportTypeBadge(report.area)}
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {reportDate}
-              </span>
+              <div className="flex items-center gap-2">
+                {getReportTypeBadge(report.area)}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {reportDate}
+                </span>
+                <button
+                  onClick={() => setDeleteReportId(report.id)}
+                  className="p-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                  title="Eliminar reporte"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex items-center gap-2">
@@ -185,11 +220,22 @@ export default function PrimerosPassos() {
       <Card key={report.id} className="border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300">
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            {getReportTypeBadge(report.area)}
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {reportDate}
-            </span>
+            <div className="flex items-center gap-2">
+              {getReportTypeBadge(report.area)}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                {reportDate}
+              </span>
+              <button
+                onClick={() => setDeleteReportId(report.id)}
+                className="p-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                title="Eliminar reporte"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex items-center gap-2">
@@ -354,6 +400,22 @@ export default function PrimerosPassos() {
           )}
         </div>
       </div>
+      <AlertDialog open={!!deleteReportId} onOpenChange={(o) => !o && setDeleteReportId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar reporte?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El reporte será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteReport} className="bg-red-600 hover:bg-red-700">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }

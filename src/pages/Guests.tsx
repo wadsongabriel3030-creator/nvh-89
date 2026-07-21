@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Phone, User, FileText, Clock, MoreVertical, Edit, Trash2, UserCheck, MessageSquare } from 'lucide-react';
+import { Plus, Search, Phone, User, FileText, Clock, MoreVertical, Edit, Trash2, UserCheck, MessageSquare, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useDbStorage } from '@/hooks/useDbStorage';
+import { useMembers } from '@/contexts/MembersContext';
 
 interface Guest {
   id: string;
@@ -72,42 +74,11 @@ const statusColors: Record<Guest['status'], string> = {
 };
 
 export default function Guests() {
-  const [guests, setGuests] = useState<Guest[]>(() => {
-    try {
-      const raw = localStorage.getItem('guests');
-      if (raw) return JSON.parse(raw);
-    } catch {
-      // ignore
-    }
-    return [
-      {
-        id: '1',
-        name: 'Juan García',
-        nickname: 'Juanito',
-        phone: '(502) 5202-3805',
-        petitions: 'Oración por la familia',
-        status: 'aguardando' as const,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: '2',
-        name: 'Maria Santos',
-        phone: '(502) 5555-2222',
-        petitions: 'Sanidad y restauración',
-        status: 'contatado' as const,
-        createdAt: new Date().toISOString(),
-      },
-    ];
-  });
+  const { value: guests, setValue: setGuests, loading } = useDbStorage<Guest[]>('guests', [], 'guests');
+  const { members } = useMembers();
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('guests', JSON.stringify(guests));
-      window.dispatchEvent(new Event('guests-updated'));
-    } catch {
-      // ignore
-    }
-  }, [guests]);
+  // Invitados from members context (registered via member form with status 'visitor' = Invitado)
+  const invitadosFromMembers = members.filter((m) => m.status === 'visitor');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -292,108 +263,177 @@ export default function Guests() {
           </Button>
         </div>
 
-        {/* Guests Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredGuests.map((guest) => (
-            <Card key={guest.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg">{guest.name}</CardTitle>
-                    {guest.nickname && (
-                      <p className="text-sm text-muted-foreground">
-                        "{guest.nickname}"
-                      </p>
-                    )}
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEditDialog(guest)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openSeguimientoDialog(guest)}>
-                        <UserCheck className="h-4 w-4 mr-2" />
-                        Seguimientos
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDeleteGuest(guest.id)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Eliminar
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>{guest.phone}</span>
-                </div>
-                {guest.petitions && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
-                    <span className="text-muted-foreground line-clamp-2">
-                      {guest.petitions}
-                    </span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between pt-2">
-                  <Badge className={statusColors[guest.status]} variant="outline">
-                    {statusLabels[guest.status]}
-                  </Badge>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    {new Date(guest.createdAt).toLocaleDateString('es')}
-                  </div>
-                </div>
-                {guest.seguimientos && guest.seguimientos.length > 0 && (
-                  <div className="pt-2 border-t border-border space-y-1">
-                    <div className="flex items-center gap-1 text-xs font-medium text-foreground">
-                      <UserCheck className="h-3 w-3 text-primary" />
-                      Último seguimiento
-                    </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      <span className="font-medium text-foreground">
-                        {guest.seguimientos[0].responsable}:
-                      </span>{' '}
-                      {guest.seguimientos[0].nota}
-                    </p>
-                  </div>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full mt-2"
-                  onClick={() => openSeguimientoDialog(guest)}
-                >
-                  <MessageSquare className="h-3.5 w-3.5 mr-2" />
-                  Seguimientos ({guest.seguimientos?.length || 0})
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredGuests.length === 0 && (
-          <div className="text-center py-12">
-            <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground">
-              Ningún invitado encontrado
-            </h3>
-            <p className="text-muted-foreground mt-1">
-              {searchQuery
-                ? 'Intente buscar con otros términos'
-                : 'Agregue el primer invitado haciendo clic en el botón de arriba'}
-            </p>
+        {/* Loading state */}
+        {loading ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
+        ) : (
+          <>
+            {/* Guests Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredGuests.map((guest) => (
+                <Card key={guest.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <CardTitle className="text-lg">{guest.name}</CardTitle>
+                        {guest.nickname && (
+                          <p className="text-sm text-muted-foreground">
+                            "{guest.nickname}"
+                          </p>
+                        )}
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEditDialog(guest)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openSeguimientoDialog(guest)}>
+                            <UserCheck className="h-4 w-4 mr-2" />
+                            Seguimientos
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteGuest(guest.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span>{guest.phone}</span>
+                    </div>
+                    {guest.petitions && (
+                      <div className="flex items-start gap-2 text-sm">
+                        <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <span className="text-muted-foreground line-clamp-2">
+                          {guest.petitions}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between pt-2">
+                      <Badge className={statusColors[guest.status]} variant="outline">
+                        {statusLabels[guest.status]}
+                      </Badge>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {new Date(guest.createdAt).toLocaleDateString('es')}
+                      </div>
+                    </div>
+                    {guest.seguimientos && guest.seguimientos.length > 0 && (
+                      <div className="pt-2 border-t border-border space-y-1">
+                        <div className="flex items-center gap-1 text-xs font-medium text-foreground">
+                          <UserCheck className="h-3 w-3 text-primary" />
+                          Último seguimiento
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          <span className="font-medium text-foreground">
+                            {guest.seguimientos[0].responsable}:
+                          </span>{' '}
+                          {guest.seguimientos[0].nota}
+                        </p>
+                      </div>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-2"
+                      onClick={() => openSeguimientoDialog(guest)}
+                    >
+                      <MessageSquare className="h-3.5 w-3.5 mr-2" />
+                      Seguimientos ({guest.seguimientos?.length || 0})
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {filteredGuests.length === 0 && invitadosFromMembers.length === 0 && (
+              <div className="text-center py-12">
+                <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground">
+                  Ningún invitado encontrado
+                </h3>
+                <p className="text-muted-foreground mt-1">
+                  {searchQuery
+                    ? 'Intente buscar con otros términos'
+                    : 'Agregue el primer invitado haciendo clic en el botón de arriba'}
+                </p>
+              </div>
+            )}
+
+            {/* Invitados from Members (registered via member form) */}
+            {invitadosFromMembers.length > 0 && (
+              <div className="mt-8">
+                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <UserCheck className="h-5 w-5 text-orange-500" />
+                  Invitados registrados como miembros ({invitadosFromMembers.length})
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {invitadosFromMembers
+                    .filter((m) =>
+                      searchQuery === '' ||
+                      `${m.firstName} ${m.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      m.phone.includes(searchQuery)
+                    )
+                    .map((member) => (
+                    <Card key={member.id} className="hover:shadow-md transition-shadow border-orange-500/20">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-lg">{member.firstName} {member.lastName}</CardTitle>
+                            <Badge className="bg-orange-500/20 text-orange-600 border-orange-500/30" variant="outline">
+                              Invitado
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span>{member.phone || 'Sin teléfono'}</span>
+                        </div>
+                        {member.email && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">{member.email}</span>
+                          </div>
+                        )}
+                        {member.zona && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">{member.zona}</span>
+                          </div>
+                        )}
+                        {member.etapa && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Etapa: {member.etapa}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground pt-2">
+                          <Clock className="h-3 w-3" />
+                          {new Date(member.createdAt).toLocaleDateString('es')}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Add Dialog */}

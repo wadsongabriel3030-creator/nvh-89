@@ -50,6 +50,7 @@ function memberFromRow(row: any, tags: Tag[] = []): Member {
     notes: row.notes ?? undefined,
     etapa: row.etapa ?? undefined,
     sexo: row.sexo ?? undefined,
+    zona: row.address ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -72,6 +73,7 @@ function memberToRow(data: Partial<Member>) {
   if (data.notes !== undefined) row.notes = data.notes || null;
   if (data.etapa !== undefined) row.etapa = data.etapa || null;
   if (data.sexo !== undefined) row.sexo = data.sexo || null;
+  if (data.zona !== undefined) row.address = data.zona || null;
   return row;
 }
 

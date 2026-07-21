@@ -2,7 +2,7 @@ import { Member } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Phone, Mail, Calendar, Edit2, Trash2, Eye, Cake, User } from 'lucide-react';
+import { MoreHorizontal, Phone, Mail, Calendar, Edit2, Trash2, Eye, Cake, User, MapPin } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,7 +52,7 @@ export function MemberCard({ member, onEdit, onDelete, onView }: MemberCardProps
       case 'inactive':
         return 'bg-muted text-muted-foreground';
       case 'visitor':
-        return 'bg-accent/10 text-accent';
+        return 'bg-orange-500/10 text-orange-600 dark:text-orange-400';
       default:
         return 'bg-muted text-muted-foreground';
     }
@@ -61,11 +61,11 @@ export function MemberCard({ member, onEdit, onDelete, onView }: MemberCardProps
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'active':
-        return 'Activo';
+        return 'Miembro';
       case 'inactive':
         return 'Inactivo';
       case 'visitor':
-        return 'Visitante';
+        return 'Invitado';
       default:
         return status;
     }
@@ -155,6 +155,12 @@ export function MemberCard({ member, onEdit, onDelete, onView }: MemberCardProps
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 <span>Convertido el {new Date(member.conversionDate).toLocaleDateString('es')}</span>
+              </div>
+            )}
+            {member.zona && (
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span>{member.zona}</span>
               </div>
             )}
           </div>

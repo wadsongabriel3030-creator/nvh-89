@@ -1,16 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Sparkles, Plus, Users, CheckCircle, Clock, FileText, BookOpen, ClipboardList, Heart, Calendar, Phone, MessageSquare, User, Filter } from 'lucide-react';
+import { Sparkles, Plus, Users, CheckCircle, Clock, FileText, BookOpen, ClipboardList, Heart, Calendar, Phone, MessageSquare, User, Filter, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useDbStorage } from '@/hooks/useDbStorage';
 import { useMembers } from '@/contexts/MembersContext';
 import { notifyMemberProgressUpdated } from '@/lib/memberProgressEvents';
-import { fetchClassReports, type ClassReportRow } from '@/lib/classReports';
+import { fetchClassReports, deleteClassReport, type ClassReportRow } from '@/lib/classReports';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const CURSO_MEMBRESIA = {
   id: 'membresia',
@@ -45,6 +56,19 @@ export default function NuevosComienzos() {
   const [selectedParticipant, setSelectedParticipant] = useState<NuevosComienzosParticipant | null>(null);
   const [reporteOpen, setReporteOpen] = useState(false);
   const [reportFilter, setReportFilter] = useState<'all' | 'inscripcion-vida-nuevos' | 'compromiso-vnh' | 'membresia'>('all');
+  const [deleteReportId, setDeleteReportId] = useState<string | null>(null);
+
+  const handleDeleteReport = async () => {
+    if (!deleteReportId) return;
+    try {
+      await deleteClassReport(deleteReportId);
+      setAllReports(prev => prev.filter(r => r.id !== deleteReportId));
+      toast.success('Reporte eliminado con éxito');
+    } catch {
+      toast.error('No se pudo eliminar el reporte');
+    }
+    setDeleteReportId(null);
+  };
 
   // Fetch reports
   const [allReports, setAllReports] = useState<ClassReportRow[]>([]);
@@ -148,11 +172,22 @@ export default function NuevosComienzos() {
         <Card key={report.id} className="border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              {getReportTypeBadge(report.area)}
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {reportDate}
-              </span>
+              <div className="flex items-center gap-2">
+                {getReportTypeBadge(report.area)}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {reportDate}
+                </span>
+                <button
+                  onClick={() => setDeleteReportId(report.id)}
+                  className="p-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                  title="Eliminar reporte"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex items-center gap-2">
@@ -198,11 +233,22 @@ export default function NuevosComienzos() {
         <Card key={report.id} className="border-amber-500/20 hover:border-amber-500/40 transition-all duration-300">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              {getReportTypeBadge(report.area)}
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {reportDate}
-              </span>
+              <div className="flex items-center gap-2">
+                {getReportTypeBadge(report.area)}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {reportDate}
+                </span>
+                <button
+                  onClick={() => setDeleteReportId(report.id)}
+                  className="p-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                  title="Eliminar reporte"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex items-center gap-2">
@@ -254,11 +300,22 @@ export default function NuevosComienzos() {
       <Card key={report.id} className="border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300">
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            {getReportTypeBadge(report.area)}
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {reportDate}
-            </span>
+            <div className="flex items-center gap-2">
+              {getReportTypeBadge(report.area)}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                {reportDate}
+              </span>
+              <button
+                onClick={() => setDeleteReportId(report.id)}
+                className="p-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                title="Eliminar reporte"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex items-center gap-2">
@@ -522,6 +579,22 @@ export default function NuevosComienzos() {
         participant={selectedParticipant}
         member={selectedParticipant ? getMember(selectedParticipant.memberId) : undefined}
       />
+      <AlertDialog open={!!deleteReportId} onOpenChange={(o) => !o && setDeleteReportId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar reporte?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El reporte será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteReport} className="bg-red-600 hover:bg-red-700">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }

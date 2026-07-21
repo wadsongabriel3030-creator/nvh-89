@@ -47,3 +47,10 @@ export async function fetchClassReports(): Promise<ClassReportRow[]> {
   if (error) return [];
   return (data ?? []) as ClassReportRow[];
 }
+
+/** Elimina un reporte de clase del banco de datos. */
+export async function deleteClassReport(id: string) {
+  const { error } = await supabase.from('class_reports').delete().eq('id', id);
+  if (error) throw error;
+  notifyMemberProgressUpdated();
+}

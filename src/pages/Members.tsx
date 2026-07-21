@@ -53,6 +53,7 @@ export default function Members() {
       notes: data.notes,
       etapa: data.etapa || undefined,
       sexo: data.sexo || undefined,
+      zona: data.zona || undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -72,6 +73,7 @@ export default function Members() {
       role: data.role,
       etapa: data.etapa || undefined,
       sexo: data.sexo || undefined,
+      zona: data.zona || undefined,
       notes: data.notes,
     });
     toast({

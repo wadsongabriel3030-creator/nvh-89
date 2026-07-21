@@ -621,6 +621,7 @@ export type Database = {
           sexo: string | null
           status: Database["public"]["Enums"]["member_status"]
           updated_at: string
+          zona: string | null
         }
         Insert: {
           address?: string | null
@@ -642,6 +643,7 @@ export type Database = {
           sexo?: string | null
           status?: Database["public"]["Enums"]["member_status"]
           updated_at?: string
+          zona?: string | null
         }
         Update: {
           address?: string | null
@@ -663,6 +665,7 @@ export type Database = {
           sexo?: string | null
           status?: Database["public"]["Enums"]["member_status"]
           updated_at?: string
+          zona?: string | null
         }
         Relationships: []
       }

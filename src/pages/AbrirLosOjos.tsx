@@ -279,46 +279,6 @@ export default function AbrirLosOjos() {
           </div>
         </div>
 
-        {/* Curso card */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="hover:shadow-soft transition-all duration-300 animate-fade-in flex flex-col">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-2">
-                <div className="p-2 rounded-lg bg-muted text-primary">
-                  <Eye className="w-5 h-5" />
-                </div>
-                <Badge variant="secondary" className="font-semibold">
-                  {CURSO_ABRIR_LOS_OJOS.totalLabel}
-                </Badge>
-              </div>
-              <CardTitle className="text-xl mt-3">{CURSO_ABRIR_LOS_OJOS.nombre}</CardTitle>
-              <CardDescription>{CURSO_ABRIR_LOS_OJOS.descripcion}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col justify-between gap-4">
-              <div className="space-y-1.5">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Lecciones
-                </p>
-                <ul className="space-y-1">
-                  {CURSO_ABRIR_LOS_OJOS.lecciones.map((l) => (
-                    <li key={l} className="text-sm text-foreground flex gap-2">
-                      <span className="text-primary shrink-0">•</span>
-                      <span>{l}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <Button
-                onClick={() => setReporteOpen(true)}
-                variant="outline"
-                className="w-full gap-2"
-              >
-                <FileText className="w-4 h-4" />
-                Reporte
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Reports Section */}
         <div className="space-y-4">
