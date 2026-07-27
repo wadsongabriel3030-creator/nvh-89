@@ -50,6 +50,7 @@ export interface Member {
   photoUrl?: string;
   address?: string;
   notes?: string;
+  petitions?: string;
   etapa?: MemberEtapa;
   sexo?: MemberSexo;
   zona?: string;

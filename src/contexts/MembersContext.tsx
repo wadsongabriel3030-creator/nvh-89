@@ -48,6 +48,7 @@ function memberFromRow(row: any, tags: Tag[] = []): Member {
     photoUrl: row.photo_url ?? undefined,
     address: row.address ?? undefined,
     notes: row.notes ?? undefined,
+    petitions: row.petitions ?? undefined,
     etapa: row.etapa ?? undefined,
     sexo: row.sexo ?? undefined,
     zona: row.address ?? undefined,
@@ -71,6 +72,7 @@ function memberToRow(data: Partial<Member>) {
   if (data.photoUrl !== undefined) row.photo_url = data.photoUrl || null;
   if (data.address !== undefined) row.address = data.address || null;
   if (data.notes !== undefined) row.notes = data.notes || null;
+  if (data.petitions !== undefined) row.petitions = data.petitions || null;
   if (data.etapa !== undefined) row.etapa = data.etapa || null;
   if (data.sexo !== undefined) row.sexo = data.sexo || null;
   if (data.zona !== undefined) row.address = data.zona || null;

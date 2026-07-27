@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MemberCard } from '@/components/members/MemberCard';
@@ -6,21 +6,34 @@ import { MemberFilters } from '@/components/members/MemberFilters';
 import { AddMemberDialog } from '@/components/members/AddMemberDialog';
 import { EditMemberDialog } from '@/components/members/EditMemberDialog';
 import { DeleteMemberDialog } from '@/components/members/DeleteMemberDialog';
+import { MemberSeguimientoDialog } from '@/components/members/MemberSeguimientoDialog';
+import type { MemberSeguimiento, MemberSeguimientoMap } from '@/components/members/MemberSeguimientoDialog';
+import { AssignTagsDialog } from '@/components/tags/AssignTagsDialog';
 import { useMembers } from '@/contexts/MembersContext';
-import { Member } from '@/types';
+import { useDbStorage } from '@/hooks/useDbStorage';
+import { Member, Tag } from '@/types';
 import { Users } from 'lucide-react';
 
 import { toast } from '@/hooks/use-toast';
 
 export default function Members() {
-  const { members, addMember, updateMember, deleteMember } = useMembers();
+  const { members, addMember, updateMember, deleteMember, addTagToMember, removeTagFromMember } = useMembers();
+  const { value: seguimientosMap, setValue: setSeguimientosMap } = useDbStorage<MemberSeguimientoMap>(
+    'member-seguimientos',
+    {},
+    'members'
+  );
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [etapaFilter, setEtapaFilter] = useState('all');
   const [sexoFilter, setSexoFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSeguimientoOpen, setIsSeguimientoOpen] = useState(false);
+  const [isTagsDialogOpen, setIsTagsDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
   const filteredMembers = useMemo(() => {
@@ -34,10 +47,13 @@ export default function Members() {
       const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
       const matchesEtapa = etapaFilter === 'all' || member.etapa === etapaFilter;
       const matchesSexo = sexoFilter === 'all' || member.sexo === sexoFilter;
+      const matchesTags =
+        tagFilter.length === 0 ||
+        tagFilter.every((tagId) => member.tags.some((t) => t.id === tagId));
 
-      return matchesSearch && matchesStatus && matchesEtapa && matchesSexo;
+      return matchesSearch && matchesStatus && matchesEtapa && matchesSexo && matchesTags;
     });
-  }, [members, searchQuery, statusFilter, etapaFilter, sexoFilter]);
+  }, [members, searchQuery, statusFilter, etapaFilter, sexoFilter, tagFilter]);
 
   const handleAddMember = (data: any) => {
     const newMember: Member = {
@@ -51,6 +67,7 @@ export default function Members() {
       role: data.role,
       tags: [],
       notes: data.notes,
+      petitions: data.petitions || undefined,
       etapa: data.etapa || undefined,
       sexo: data.sexo || undefined,
       zona: data.zona || undefined,
@@ -75,6 +92,7 @@ export default function Members() {
       sexo: data.sexo || undefined,
       zona: data.zona || undefined,
       notes: data.notes,
+      petitions: data.petitions || undefined,
     });
     toast({
       title: '¡Miembro actualizado!',
@@ -104,11 +122,65 @@ export default function Members() {
     setIsDeleteDialogOpen(true);
   };
 
+  const openSeguimientoDialog = (member: Member) => {
+    setSelectedMember(member);
+    setIsSeguimientoOpen(true);
+  };
+
+  const openTagsDialog = (member: Member) => {
+    setSelectedMember(member);
+    setIsTagsDialogOpen(true);
+  };
+
+  const handleAssignTag = async (tag: Tag) => {
+    if (!selectedMember) return;
+    await addTagToMember(selectedMember.id, tag);
+    setSelectedMember((prev) =>
+      prev ? { ...prev, tags: [...prev.tags, tag] } : prev
+    );
+    toast({
+      title: '¡Etiqueta asignada!',
+      description: `"${tag.name}" fue asignada a ${selectedMember.firstName}.`,
+    });
+  };
+
+  const handleRemoveTag = async (tagId: string) => {
+    if (!selectedMember) return;
+    await removeTagFromMember(selectedMember.id, tagId);
+    setSelectedMember((prev) =>
+      prev ? { ...prev, tags: prev.tags.filter((t) => t.id !== tagId) } : prev
+    );
+  };
+
   const handleViewMember = (member: Member) => {
     toast({
       title: `Perfil: ${member.firstName} ${member.lastName}`,
       description: `Telefone: ${member.phone}${member.email ? ` | Email: ${member.email}` : ''}${member.etapa ? ` | Etapa: ${member.etapa}` : ''}`,
     });
+  };
+
+  const handleAddSeguimiento = useCallback(
+    (memberId: string, seguimiento: MemberSeguimiento) => {
+      setSeguimientosMap((prev) => {
+        const existing = prev[memberId] || [];
+        return { ...prev, [memberId]: [seguimiento, ...existing] };
+      });
+    },
+    [setSeguimientosMap]
+  );
+
+  const handleDeleteSeguimiento = useCallback(
+    (memberId: string, seguimientoId: string) => {
+      setSeguimientosMap((prev) => {
+        const existing = prev[memberId] || [];
+        return { ...prev, [memberId]: existing.filter((s) => s.id !== seguimientoId) };
+      });
+    },
+    [setSeguimientosMap]
+  );
+
+  const getSeguimientosForMember = (memberId: string): MemberSeguimiento[] => {
+    return seguimientosMap[memberId] || [];
   };
 
   return (
@@ -140,25 +212,34 @@ export default function Members() {
           onEtapaChange={setEtapaFilter}
           sexoFilter={sexoFilter}
           onSexoChange={setSexoFilter}
+          tagFilter={tagFilter}
+          onTagFilterChange={setTagFilter}
           onAddMember={() => setIsAddDialogOpen(true)}
         />
 
         {/* Members Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredMembers.map((member, index) => (
-            <div
-              key={member.id}
-              className="animate-fade-in"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <MemberCard
-                member={member}
-                onEdit={openEditDialog}
-                onDelete={openDeleteDialog}
-                onView={handleViewMember}
-              />
-            </div>
-          ))}
+          {filteredMembers.map((member, index) => {
+            const memberSeguimientos = getSeguimientosForMember(member.id);
+            return (
+              <div
+                key={member.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <MemberCard
+                  member={member}
+                  onEdit={openEditDialog}
+                  onDelete={openDeleteDialog}
+                  onView={handleViewMember}
+                  onSeguimiento={openSeguimientoDialog}
+                  onAssignTags={openTagsDialog}
+                  seguimientoCount={memberSeguimientos.length}
+                  lastSeguimiento={memberSeguimientos.length > 0 ? memberSeguimientos[0] : null}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {filteredMembers.length === 0 && (
@@ -195,7 +276,28 @@ export default function Members() {
           onOpenChange={setIsDeleteDialogOpen}
           onConfirm={handleDeleteMember}
         />
+
+        {/* Seguimiento Dialog */}
+        <MemberSeguimientoDialog
+          member={selectedMember}
+          open={isSeguimientoOpen}
+          onOpenChange={setIsSeguimientoOpen}
+          seguimientos={selectedMember ? getSeguimientosForMember(selectedMember.id) : []}
+          onAddSeguimiento={handleAddSeguimiento}
+          onDeleteSeguimiento={handleDeleteSeguimiento}
+        />
+
+        {/* Assign Tags Dialog */}
+        <AssignTagsDialog
+          open={isTagsDialogOpen}
+          onOpenChange={setIsTagsDialogOpen}
+          entityName={selectedMember ? `${selectedMember.firstName} ${selectedMember.lastName}` : ''}
+          assignedTags={selectedMember?.tags ?? []}
+          onAssign={handleAssignTag}
+          onRemove={handleRemoveTag}
+        />
       </div>
     </MainLayout>
   );
 }
+

@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useMembers } from '@/contexts/MembersContext';
 import { UserPlus } from 'lucide-react';
 
@@ -12,45 +10,10 @@ type Entry = {
   photoUrl?: string;
   role?: string;
   status?: string;
-  createdAt?: string;
 };
-
-function readGuests(): Entry[] {
-  try {
-    const raw = localStorage.getItem('guests');
-    if (!raw) return [];
-    const list = JSON.parse(raw);
-    if (!Array.isArray(list)) return [];
-    return list.map((g: any) => ({
-      id: String(g.id),
-      name: g.name,
-      subtitle: g.phone,
-      status: g.status,
-      createdAt: g.createdAt,
-    }));
-  } catch {
-    return [];
-  }
-}
-
-
 
 export function RecentMembers() {
   const { members } = useMembers();
-  const [guests, setGuests] = useState<Entry[]>([]);
-
-  useEffect(() => {
-    const reload = () => {
-      setGuests(readGuests());
-    };
-    reload();
-    window.addEventListener('storage', reload);
-    window.addEventListener('guests-updated', reload);
-    return () => {
-      window.removeEventListener('storage', reload);
-      window.removeEventListener('guests-updated', reload);
-    };
-  }, []);
 
   const recentMembers: Entry[] = members.slice(0, 5).map((m) => ({
     id: m.id,
@@ -60,14 +23,13 @@ export function RecentMembers() {
     role: m.role,
     status: m.status,
   }));
-  const recentGuests = guests.slice(0, 5);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
         return <Badge className="bg-success/10 text-success hover:bg-success/20 border-0">Activo</Badge>;
       case 'inactive':
-        return <Badge variant="secondary">Inactivo</Badge>;
+        return <Badge className="bg-red-500/10 text-red-600 hover:bg-red-500/20 border-0">Inactivo</Badge>;
       case 'visitor':
         return <Badge className="bg-accent/10 text-accent hover:bg-accent/20 border-0">Visitante</Badge>;
       default:
@@ -93,16 +55,23 @@ export function RecentMembers() {
     return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?';
   };
 
-  const renderList = (items: Entry[], emptyText: string, viewAllHref?: string, kind?: 'member' | 'guest') => (
-    <>
-      {items.length === 0 ? (
+  return (
+    <div className="bg-card rounded-xl p-6 border border-border shadow-card">
+      <div className="flex items-center justify-between mb-4 gap-3">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Registros Recientes</h3>
+          <p className="text-sm text-muted-foreground">Miembros de la iglesia</p>
+        </div>
+        <a href="/members" className="text-sm font-medium text-primary hover:underline">Ver todos</a>
+      </div>
+      {recentMembers.length === 0 ? (
         <div className="py-10 text-center text-sm text-muted-foreground">
           <UserPlus className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          {emptyText}
+          Sin miembros registrados
         </div>
       ) : (
         <div className="space-y-3">
-          {items.map((item, index) => (
+          {recentMembers.map((item, index) => (
             <div
               key={item.id}
               className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in"
@@ -121,47 +90,13 @@ export function RecentMembers() {
                 )}
               </div>
               <div className="flex flex-wrap gap-2 justify-end">
-                {kind === 'member' && item.role && getRoleBadge(item.role)}
-                {kind === 'member' && item.status && getStatusBadge(item.status)}
-                {kind === 'guest' && item.status && (
-                  <Badge variant="secondary" className="capitalize">{item.status}</Badge>
-                )}
-
+                {item.role && getRoleBadge(item.role)}
+                {item.status && getStatusBadge(item.status)}
               </div>
             </div>
           ))}
         </div>
       )}
-    </>
-  );
-
-  return (
-    <div className="bg-card rounded-xl p-6 border border-border shadow-card">
-      <div className="flex items-center justify-between mb-4 gap-3">
-        <div>
-          <h3 className="text-lg font-semibold text-foreground">Registros Recientes</h3>
-          <p className="text-sm text-muted-foreground">Miembros e invitados</p>
-        </div>
-      </div>
-      <Tabs defaultValue="members">
-        <TabsList className="grid grid-cols-2 w-full">
-          <TabsTrigger value="members">Miembros</TabsTrigger>
-          <TabsTrigger value="guests">Invitados</TabsTrigger>
-        </TabsList>
-        <TabsContent value="members" className="mt-4">
-          <div className="flex justify-end mb-2">
-            <a href="/members" className="text-sm font-medium text-primary hover:underline">Ver todos</a>
-          </div>
-          {renderList(recentMembers, 'Sin miembros registrados', '/members', 'member')}
-        </TabsContent>
-        <TabsContent value="guests" className="mt-4">
-          <div className="flex justify-end mb-2">
-            <a href="/guests" className="text-sm font-medium text-primary hover:underline">Ver todos</a>
-          </div>
-          {renderList(recentGuests, 'Sin invitados registrados', '/guests', 'guest')}
-        </TabsContent>
-
-      </Tabs>
     </div>
   );
-}
+}

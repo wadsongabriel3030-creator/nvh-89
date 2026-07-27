@@ -24,29 +24,14 @@ export interface PLCPdfFile {
   uploadedAt: string;
 }
 
-const STORAGE_KEY = 'plc_pdf_files';
-
-export function getPLCPdfFiles(): PLCPdfFile[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function savePLCPdfFiles(files: PLCPdfFile[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
-}
-
 interface UploadPLCPdfDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   activities: PLCActivity[];
-  onUploaded: () => void;
+  onSave: (pdf: PLCPdfFile) => void;
 }
 
-export function UploadPLCPdfDialog({ open, onOpenChange, activities, onUploaded }: UploadPLCPdfDialogProps) {
+export function UploadPLCPdfDialog({ open, onOpenChange, activities, onSave }: UploadPLCPdfDialogProps) {
   const [selectedActivityId, setSelectedActivityId] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -86,8 +71,7 @@ export function UploadPLCPdfDialog({ open, onOpenChange, activities, onUploaded 
         uploadedAt: new Date().toISOString(),
       };
 
-      const existing = getPLCPdfFiles();
-      savePLCPdfFiles([...existing, pdfFile]);
+      onSave(pdfFile);
 
       toast({
         title: 'PDF guardado',
@@ -97,7 +81,6 @@ export function UploadPLCPdfDialog({ open, onOpenChange, activities, onUploaded 
       setFile(null);
       setSelectedActivityId('');
       setIsUploading(false);
-      onUploaded();
       onOpenChange(false);
     };
     reader.onerror = () => {

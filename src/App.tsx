@@ -13,7 +13,6 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Members from "./pages/Members";
-import Guests from "./pages/Guests";
 import Tags from "./pages/Tags";
 import Events from "./pages/Events";
 import PLC from "./pages/PLC";
@@ -98,7 +97,6 @@ const App = () => (
                 {/* Protected routes */}
                 <Route path="/" element={<P><Dashboard /></P>} />
                 <Route path="/members" element={<P><Members /></P>} />
-                <Route path="/guests" element={<P><Guests /></P>} />
                 <Route path="/tags" element={<P><Tags /></P>} />
                 <Route path="/events" element={<P><Events /></P>} />
                 <Route path="/plc" element={<P><PLC /></P>} />

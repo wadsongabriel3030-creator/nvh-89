@@ -614,6 +614,7 @@ export type Database = {
           id: string
           last_name: string
           notes: string | null
+          petitions: string | null
           phone: string | null
           photo_url: string | null
           plc_group_id: string | null
@@ -636,6 +637,7 @@ export type Database = {
           id?: string
           last_name: string
           notes?: string | null
+          petitions?: string | null
           phone?: string | null
           photo_url?: string | null
           plc_group_id?: string | null
@@ -658,6 +660,7 @@ export type Database = {
           id?: string
           last_name?: string
           notes?: string | null
+          petitions?: string | null
           phone?: string | null
           photo_url?: string | null
           plc_group_id?: string | null

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Calendar, Plus, MapPin, Clock, Users, Search, ClipboardList, Repeat, ExternalLink, Phone, MessageSquare, Trash2, CalendarCheck } from 'lucide-react';
+import { Calendar, Plus, MapPin, Clock, Users, Search, ClipboardList, Repeat, ExternalLink, Phone, MessageSquare, Trash2, CalendarCheck, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,10 +11,13 @@ import { cn } from '@/lib/utils';
 import { Event } from '@/types';
 import { AddEventDialog } from '@/components/events/AddEventDialog';
 import { EditEventDialog } from '@/components/events/EditEventDialog';
+import type { EventImageMap } from '@/components/events/EditEventDialog';
+import { formatFileSize } from '@/components/reunion-dominical/UploadFileDialog';
 import { DeleteEventDialog } from '@/components/events/DeleteEventDialog';
 import { EventDetailsDialog } from '@/components/events/EventDetailsDialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useDbStorage } from '@/hooks/useDbStorage';
 
 const typeColors: Record<string, string> = {
   worship: 'bg-primary/10 text-primary',
@@ -111,6 +114,7 @@ export default function Events() {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const { value: eventImages } = useDbStorage<EventImageMap>('event-images', {}, 'events');
 
   interface InscripcionEvento {
     id: string;
@@ -315,88 +319,113 @@ export default function Events() {
               <p className="text-muted-foreground">Ningún evento encontrado.</p>
             </Card>
           ) : (
-            filteredEvents.map((event, index) => (
-              <Card
-                key={event.id}
-                className="hover:shadow-soft transition-all duration-300 animate-fade-in"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row md:items-center gap-4">
-                    {/* Date */}
-                    <div className="flex-shrink-0 w-16 h-16 bg-primary/10 rounded-xl flex flex-col items-center justify-center">
-                      <span className="text-2xl font-bold text-primary">
-                        {new Date(event.date + 'T00:00:00').getDate()}
-                      </span>
-                      <span className="text-xs text-primary uppercase">
-                        {new Date(event.date + 'T00:00:00').toLocaleDateString('es', { month: 'short' })}
-                      </span>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredEvents.map((event, index) => {
+                const eventImage = eventImages[event.id] || null;
+                return (
+                  <Card
+                    key={event.id}
+                    className="hover:shadow-soft transition-all duration-300 animate-fade-in overflow-hidden flex flex-col"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    {/* Event Image */}
+                    {eventImage && (
+                      <div className="aspect-video bg-muted overflow-hidden">
+                        <img
+                          src={eventImage.data}
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
 
-                    {/* Content */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground">{event.title}</h3>
-                          <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-4 h-4" />
-                              <span>{event.startTime}{event.endTime ? ` - ${event.endTime}` : ''}</span>
-                            </div>
-                            {event.location && (
-                              <div className="flex items-center gap-1.5">
-                                <MapPin className="w-4 h-4" />
-                                <span>{event.location}</span>
-                              </div>
-                            )}
-                            <div className="flex items-center gap-1.5">
-                              <Users className="w-4 h-4" />
-                              <span>{event.attendees.length} inscritos</span>
-                            </div>
-                            {event.isRecurring && (
-                              <div className="flex items-center gap-1.5 text-primary">
-                                <Repeat className="w-4 h-4" />
-                                <span>
-                                  {event.recurrenceType === 'fixed' ? 'Fijo' : 'Temporal'}
-                                  {' · '}
-                                  {{ weekly: 'Semanal', biweekly: 'Quincenal', monthly: 'Mensual', yearly: 'Anual' }[event.recurrenceFrequency || ''] || ''}
-                                </span>
-                              </div>
+                    <CardContent className={cn("p-5 flex flex-col flex-1", !eventImage && "pt-5")}>
+                      {/* Header: Title + Badge */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex flex-col items-center justify-center">
+                            <span className="text-lg font-bold text-primary leading-none">
+                              {new Date(event.date + 'T00:00:00').getDate()}
+                            </span>
+                            <span className="text-[10px] text-primary uppercase leading-none mt-0.5">
+                              {new Date(event.date + 'T00:00:00').toLocaleDateString('es', { month: 'short' })}
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-foreground leading-tight">{event.title}</h3>
+                            {event.description && (
+                              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{event.description}</p>
                             )}
                           </div>
                         </div>
-                        <Badge className={cn('border-0 shrink-0', typeColors[event.type] || typeColors.worship)}>
+                        <Badge className={cn('border-0 shrink-0 text-xs', typeColors[event.type] || typeColors.worship)}>
                           {typeLabels[event.type] || event.type}
                         </Badge>
                       </div>
-                    </div>
 
-                    {/* Actions */}
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleViewDetails(event)}>
-                        Detalles
-                      </Button>
-                      <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/inscripcion-evento/${encodeURIComponent(event.title.toLowerCase().replace(/\s+/g, '-'))}`)}>
-                        <ClipboardList className="w-3.5 h-3.5" />
-                        Inscríbete
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1"
-                        onClick={() => window.open(generateGoogleCalendarUrl(event), '_blank')}
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        Lembrete Google Calendar
-                      </Button>
-                      <Button size="sm" onClick={() => handleManageEvent(event)}>
-                        Administrar
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                      {/* Event Details */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted-foreground mb-4">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{event.startTime}{event.endTime ? ` - ${event.endTime}` : ''}</span>
+                        </div>
+                        {event.location && (
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5" />
+                            <span>{event.location}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                          <Users className="w-3.5 h-3.5" />
+                          <span>{event.attendees.length} inscritos</span>
+                        </div>
+                        {event.isRecurring && (
+                          <div className="flex items-center gap-1.5 text-primary">
+                            <Repeat className="w-3.5 h-3.5" />
+                            <span>
+                              {event.recurrenceType === 'fixed' ? 'Fijo' : 'Temporal'}
+                              {' · '}
+                              {{ weekly: 'Semanal', biweekly: 'Quincenal', monthly: 'Mensual', yearly: 'Anual' }[event.recurrenceFrequency || ''] || ''}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Image file info (like Recursos) */}
+                      {eventImage && (
+                        <div className="text-xs text-muted-foreground mb-3 border-t border-border pt-2">
+                          <p className="font-medium text-foreground text-sm truncate">{eventImage.name}</p>
+                          <p>{formatFileSize(eventImage.size)}</p>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap gap-2 mt-auto">
+                        <Button variant="outline" size="sm" onClick={() => handleViewDetails(event)}>
+                          Detalles
+                        </Button>
+                        <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/inscripcion-evento/${encodeURIComponent(event.title.toLowerCase().replace(/\s+/g, '-'))}`)}>
+                          <ClipboardList className="w-3.5 h-3.5" />
+                          Inscríbete
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1"
+                          onClick={() => window.open(generateGoogleCalendarUrl(event), '_blank')}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Lembrete Google Calendar
+                        </Button>
+                        <Button size="sm" onClick={() => handleManageEvent(event)}>
+                          Administrar
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </div>
 

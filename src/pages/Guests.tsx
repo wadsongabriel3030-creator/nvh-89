@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Phone, User, FileText, Clock, MoreVertical, Edit, Trash2, UserCheck, MessageSquare, Loader2 } from 'lucide-react';
+import { Plus, Search, Phone, User, FileText, Clock, MoreVertical, Edit, Trash2, UserCheck, MessageSquare, Loader2, Tags } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,10 @@ import {
 import { toast } from 'sonner';
 import { useDbStorage } from '@/hooks/useDbStorage';
 import { useMembers } from '@/contexts/MembersContext';
+import { useTags } from '@/contexts/TagsContext';
+import { AssignTagsDialog } from '@/components/tags/AssignTagsDialog';
+import { Tag } from '@/types';
+import { cn } from '@/lib/utils';
 
 interface Guest {
   id: string;
@@ -40,6 +44,7 @@ interface Guest {
   createdAt: string;
   notes?: string;
   seguimientos?: Seguimiento[];
+  tagIds?: string[];
 }
 
 interface Seguimiento {
@@ -76,6 +81,7 @@ const statusColors: Record<Guest['status'], string> = {
 export default function Guests() {
   const { value: guests, setValue: setGuests, loading } = useDbStorage<Guest[]>('guests', [], 'guests');
   const { members } = useMembers();
+  const { tags: allTags } = useTags();
 
   // Invitados from members context (registered via member form with status 'visitor' = Invitado)
   const invitadosFromMembers = members.filter((m) => m.status === 'visitor');
@@ -85,6 +91,7 @@ export default function Guests() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
   const [isSeguimientoOpen, setIsSeguimientoOpen] = useState(false);
+  const [isTagsDialogOpen, setIsTagsDialogOpen] = useState(false);
   const [seguimientoForm, setSeguimientoForm] = useState({ responsable: '', nota: '' });
 
   // Form state
@@ -103,6 +110,13 @@ export default function Guests() {
       guest.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       guest.phone.includes(searchQuery)
   );
+
+  const getGuestTags = (guest: Guest): Tag[] => {
+    if (!guest.tagIds || guest.tagIds.length === 0) return [];
+    return guest.tagIds
+      .map((id) => allTags.find((t) => t.id === id))
+      .filter(Boolean) as Tag[];
+  };
 
   const resetForm = () => {
     setFormData({
@@ -175,6 +189,40 @@ export default function Guests() {
     setSelectedGuest(guest);
     setSeguimientoForm({ responsable: '', nota: '' });
     setIsSeguimientoOpen(true);
+  };
+
+  const openTagsDialog = (guest: Guest) => {
+    setSelectedGuest(guest);
+    setIsTagsDialogOpen(true);
+  };
+
+  const handleAssignTagToGuest = (tag: Tag) => {
+    if (!selectedGuest) return;
+    setGuests((prev) =>
+      prev.map((g) =>
+        g.id === selectedGuest.id
+          ? { ...g, tagIds: [...(g.tagIds || []), tag.id] }
+          : g
+      )
+    );
+    setSelectedGuest((prev) =>
+      prev ? { ...prev, tagIds: [...(prev.tagIds || []), tag.id] } : prev
+    );
+    toast.success(`¡Etiqueta "${tag.name}" asignada!`);
+  };
+
+  const handleRemoveTagFromGuest = (tagId: string) => {
+    if (!selectedGuest) return;
+    setGuests((prev) =>
+      prev.map((g) =>
+        g.id === selectedGuest.id
+          ? { ...g, tagIds: (g.tagIds || []).filter((id) => id !== tagId) }
+          : g
+      )
+    );
+    setSelectedGuest((prev) =>
+      prev ? { ...prev, tagIds: (prev.tagIds || []).filter((id) => id !== tagId) } : prev
+    );
   };
 
   const handleAddSeguimiento = () => {
@@ -272,92 +320,122 @@ export default function Guests() {
           <>
             {/* Guests Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredGuests.map((guest) => (
-                <Card key={guest.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg">{guest.name}</CardTitle>
-                        {guest.nickname && (
-                          <p className="text-sm text-muted-foreground">
-                            "{guest.nickname}"
-                          </p>
-                        )}
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditDialog(guest)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openSeguimientoDialog(guest)}>
-                            <UserCheck className="h-4 w-4 mr-2" />
-                            Seguimientos
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteGuest(guest.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{guest.phone}</span>
-                    </div>
-                    {guest.petitions && (
-                      <div className="flex items-start gap-2 text-sm">
-                        <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
-                        <span className="text-muted-foreground line-clamp-2">
-                          {guest.petitions}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between pt-2">
-                      <Badge className={statusColors[guest.status]} variant="outline">
-                        {statusLabels[guest.status]}
-                      </Badge>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {new Date(guest.createdAt).toLocaleDateString('es')}
-                      </div>
-                    </div>
-                    {guest.seguimientos && guest.seguimientos.length > 0 && (
-                      <div className="pt-2 border-t border-border space-y-1">
-                        <div className="flex items-center gap-1 text-xs font-medium text-foreground">
-                          <UserCheck className="h-3 w-3 text-primary" />
-                          Último seguimiento
+              {filteredGuests.map((guest) => {
+                const guestTags = getGuestTags(guest);
+                return (
+                  <Card key={guest.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <CardTitle className="text-lg">{guest.name}</CardTitle>
+                          {guest.nickname && (
+                            <p className="text-sm text-muted-foreground">
+                              "{guest.nickname}"
+                            </p>
+                          )}
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          <span className="font-medium text-foreground">
-                            {guest.seguimientos[0].responsable}:
-                          </span>{' '}
-                          {guest.seguimientos[0].nota}
-                        </p>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openEditDialog(guest)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openSeguimientoDialog(guest)}>
+                              <UserCheck className="h-4 w-4 mr-2" />
+                              Seguimientos
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openTagsDialog(guest)}>
+                              <Tags className="h-4 w-4 mr-2" />
+                              Etiquetas
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteGuest(guest.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full mt-2"
-                      onClick={() => openSeguimientoDialog(guest)}
-                    >
-                      <MessageSquare className="h-3.5 w-3.5 mr-2" />
-                      Seguimientos ({guest.seguimientos?.length || 0})
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{guest.phone}</span>
+                      </div>
+                      {guest.petitions && (
+                        <div className="flex items-start gap-2 text-sm">
+                          <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
+                          <span className="text-muted-foreground line-clamp-2">
+                            {guest.petitions}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between pt-2">
+                        <Badge className={statusColors[guest.status]} variant="outline">
+                          {statusLabels[guest.status]}
+                        </Badge>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {new Date(guest.createdAt).toLocaleDateString('es')}
+                        </div>
+                      </div>
+
+                      {/* Guest Tags */}
+                      {guestTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {guestTags.slice(0, 3).map((tag) => (
+                            <span
+                              key={tag.id}
+                              className={cn(
+                                'text-xs px-2 py-0.5 rounded-full text-white font-medium',
+                                tag.color
+                              )}
+                            >
+                              {tag.name}
+                            </span>
+                          ))}
+                          {guestTags.length > 3 && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                              +{guestTags.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {guest.seguimientos && guest.seguimientos.length > 0 && (
+                        <div className="pt-2 border-t border-border space-y-1">
+                          <div className="flex items-center gap-1 text-xs font-medium text-foreground">
+                            <UserCheck className="h-3 w-3 text-primary" />
+                            Último seguimiento
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            <span className="font-medium text-foreground">
+                              {guest.seguimientos[0].responsable}:
+                            </span>{' '}
+                            {guest.seguimientos[0].nota}
+                          </p>
+                        </div>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2"
+                        onClick={() => openSeguimientoDialog(guest)}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5 mr-2" />
+                        Seguimientos ({guest.seguimientos?.length || 0})
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
 
             {filteredGuests.length === 0 && invitadosFromMembers.length === 0 && (
@@ -421,6 +499,27 @@ export default function Guests() {
                           <div className="flex items-center gap-2 text-sm">
                             <User className="h-4 w-4 text-muted-foreground" />
                             <span className="text-muted-foreground">Etapa: {member.etapa}</span>
+                          </div>
+                        )}
+                        {/* Member Tags */}
+                        {member.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {member.tags.slice(0, 3).map((tag) => (
+                              <span
+                                key={tag.id}
+                                className={cn(
+                                  'text-xs px-2 py-0.5 rounded-full text-white font-medium',
+                                  tag.color
+                                )}
+                              >
+                                {tag.name}
+                              </span>
+                            ))}
+                            {member.tags.length > 3 && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                                +{member.tags.length - 3}
+                              </span>
+                            )}
                           </div>
                         )}
                         <div className="flex items-center gap-1 text-xs text-muted-foreground pt-2">
@@ -701,6 +800,16 @@ export default function Guests() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Assign Tags Dialog for Guests */}
+        <AssignTagsDialog
+          open={isTagsDialogOpen}
+          onOpenChange={setIsTagsDialogOpen}
+          entityName={selectedGuest?.name ?? ''}
+          assignedTags={selectedGuest ? getGuestTags(selectedGuest) : []}
+          onAssign={handleAssignTagToGuest}
+          onRemove={handleRemoveTagFromGuest}
+        />
       </div>
     </MainLayout>
   );

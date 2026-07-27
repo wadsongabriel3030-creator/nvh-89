@@ -7,7 +7,6 @@ export interface PagePermission {
 export const AVAILABLE_PAGES: PagePermission[] = [
   { path: '/', label: 'Dashboard', group: 'Principal' },
   { path: '/members', label: 'Miembros', group: 'Personas' },
-  { path: '/guests', label: 'Visitantes', group: 'Personas' },
   { path: '/tags', label: 'Etiquetas', group: 'Personas' },
 
   { path: '/listado-lideres', label: 'Listado de Maestros', group: 'Personas' },

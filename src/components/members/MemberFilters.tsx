@@ -1,4 +1,4 @@
-import { Search, Filter, Plus } from 'lucide-react';
+import { Search, Filter, Plus, Tags, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,6 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { useTags } from '@/contexts/TagsContext';
+import { cn } from '@/lib/utils';
 
 interface MemberFiltersProps {
   searchQuery: string;
@@ -18,6 +25,8 @@ interface MemberFiltersProps {
   onEtapaChange: (value: string) => void;
   sexoFilter: string;
   onSexoChange: (value: string) => void;
+  tagFilter: string[];
+  onTagFilterChange: (value: string[]) => void;
   onAddMember: () => void;
 }
 
@@ -30,8 +39,21 @@ export function MemberFilters({
   onEtapaChange,
   sexoFilter,
   onSexoChange,
+  tagFilter,
+  onTagFilterChange,
   onAddMember,
 }: MemberFiltersProps) {
+  const { tags } = useTags();
+
+  const toggleTag = (tagId: string) => {
+    if (tagFilter.includes(tagId)) {
+      onTagFilterChange(tagFilter.filter((id) => id !== tagId));
+    } else {
+      onTagFilterChange([...tagFilter, tagId]);
+    }
+  };
+
+  const clearTagFilter = () => onTagFilterChange([]);
 
   return (
     <div className="flex flex-col gap-4 mb-6">
@@ -84,6 +106,70 @@ export function MemberFilters({
               <SelectItem value="Mujer">Mujer</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Tag Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'gap-2',
+                  tagFilter.length > 0 && 'border-primary text-primary'
+                )}
+              >
+                <Tags className="w-4 h-4" />
+                Etiquetas
+                {tagFilter.length > 0 && (
+                  <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5 font-medium">
+                    {tagFilter.length}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-3" align="end">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Filtrar por etiquetas</p>
+                  {tagFilter.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-muted-foreground"
+                      onClick={clearTagFilter}
+                    >
+                      <X className="w-3 h-3 mr-1" />
+                      Limpiar
+                    </Button>
+                  )}
+                </div>
+                {tags.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-3">
+                    No hay etiquetas creadas.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
+                    {tags.map((tag) => {
+                      const isSelected = tagFilter.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          onClick={() => toggleTag(tag.id)}
+                          className={cn(
+                            'text-xs px-2.5 py-1 rounded-full font-medium transition-all',
+                            isSelected
+                              ? `${tag.color} text-white ring-2 ring-offset-1 ring-primary/50`
+                              : `${tag.color} text-white opacity-50 hover:opacity-80`
+                          )}
+                        >
+                          {tag.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Button onClick={onAddMember} className="gap-2">
             <Plus className="w-4 h-4" />

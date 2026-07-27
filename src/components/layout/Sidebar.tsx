@@ -55,7 +55,6 @@ interface NavItem {
 const mainNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Resumen administrativo', href: '/' },
   { icon: Users, label: 'Miembros', href: '/members' },
-  { icon: UserPlus, label: 'Invitados', href: '/guests' },
   { icon: Tags, label: 'Etiquetas', href: '/tags' },
   { icon: Calendar, label: 'Eventos', href: '/events' },
   { icon: Calendar, label: 'Calendario 2026', href: '/calendar-2026' },

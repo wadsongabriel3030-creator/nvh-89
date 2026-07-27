@@ -34,6 +34,7 @@ const memberSchema = z.object({
   etapa: z.enum(['Adulto', 'Joven Adulto', 'Joven', 'Niño']).optional(),
   sexo: z.enum(['Hombre', 'Mujer']).optional(),
   zona: z.string().optional(),
+  petitions: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -189,6 +190,7 @@ export function AddMemberDialog({ open, onOpenChange, onSubmit }: AddMemberDialo
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">Miembro</SelectItem>
+                  <SelectItem value="inactive">Inactivo</SelectItem>
                   <SelectItem value="visitor">Invitado</SelectItem>
                 </SelectContent>
               </Select>
@@ -220,6 +222,16 @@ export function AddMemberDialog({ open, onOpenChange, onSubmit }: AddMemberDialo
                 <SelectItem value="pastor">Pastor</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="petitions">Petición</Label>
+            <Textarea
+              id="petitions"
+              {...register('petitions')}
+              placeholder="Pedidos de oración, necesidades..."
+              rows={2}
+            />
           </div>
 
           <div className="space-y-2">

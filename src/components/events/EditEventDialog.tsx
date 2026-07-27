@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Event } from '@/types';
-import { Repeat } from 'lucide-react';
+import { Repeat, Upload, Image as ImageIcon, Download, Trash2, X } from 'lucide-react';
+import {
+  type ReunionFile,
+  formatFileSize,
+  downloadReunionFile,
+} from '@/components/reunion-dominical/UploadFileDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useDbStorage } from '@/hooks/useDbStorage';
+
+interface EventImageMap {
+  [eventId: string]: ReunionFile | null;
+}
 
 interface EditEventDialogProps {
   open: boolean;
@@ -22,6 +34,27 @@ interface EditEventDialogProps {
   event: Event | null;
   onSubmit: (event: Event) => void;
 }
+
+const ACCEPTED_IMAGE = ['image/png', 'image/jpeg', 'image/webp'];
+const BUCKET = 'reunion-files';
+
+async function ensureBucket() {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  if (!buckets?.find((b) => b.name === BUCKET)) {
+    await supabase.storage.createBucket(BUCKET, { public: true });
+  }
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+export { EventImageMap };
 
 const eventTypes = [
   { value: 'worship', label: 'Reunión' },
@@ -50,6 +83,13 @@ const frequencyOptions = [
 ];
 
 export function EditEventDialog({ open, onOpenChange, event, onSubmit }: EditEventDialogProps) {
+  const { toast } = useToast();
+  const { value: eventImages, setValue: setEventImages } = useDbStorage<EventImageMap>('event-images', {}, 'events');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const currentImage = event ? eventImages[event.id] || null : null;
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -280,6 +320,78 @@ export function EditEventDialog({ open, onOpenChange, event, onSubmit }: EditEve
               </div>
             )}
           </div>
+
+          {/* Image Section */}
+          <div className="space-y-3 rounded-lg border border-border p-4">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-primary" />
+              <Label className="text-base font-semibold">Imagen del Evento</Label>
+            </div>
+
+            {currentImage ? (
+              <div className="rounded-lg overflow-hidden border border-border bg-card">
+                <div className="aspect-video bg-muted flex items-center justify-center overflow-hidden">
+                  <img
+                    src={currentImage.data}
+                    alt={currentImage.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="p-3 space-y-2">
+                  <p className="font-medium text-sm text-foreground truncate" title={currentImage.name}>
+                    {currentImage.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{formatFileSize(currentImage.size)}</p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 gap-1.5"
+                      onClick={() => downloadReunionFile(currentImage)}
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Descargar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive gap-1.5"
+                      onClick={handleDeleteImage}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer hover:border-primary/50 border-muted-foreground/25"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                {isUploadingImage ? (
+                  <div className="space-y-2">
+                    <Upload className="w-8 h-8 mx-auto text-primary animate-pulse" />
+                    <p className="text-sm text-muted-foreground">Subiendo imagen...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
+                    <p className="text-sm font-medium text-foreground">Subir imagen del evento</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG o WebP — clic para seleccionar</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <DialogFooter>
@@ -293,4 +405,74 @@ export function EditEventDialog({ open, onOpenChange, event, onSubmit }: EditEve
       </DialogContent>
     </Dialog>
   );
+
+  async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !event) return;
+    if (!ACCEPTED_IMAGE.includes(file.type)) {
+      toast({ title: 'Formato no permitido', description: 'Sube PNG, JPG o WebP.', variant: 'destructive' });
+      return;
+    }
+    setIsUploadingImage(true);
+    try {
+      await ensureBucket();
+      const fileId = crypto.randomUUID();
+      const ext = file.name.split('.').pop() || 'jpg';
+      const storagePath = `event-images/${fileId}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(storagePath, file, { contentType: file.type, upsert: true });
+
+      let fileUrl: string;
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+        fileUrl = urlData?.publicUrl || '';
+      } else {
+        fileUrl = await readFileAsDataUrl(file);
+      }
+
+      const imageFile: ReunionFile = {
+        id: fileId,
+        name: file.name,
+        type: file.type,
+        data: fileUrl,
+        size: file.size,
+        uploadedAt: new Date().toISOString(),
+      };
+
+      setEventImages((prev) => ({ ...prev, [event.id]: imageFile }));
+      toast({ title: 'Imagen subida', description: `"${file.name}" se asignó al evento.` });
+    } catch (err) {
+      console.error('[EditEventDialog] Image upload error:', err);
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        const imageFile: ReunionFile = {
+          id: crypto.randomUUID(),
+          name: file.name,
+          type: file.type,
+          data: dataUrl,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+        };
+        setEventImages((prev) => ({ ...prev, [event.id]: imageFile }));
+        toast({ title: 'Imagen guardada', description: `"${file.name}" se guardó (modo local).` });
+      } catch {
+        toast({ title: 'Error', description: 'No se pudo guardar la imagen.', variant: 'destructive' });
+      }
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  function handleDeleteImage() {
+    if (!event) return;
+    setEventImages((prev) => {
+      const updated = { ...prev };
+      delete updated[event.id];
+      return updated;
+    });
+    toast({ title: 'Imagen eliminada', description: 'La imagen del evento fue removida.' });
+  }
 }
