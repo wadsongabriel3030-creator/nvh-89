@@ -21,7 +21,6 @@ import ResumenPLC from "./pages/ResumenPLC";
 import NuevosComienzos from "./pages/NuevosComienzos";
 import ReporteMembresia from "./pages/ReporteMembresia";
 
-import CreenciasBasicas from "./pages/CreenciasBasicas";
 import Batismos from "./pages/Batismos";
 import BaptismRegistration from "./pages/BaptismRegistration";
 import Discipleship from "./pages/Discipleship";
@@ -56,6 +55,7 @@ import ReportePasosFirmes from "./pages/ReportePasosFirmes";
 import CursoVidaEnLibertad from "./pages/CursoVidaEnLibertad";
 import RetiroVidaEnLibertad from "./pages/RetiroVidaEnLibertad";
 import InscripcionRetiroVidaLibertad from "./pages/InscripcionRetiroVidaLibertad";
+import InscripcionCursoVidaLibertad from "./pages/InscripcionCursoVidaLibertad";
 import Discipulador from "./pages/Discipulador";
 import Recursos from "./pages/reunion-dominical/Recursos";
 import Programa from "./pages/reunion-dominical/Programa";
@@ -92,6 +92,7 @@ const App = () => (
                 <Route path="/inscripcion-vida-nuevos" element={<InscripcionVidaNuevos />} />
                 <Route path="/inscripcion-primeros-pasos" element={<InscripcionPrimerosPassos />} />
                 <Route path="/inscripcion-retiro-vida-libertad" element={<InscripcionRetiroVidaLibertad />} />
+                <Route path="/inscripcion-curso-vida-libertad" element={<InscripcionCursoVidaLibertad />} />
 
                 {/* Protected routes */}
                 <Route path="/" element={<P><Dashboard /></P>} />
@@ -103,7 +104,6 @@ const App = () => (
                 <Route path="/reporte-plc" element={<P><ReportePLC /></P>} />
                 <Route path="/membresia" element={<P><NuevosComienzos /></P>} />
                 <Route path="/reporte-membresia" element={<P><ReporteMembresia /></P>} />
-                <Route path="/creencias-basicas" element={<P><CreenciasBasicas /></P>} />
                 <Route path="/batismos" element={<P><Batismos /></P>} />
                 <Route path="/discipleship" element={<P><Discipleship /></P>} />
                 <Route path="/cursos" element={<P><Cursos /></P>} />

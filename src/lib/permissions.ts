@@ -20,7 +20,7 @@ export const AVAILABLE_PAGES: PagePermission[] = [
 
   { path: '/membresia', label: 'Nuevos Comienzos', group: 'Discipulado' },
   { path: '/reporte-membresia', label: 'Reporte Membresía', group: 'Discipulado' },
-  { path: '/creencias-basicas', label: 'Creencias Básicas', group: 'Discipulado' },
+
   { path: '/discipleship', label: 'Discipulado', group: 'Discipulado' },
   { path: '/cursos', label: 'Cursos', group: 'Discipulado' },
   { path: '/reporte-discipulado', label: 'Reporte Discipulado', group: 'Discipulado' },

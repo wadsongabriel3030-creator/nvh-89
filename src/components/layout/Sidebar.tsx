@@ -101,7 +101,7 @@ const secondaryNavItems: NavItem[] = [
       { icon: Heart, label: 'Retiro Vida en Libertad', href: '/retiro-vida-libertad' },
     ]
   },
-  { icon: Heart, label: 'Escuela de Equipamiento', href: '/creencias-basicas' },
+
   { icon: Droplets, label: 'Bautismos', href: '/batismos' },
   {
     icon: BookOpen,

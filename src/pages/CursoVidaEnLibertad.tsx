@@ -4,7 +4,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, FileText, ClipboardList, Calendar, User, Users, Heart, MessageSquare, Trash2 } from 'lucide-react';
+import { BookOpen, FileText, ClipboardList, Calendar, User, Users, Heart, MessageSquare, Trash2, UserPlus } from 'lucide-react';
 import type { CursoPasosFirmes } from '@/components/pasos-firmes/PasosFirmesReporteDialog';
 import { fetchClassReports, deleteClassReport, type ClassReportRow } from '@/lib/classReports';
 import { toast } from 'sonner';
@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { VidaLibertadActions } from '@/components/vida-libertad/VidaLibertadActions';
+
 
 const CURSO: CursoPasosFirmes & { icon: typeof BookOpen; descripcion: string; totalLabel: string } = {
   id: 'curso-vida-libertad',
@@ -194,6 +194,14 @@ export default function CursoVidaEnLibertad() {
               </p>
             </div>
           </div>
+          <Button
+            onClick={() => navigate('/inscripcion-curso-vida-libertad')}
+            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6"
+            size="lg"
+          >
+            <UserPlus className="w-5 h-5" />
+            INSCRÍBETE
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -237,9 +245,6 @@ export default function CursoVidaEnLibertad() {
             </CardContent>
           </Card>
         </div>
-
-        {/* VidaLibertadActions - registrar miembro y marcar presencia */}
-        <VidaLibertadActions groupName="Curso Vida en Libertad" storageKey="curso-vida-libertad" />
 
         {/* Reports Section */}
         <div className="space-y-4">

@@ -54,7 +54,7 @@ export function AddBatismoDialog({ open, onOpenChange, onAdd }: Props) {
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Nombre Completo *</Label>
+              <Label>Título *</Label>
               <Input
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
