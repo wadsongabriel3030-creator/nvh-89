@@ -28,7 +28,6 @@ export const AVAILABLE_PAGES: PagePermission[] = [
   { path: '/guia-reunion-discipulado', label: 'Guía Reunión Discipulado', group: 'Discipulado' },
   { path: '/proceso-discipular', label: 'Proceso Discipular', group: 'Discipulado' },
   { path: '/primeros-pasos', label: 'Primeros Pasos', group: 'Discipulado' },
-  { path: '/abrir-los-ojos', label: 'Abrir Los Ojos', group: 'Discipulado' },
   { path: '/curso-vida-libertad', label: 'Curso Vida en Libertad', group: 'Discipulado' },
   { path: '/retiro-vida-libertad', label: 'Retiro Vida en Libertad', group: 'Discipulado' },
   { path: '/compromiso-vnh', label: 'Compromiso VNH', group: 'Discipulado' },
@@ -46,11 +45,11 @@ export const AVAILABLE_PAGES: PagePermission[] = [
   { path: '/recibo-donacion', label: 'Recibo de Donación', group: 'Finanzas' },
 
   { path: '/testimonies', label: 'Testimonios', group: 'Comunicación' },
-  { path: '/reunion-dominical/recursos', label: 'Reunión Dominical - Recursos', group: 'Reunión Dominical' },
+  { path: '/reunion-dominical/recursos', label: 'Reunión Dominical - Anuncios', group: 'Reunión Dominical' },
   { path: '/reunion-dominical/programa', label: 'Reunión Dominical - Programa', group: 'Reunión Dominical' },
   { path: '/reunion-dominical/frases', label: 'Reunión Dominical - Frases', group: 'Reunión Dominical' },
   { path: '/reunion-dominical/versiculos', label: 'Reunión Dominical - Versículos', group: 'Reunión Dominical' },
-  { path: '/reunion-dominical/anuncios', label: 'Reunión Dominical - Anuncios', group: 'Reunión Dominical' },
+  { path: '/reunion-dominical/anuncios', label: 'Reunión Dominical - Recursos', group: 'Reunión Dominical' },
   { path: '/reporte-dominical', label: 'Reporte Dominical', group: 'Reunión Dominical' },
 
   { path: '/reports', label: 'Reportes', group: 'Sistema' },

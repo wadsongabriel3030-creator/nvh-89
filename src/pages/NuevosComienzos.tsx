@@ -388,10 +388,6 @@ export default function NuevosComienzos() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
-              <Plus className="w-4 h-4" />
-              Agregar Participante
-            </Button>
             <Button variant="outline" className="gap-2" onClick={() => window.open('/inscripcion-vida-nuevos', '_blank')}>
               <Sparkles className="w-4 h-4" />
               INSCRÍBETE

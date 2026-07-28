@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { useMembers } from '@/contexts/MembersContext';
 import { toast } from 'sonner';
 import type { CursoPasosFirmes } from '@/components/pasos-firmes/PasosFirmesReporteDialog';
-import { saveClassReport } from '@/lib/classReports';
+import { saveClassReport, fetchClassReports, type ClassReportRow } from '@/lib/classReports';
 
 const CURSOS: CursoPasosFirmes[] = [
   {
@@ -58,16 +58,23 @@ const CURSOS: CursoPasosFirmes[] = [
     lecciones: ['Día Antes'],
   },
   {
-    id: 'abrir-los-ojos',
-    nombre: 'Lección 7 – Abrir los Ojos',
-    color: 'text-sky-500',
-    lecciones: ['Abrir los Ojos'],
-  },
-  {
     id: 'curso-vida-libertad',
     nombre: 'Curso Vida en Libertad',
     color: 'text-primary',
-    lecciones: ['Vida en Libertad'],
+    lecciones: [
+      'Semana 1 – Notas del Video: El Árbol de La Vida',
+      'Semana 2 – El Árbol del Conocimiento del Bien y del Mal',
+      'Semana 3 – El Árbol de La Vida',
+      'Semana 4 – Orden Espiritual',
+      'Semana 5 – Notas del Video: La Abundancia del Corazón',
+      'Semana 6 – Una Vida de Entrega',
+      'Semana 7 – El Perdón',
+      'Semana 8 – El Poder de las Palabras',
+      'Semana 9 – La Palabra Viva',
+      'Semana 10 – Notas del Video: Vasijas de Honra',
+      'Semana 11 – Vasijas de Honra',
+      'Semana 12 – Adoración',
+    ],
   },
 ];
 
@@ -86,6 +93,37 @@ export default function ReportePasosFirmes() {
   const [invitados, setInvitados] = useState('');
   const [decisiones, setDecisiones] = useState('');
   const [observaciones, setObservaciones] = useState('');
+
+  // Fetch existing reports for this curso to know which members already received each lesson
+  const [existingReports, setExistingReports] = useState<ClassReportRow[]>([]);
+  useEffect(() => {
+    if (!curso) return;
+    let active = true;
+    (async () => {
+      const all = await fetchClassReports();
+      if (!active) return;
+      setExistingReports(all.filter(r => r.area === curso.id));
+    })();
+    return () => { active = false; };
+  }, [curso]);
+
+  // Members who already attended the selected lesson
+  const attendedMemberIds = useMemo(() => {
+    if (!leccion) return new Set<string>();
+    const ids = new Set<string>();
+    for (const report of existingReports) {
+      if (report.leccion === leccion && report.attendee_ids) {
+        for (const id of report.attendee_ids) ids.add(id);
+      }
+    }
+    return ids;
+  }, [leccion, existingReports]);
+
+  // Only show members who haven't received the selected lesson yet
+  const availableMembers = useMemo(() => {
+    if (!leccion) return members;
+    return members.filter(m => !attendedMemberIds.has(m.id));
+  }, [members, leccion, attendedMemberIds]);
 
   const reset = () => {
     setFecha(new Date());
@@ -216,7 +254,7 @@ export default function ReportePasosFirmes() {
                     type="button"
                     variant={leccion === l ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setLeccion(l)}
+                    onClick={() => { setLeccion(l); setAsistentes([]); }}
                     className="justify-start text-left h-auto py-2 whitespace-normal"
                   >
                     {l}
@@ -228,21 +266,19 @@ export default function ReportePasosFirmes() {
             <div className="space-y-2">
               <Label>Miembros asistentes ({asistentes.length})</Label>
               <div className="border rounded-lg max-h-64 overflow-y-auto divide-y">
-                {members.length === 0 && (
-                  <p className="p-3 text-sm text-muted-foreground">No hay miembros registrados</p>
+                {!leccion && (
+                  <p className="p-3 text-sm text-muted-foreground">Seleccione una lección para ver los miembros disponibles</p>
                 )}
-                {members.map((m) => (
+                {leccion && availableMembers.length === 0 && (
+                  <p className="p-3 text-sm text-muted-foreground">Todos los miembros ya recibieron esta lección</p>
+                )}
+                {leccion && availableMembers.map((m) => (
                   <label key={m.id} className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50">
                     <Checkbox checked={asistentes.includes(m.id)} onCheckedChange={() => toggleMember(m.id)} />
                     <span className="text-sm">{m.firstName} {m.lastName}</span>
                   </label>
                 ))}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Invitados</Label>
-              <Textarea value={invitados} onChange={(e) => setInvitados(e.target.value)} placeholder="Nombres de invitados (separados por coma)" rows={2} />
             </div>
 
             <div className="space-y-2">

@@ -65,11 +65,11 @@ const secondaryNavItems: NavItem[] = [
     icon: Church,
     label: 'Reunión Dominical',
     children: [
-      { icon: Upload, label: 'Recursos', href: '/reunion-dominical/recursos' },
+      { icon: Megaphone, label: 'Anuncios', href: '/reunion-dominical/recursos' },
       { icon: FileText, label: 'Programa', href: '/reunion-dominical/programa' },
       { icon: MessageCircle, label: 'Frases Institucionales', href: '/reunion-dominical/frases' },
       { icon: BookMarked, label: 'Versículos', href: '/reunion-dominical/versiculos' },
-      { icon: Megaphone, label: 'Anuncios', href: '/reunion-dominical/anuncios' },
+      { icon: Upload, label: 'Recursos', href: '/reunion-dominical/anuncios' },
       { icon: BookOpenCheck, label: 'Reporte Dominical', href: '/reunion-dominical/reporte-dominical' },
     ]
   },
@@ -91,7 +91,6 @@ const secondaryNavItems: NavItem[] = [
     children: [
       { icon: Sparkles, label: 'Vida Nuevos Hechos', href: '/membresia' },
       { icon: Sparkles, label: 'Pasos Firmes', href: '/primeros-pasos' },
-      { icon: Eye, label: 'Abrir Los Ojos', href: '/abrir-los-ojos' },
     ]
   },
   {

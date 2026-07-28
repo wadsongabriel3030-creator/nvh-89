@@ -52,8 +52,7 @@ import CompromisoVNH from "./pages/CompromisoVNH";
 import PrimerosPassos from "./pages/PrimerosPassos";
 import InscripcionPrimerosPassos from "./pages/InscripcionPrimerosPassos";
 import ReportePasosFirmes from "./pages/ReportePasosFirmes";
-import AbrirLosOjos from "./pages/AbrirLosOjos";
-import ReporteAbrirLosOjos from "./pages/ReporteAbrirLosOjos";
+
 import CursoVidaEnLibertad from "./pages/CursoVidaEnLibertad";
 import RetiroVidaEnLibertad from "./pages/RetiroVidaEnLibertad";
 import InscripcionRetiroVidaLibertad from "./pages/InscripcionRetiroVidaLibertad";
@@ -133,8 +132,7 @@ const App = () => (
                 <Route path="/compromiso-vnh" element={<P><CompromisoVNH /></P>} />
                 <Route path="/primeros-pasos" element={<P><PrimerosPassos /></P>} />
                 <Route path="/reporte-pasos-firmes/:cursoId" element={<P><ReportePasosFirmes /></P>} />
-                <Route path="/abrir-los-ojos" element={<P><AbrirLosOjos /></P>} />
-                <Route path="/reporte-abrir-los-ojos" element={<P><ReporteAbrirLosOjos /></P>} />
+
                 <Route path="/curso-vida-libertad" element={<P><CursoVidaEnLibertad /></P>} />
                 <Route path="/retiro-vida-libertad" element={<P><RetiroVidaEnLibertad /></P>} />
                 <Route path="/calendar-2026" element={<P><CalendarTaskPage /></P>} />

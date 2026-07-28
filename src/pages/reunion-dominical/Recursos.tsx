@@ -1,5 +1,5 @@
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Upload, Plus } from 'lucide-react';
+import { Megaphone, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useState } from 'react';
@@ -28,31 +28,31 @@ export default function Recursos() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary/10">
-              <Upload className="w-6 h-6 text-primary" />
+              <Megaphone className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Recursos</h1>
-              <p className="text-muted-foreground">Sube y gestiona recursos para la reunión dominical</p>
+              <h1 className="text-3xl font-bold text-foreground">Anuncios</h1>
+              <p className="text-muted-foreground">Sube y gestiona anuncios para la reunión dominical</p>
             </div>
           </div>
           <Button className="gap-2" onClick={() => setOpen(true)}>
             <Plus className="w-4 h-4" />
-            Subir Recurso
+            Subir Anuncio
           </Button>
         </div>
 
         {loading ? (
           <Card className="p-12 text-center">
-            <p className="text-muted-foreground">Cargando recursos...</p>
+            <p className="text-muted-foreground">Cargando anuncios...</p>
           </Card>
         ) : files.length === 0 ? (
           <Card className="p-12 text-center">
             <div className="flex flex-col items-center gap-4">
               <div className="p-4 rounded-full bg-muted">
-                <Upload className="w-8 h-8 text-muted-foreground" />
+                <Megaphone className="w-8 h-8 text-muted-foreground" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Sin recursos aún</h3>
+                <h3 className="text-lg font-semibold text-foreground">Sin anuncios aún</h3>
                 <p className="text-muted-foreground mt-1">Sube archivos PDF, PNG o JPG para la reunión.</p>
               </div>
             </div>
@@ -66,7 +66,7 @@ export default function Recursos() {
           onOpenChange={setOpen}
           onSaveFile={handleSaveFile}
           folder="recursos"
-          title="Subir Recurso"
+          title="Subir Anuncio"
         />
       </div>
     </MainLayout>

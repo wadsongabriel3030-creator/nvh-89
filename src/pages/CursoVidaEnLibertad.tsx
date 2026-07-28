@@ -26,10 +26,23 @@ const CURSO: CursoPasosFirmes & { icon: typeof BookOpen; descripcion: string; to
   id: 'curso-vida-libertad',
   nombre: 'Curso Vida en Libertad',
   descripcion: 'Curso para crecer en libertad espiritual en Nuevos Hechos',
-  totalLabel: '1 LECCIÓN',
+  totalLabel: '12 LECCIONES',
   color: 'text-primary',
   icon: BookOpen,
-  lecciones: ['Vida en Libertad'],
+  lecciones: [
+    'Semana 1 – Notas del Video: El Árbol de La Vida',
+    'Semana 2 – El Árbol del Conocimiento del Bien y del Mal',
+    'Semana 3 – El Árbol de La Vida',
+    'Semana 4 – Orden Espiritual',
+    'Semana 5 – Notas del Video: La Abundancia del Corazón',
+    'Semana 6 – Una Vida de Entrega',
+    'Semana 7 – El Perdón',
+    'Semana 8 – El Poder de las Palabras',
+    'Semana 9 – La Palabra Viva',
+    'Semana 10 – Notas del Video: Vasijas de Honra',
+    'Semana 11 – Vasijas de Honra',
+    'Semana 12 – Adoración',
+  ],
 };
 
 export default function CursoVidaEnLibertad() {

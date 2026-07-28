@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Megaphone, Plus, Upload, FileText, Download, Trash2 } from 'lucide-react';
+import { Upload, Plus, FileText, Download, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -51,17 +51,20 @@ export default function Anuncios() {
 
     const newFiles: UploadedFile[] = [];
     for (const file of Array.from(inputFiles)) {
-      if (!['application/pdf', 'image/png', 'image/jpeg'].includes(file.type)) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'];
+      const allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'pptx'];
+      if (!allowedTypes.includes(file.type) && !allowedExts.includes(ext)) {
         toast({
           title: 'Archivo inválido',
-          description: `${file.name} no es un archivo permitido (PDF, PNG o JPG).`,
+          description: `${file.name} no es un archivo permitido (PDF, PNG, JPG o PPTX).`,
           variant: 'destructive',
         });
         continue;
       }
 
       const fileId = crypto.randomUUID();
-      const ext = file.name.split('.').pop() || 'bin';
+      const fileExt = ext || 'bin';
       let url = '';
 
       try {
@@ -123,18 +126,18 @@ export default function Anuncios() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary/10">
-              <Megaphone className="w-6 h-6 text-primary" />
+              <Upload className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Anuncios</h1>
-              <p className="text-muted-foreground">Gestiona los anuncios para la reunión dominical</p>
+              <h1 className="text-3xl font-bold text-foreground">Recursos</h1>
+              <p className="text-muted-foreground">Gestiona los recursos para la reunión dominical</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <input
               ref={fileInputRef}
               type="file"
-              accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg"
+              accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg,.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"
               multiple
               className="hidden"
               onChange={handleFileChange}
@@ -149,14 +152,14 @@ export default function Anuncios() {
             </Button>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
-              Nuevo Anuncio
+              Nuevo Recurso
             </Button>
           </div>
         </div>
 
         {loading ? (
           <Card className="p-12 text-center">
-            <p className="text-muted-foreground">Cargando anuncios...</p>
+            <p className="text-muted-foreground">Cargando recursos...</p>
           </Card>
         ) : (
           <>
@@ -214,11 +217,11 @@ export default function Anuncios() {
             <Card className="p-12 text-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="p-4 rounded-full bg-muted">
-                  <Megaphone className="w-8 h-8 text-muted-foreground" />
+                  <Upload className="w-8 h-8 text-muted-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">Sin anuncios aún</h3>
-                  <p className="text-muted-foreground mt-1">Crea anuncios para compartir durante la reunión.</p>
+                  <h3 className="text-lg font-semibold text-foreground">Sin recursos aún</h3>
+                  <p className="text-muted-foreground mt-1">Sube recursos (PDF, PNG, JPG o PPTX) para compartir durante la reunión.</p>
                 </div>
               </div>
             </Card>

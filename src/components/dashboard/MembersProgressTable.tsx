@@ -143,15 +143,32 @@ const AREAS: Area[] = [
     group: 'Vida en Libertad',
     path: '/curso-vida-libertad',
     clases: [
-      {
-        key: 'cvl',
-        label: 'Curso Vida en Libertad',
-        storageKeys: ['curso-vida-libertad-participants'],
-        appStorageKeys: ['vl-enrolled-curso-vida-libertad'],
-        appStorageAttendanceKeys: ['vl-attendance-curso-vida-libertad'],
+      ...([
+        'Semana 1 – Notas del Video: El Árbol de La Vida',
+        'Semana 2 – El Árbol del Conocimiento del Bien y del Mal',
+        'Semana 3 – El Árbol de La Vida',
+        'Semana 4 – Orden Espiritual',
+        'Semana 5 – Notas del Video: La Abundancia del Corazón',
+        'Semana 6 – Una Vida de Entrega',
+        'Semana 7 – El Perdón',
+        'Semana 8 – El Poder de las Palabras',
+        'Semana 9 – La Palabra Viva',
+        'Semana 10 – Notas del Video: Vasijas de Honra',
+        'Semana 11 – Vasijas de Honra',
+        'Semana 12 – Adoración',
+      ].map((l, i) => ({
+        key: `cvl_${i}`,
+        label: l,
         reporteKey: 'curso-vida-libertad',
-        reporteLeccion: 'Curso Vida en Libertad',
-      },
+        reporteLeccion: l,
+        ...(i === 0
+          ? {
+              storageKeys: ['curso-vida-libertad-participants'],
+              appStorageKeys: ['vl-enrolled-curso-vida-libertad'],
+              appStorageAttendanceKeys: ['vl-attendance-curso-vida-libertad'],
+            }
+          : {}),
+      }))),
       {
         key: 'rvl',
         label: 'Retiro Vida en Libertad',

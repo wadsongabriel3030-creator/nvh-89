@@ -78,15 +78,6 @@ const CURSOS: (CursoPasosFirmes & { icon: typeof BookOpen; descripcion: string; 
     icon: CalendarCheck,
     lecciones: ['Día Antes'],
   },
-  {
-    id: 'abrir-los-ojos',
-    nombre: 'Lección 7 – Abrir los Ojos',
-    descripcion: 'Abrir los ojos a la visión de Dios',
-    totalLabel: '1 LECCIÓN',
-    color: 'text-sky-500',
-    icon: Eye,
-    lecciones: ['Abrir los Ojos'],
-  },
 ];
 
 export default function PrimerosPassos() {
