@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { BookOpen, Users, Award, Clock, Plus, ClipboardList, UserPlus, GraduationCap, ArrowLeft } from 'lucide-react';
+import {
+  BookOpen, Users, Award, Clock, Plus, ClipboardList,
+  UserPlus, GraduationCap, ArrowLeft, CalendarDays, ChevronDown, ChevronUp
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +14,9 @@ import { ManageCourseDialog, CourseLesson } from '@/components/discipleship/Mana
 import { ViewStudentsDialog, CourseStudent } from '@/components/discipleship/ViewStudentsDialog';
 import { AddStudentDialog } from '@/components/discipleship/AddStudentDialog';
 import { notifyMemberProgressUpdated } from '@/lib/memberProgressEvents';
+import { fetchClassReports, ClassReportRow } from '@/lib/classReports';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface CourseData {
   id: string;
@@ -35,10 +41,21 @@ const courses: CourseData[] = [
     slug: 'administracion',
     description: 'Mayordomía y administración de recursos',
     level: 'intermediate',
-    duration: '10 semanas',
+    duration: '10 lecciones',
     students: 0,
     progress: 0,
-    lessons: makeLessons(['La Administración', 'Práctica']),
+    lessons: makeLessons([
+      'Lección 1 - Administración definida',
+      'Lección 2 – Dinero y posesiones',
+      'Lección 3 – Ganar dinero',
+      'Lección 4 – Gastar sabiamente',
+      'Lección 5 – Dar/diezmar',
+      'Lección 6 – Dar generosamente/sacrificialmente',
+      'Lección 7 – Codicia',
+      'Lección 8 – Cuidar a otros',
+      'Lección 9 – Dones espirituales',
+      'Lección 10 – La vida como un administrador',
+    ]),
     studentList: [],
   },
   {
@@ -47,10 +64,20 @@ const courses: CourseData[] = [
     slug: 'la-familia',
     description: 'Principios bíblicos para la familia',
     level: 'advanced',
-    duration: '12 semanas',
+    duration: '9 lecciones',
     students: 0,
     progress: 0,
-    lessons: makeLessons(['La Familia', 'Seminario Familiar']),
+    lessons: makeLessons([
+      'Lección 1: El propósito de Dios para el matrimonio',
+      'Lección 2: El cimiento del matrimonio',
+      'Lección 3: Convenio del matrimonio',
+      'Lección 4: Cómo funciona el matrimonio',
+      'Lección 5: Pautas para los esposos',
+      'Lección 6: Pautas para las esposas',
+      'Lección 7: Criar hijos a manera de Dios',
+      'Lección 8: Criar hijos sanos: Nutrir y entrenar',
+      'Lección 9: Pautas para una disciplina justa',
+    ]),
     studentList: [],
   },
   {
@@ -59,10 +86,24 @@ const courses: CourseData[] = [
     slug: 'creencias-basicas',
     description: 'Fundamentos doctrinales de la fe cristiana',
     level: 'advanced',
-    duration: '10 lecciones',
+    duration: '13 lecciones',
     students: 0,
     progress: 0,
-    lessons: makeLessons(['Creencias Básicas de la Cristiandad', 'Práctica']),
+    lessons: makeLessons([
+      'Lección 1 – La Biblia',
+      'Lección 2 – Dios Padre',
+      'Lección 3 – Hijo: Jesús',
+      'Lección 4 – Dios Espíritu Santo',
+      'Lección 5 – Origen del hombre',
+      'Lección 6 – Origen del hombre',
+      'Lección 7 – Satanás y la tentación',
+      'Lección 8 – La sangre de Jesús',
+      'Lección 9 – La resurrección de Jesús',
+      'Lección 10 – La gracia',
+      'Lección 11 – El bautismo en agua',
+      'Lección 12 – Cielo o infierno',
+      'Lección 13 – El retorno de Jesús (Su segunda venida)',
+    ]),
     studentList: [],
   },
 ];
@@ -74,6 +115,75 @@ const levelColors: Record<string, { bg: string; text: string; label: string }> =
 };
 
 const STORAGE_KEY = 'discipleship-courses-v1';
+
+function CourseReports({ slug }: { slug: string }) {
+  const [reports, setReports] = useState<ClassReportRow[]>([]);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    fetchClassReports().then((all) => {
+      const filtered = all
+        .filter((r) => r.area === `discipulado:${slug}`)
+        .sort((a, b) => {
+          const da = a.report_date ?? '';
+          const db = b.report_date ?? '';
+          return db.localeCompare(da);
+        });
+      setReports(filtered);
+    });
+  }, [slug]);
+
+  if (reports.length === 0) return null;
+
+  const visible = expanded ? reports : reports.slice(0, 3);
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/40">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
+        <ClipboardList className="w-3 h-3" />
+        Reportes ({reports.length})
+      </p>
+      <div className="space-y-2">
+        {visible.map((r) => (
+          <div
+            key={r.id}
+            className="text-xs rounded-lg bg-muted/40 border border-border/30 px-3 py-2 space-y-0.5"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-medium text-foreground truncate">{r.leccion || '—'}</span>
+              <span className="text-muted-foreground shrink-0 flex items-center gap-1">
+                <CalendarDays className="w-3 h-3" />
+                {r.report_date
+                  ? format(new Date(r.report_date + 'T12:00:00'), 'd MMM yyyy', { locale: es })
+                  : '—'}
+              </span>
+            </div>
+            {r.leader_name && (
+              <p className="text-muted-foreground">Discipulador: {r.leader_name}</p>
+            )}
+            {r.attendee_names && r.attendee_names.length > 0 && (
+              <p className="text-muted-foreground">
+                Presentes: {r.attendee_names.join(', ')}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+      {reports.length > 3 && (
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          className="mt-2 text-xs text-primary/70 hover:text-primary flex items-center gap-1 transition-colors"
+        >
+          {expanded ? (
+            <><ChevronUp className="w-3 h-3" /> Ver menos</>
+          ) : (
+            <><ChevronDown className="w-3 h-3" /> Ver {reports.length - 3} más</>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function NivelI() {
   const navigate = useNavigate();
@@ -295,6 +405,9 @@ export default function NivelI() {
                       <span className="truncate">Reporte</span>
                     </Button>
                   </div>
+
+                  {/* Reports panel */}
+                  <CourseReports slug={course.slug} />
                 </CardContent>
               </Card>
             );

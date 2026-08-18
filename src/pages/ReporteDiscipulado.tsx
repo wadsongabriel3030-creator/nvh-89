@@ -27,15 +27,50 @@ const LECCIONES_DEFAULT = [
 const LECCIONES_POR_CURSO: Record<string, { titulo: string; lecciones: string[] }> = {
   administracion: {
     titulo: 'Administración',
-    lecciones: ['CURSO La Administración', 'PRÁCTICA'],
+    lecciones: [
+      'Lección 1 - Administración definida',
+      'Lección 2 – Dinero y posesiones',
+      'Lección 3 – Ganar dinero',
+      'Lección 4 – Gastar sabiamente',
+      'Lección 5 – Dar/diezmar',
+      'Lección 6 – Dar generosamente/sacrificialmente',
+      'Lección 7 – Codicia',
+      'Lección 8 – Cuidar a otros',
+      'Lección 9 – Dones espirituales',
+      'Lección 10 – La vida como un administrador',
+    ],
   },
   'la-familia': {
     titulo: 'La Familia',
-    lecciones: ['CURSO La Familia', 'SEMINARIO FAMILIAR'],
+    lecciones: [
+      'Lección 1: El propósito de Dios para el matrimonio',
+      'Lección 2: El cimiento del matrimonio',
+      'Lección 3: Convenio del matrimonio',
+      'Lección 4: Cómo funciona el matrimonio',
+      'Lección 5: Pautas para los esposos',
+      'Lección 6: Pautas para las esposas',
+      'Lección 7: Criar hijos a manera de Dios',
+      'Lección 8: Criar hijos sanos: Nutrir y entrenar',
+      'Lección 9: Pautas para una disciplina justa',
+    ],
   },
   'creencias-basicas': {
     titulo: 'Creencias Básicas',
-    lecciones: ['CURSO Creencias Básicas de la Cristiandad', 'PRÁCTICA'],
+    lecciones: [
+      'Lección 1 – La Biblia',
+      'Lección 2 – Dios Padre',
+      'Lección 3 – Hijo: Jesús',
+      'Lección 4 – Dios Espíritu Santo',
+      'Lección 5 – Origen del hombre',
+      'Lección 6 – Origen del hombre',
+      'Lección 7 – Satanás y la tentación',
+      'Lección 8 – La sangre de Jesús',
+      'Lección 9 – La resurrección de Jesús',
+      'Lección 10 – La gracia',
+      'Lección 11 – El bautismo en agua',
+      'Lección 12 – Cielo o infierno',
+      'Lección 13 – El retorno de Jesús (Su segunda venida)',
+    ],
   },
 };
 
@@ -124,9 +159,9 @@ export default function ReporteDiscipulado() {
   const isStepValid = () => {
     switch (step) {
       case 1:
-        return formData.leccionSeleccionada.trim().length > 0;
-      case 2:
         return formData.fechaDiscipulado !== undefined;
+      case 2:
+        return formData.leccionSeleccionada.trim().length > 0;
       case 3:
         return formData.nombreDiscipulador.trim().length > 0;
       case 4:
@@ -191,37 +226,6 @@ export default function ReporteDiscipulado() {
             {step === 1 && (
               <div className="space-y-4 animate-in fade-in duration-300">
                 <div>
-                  <Label className="text-base font-semibold">Seleccione la Lección *</Label>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    ¿De cuál lección desea hacer el reporte?
-                  </p>
-                  <div className="space-y-2">
-                    {lecciones.map((leccion) => (
-                      <div
-                        key={leccion}
-                        className={cn(
-                          "flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-colors",
-                          formData.leccionSeleccionada === leccion
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
-                        )}
-                        onClick={() => setFormData({ ...formData, leccionSeleccionada: leccion })}
-                      >
-                        <Checkbox
-                          checked={formData.leccionSeleccionada === leccion}
-                          onCheckedChange={() => setFormData({ ...formData, leccionSeleccionada: leccion })}
-                        />
-                        <Label className="cursor-pointer font-medium text-sm">{leccion}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="space-y-4 animate-in fade-in duration-300">
-                <div>
                   <Label className="text-base font-semibold">Fecha de Discipulado *</Label>
                   <p className="text-sm text-muted-foreground mb-3">
                     Seleccione la fecha del discipulado
@@ -249,6 +253,37 @@ export default function ReporteDiscipulado() {
                       />
                     </PopoverContent>
                   </Popover>
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-4 animate-in fade-in duration-300">
+                <div>
+                  <Label className="text-base font-semibold">Seleccione la Lección *</Label>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    ¿De cuál lección desea hacer el reporte?
+                  </p>
+                  <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                    {lecciones.map((leccion) => (
+                      <div
+                        key={leccion}
+                        className={cn(
+                          "flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-colors",
+                          formData.leccionSeleccionada === leccion
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
+                        )}
+                        onClick={() => setFormData({ ...formData, leccionSeleccionada: leccion })}
+                      >
+                        <Checkbox
+                          checked={formData.leccionSeleccionada === leccion}
+                          onCheckedChange={() => setFormData({ ...formData, leccionSeleccionada: leccion })}
+                        />
+                        <Label className="cursor-pointer font-medium text-sm">{leccion}</Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
