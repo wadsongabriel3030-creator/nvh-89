@@ -193,9 +193,9 @@ export default function Members() {
               <Users className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Miembros</h1>
+              <h1 className="text-3xl font-bold text-foreground">Comunidad</h1>
               <p className="text-muted-foreground">
-                Administre todos los miembros de la iglesia ({members.length} total
+                Administre todos los miembros de la comunidad ({members.length} total
                 {filteredMembers.length !== members.length ? `, ${filteredMembers.length} filtrados` : ''})
               </p>
             </div>

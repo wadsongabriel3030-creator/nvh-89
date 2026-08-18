@@ -32,6 +32,9 @@ export const AVAILABLE_PAGES: PagePermission[] = [
   { path: '/retiro-vida-libertad', label: 'Retiro Vida en Libertad', group: 'Discipulado' },
   { path: '/compromiso-vnh', label: 'Compromiso VNH', group: 'Discipulado' },
   { path: '/discipulador', label: 'Discipulador', group: 'Discipulado' },
+  { path: '/ruta-discipulo', label: 'Ruta del Discípulo', group: 'Ruta del Discípulo' },
+  { path: '/escuela-equipamiento', label: 'Escuela de Equipamiento', group: 'Ruta del Discípulo' },
+  { path: '/escuela-equipamiento/nivel-i', label: 'Escuela de Equipamiento – Nivel I', group: 'Ruta del Discípulo' },
 
   { path: '/batismos', label: 'Bautismos', group: 'Bautismos' },
 

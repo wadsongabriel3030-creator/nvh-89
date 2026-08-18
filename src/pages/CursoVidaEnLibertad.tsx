@@ -4,7 +4,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, FileText, ClipboardList, Calendar, User, Users, Heart, MessageSquare, Trash2, UserPlus } from 'lucide-react';
+import { BookOpen, FileText, ClipboardList, Calendar, User, Users, Heart, MessageSquare, Trash2, UserPlus, Phone, CheckCircle, Flame } from 'lucide-react';
 import type { CursoPasosFirmes } from '@/components/pasos-firmes/PasosFirmesReporteDialog';
 import { fetchClassReports, deleteClassReport, type ClassReportRow } from '@/lib/classReports';
 import { toast } from 'sonner';
@@ -71,7 +71,7 @@ export default function CursoVidaEnLibertad() {
       const reports = await fetchClassReports();
       if (!active) return;
 
-      const filtered = reports.filter(r => r.area === 'curso-vida-libertad');
+      const filtered = reports.filter(r => r.area === 'curso-vida-libertad' || r.area === 'inscripcion-curso-vida-libertad' || r.area === 'compromiso-vida-en-libertad');
 
       filtered.sort((a, b) => {
         const dateA = a.report_date || '';
@@ -84,7 +84,23 @@ export default function CursoVidaEnLibertad() {
     return () => { active = false; };
   }, []);
 
-  const getReportTypeBadge = () => {
+  const getReportTypeBadge = (area: string) => {
+    if (area === 'inscripcion-curso-vida-libertad') {
+      return (
+        <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/30 hover:bg-blue-500/20">
+          <ClipboardList className="w-3 h-3 mr-1" />
+          Inscripción
+        </Badge>
+      );
+    }
+    if (area === 'compromiso-vida-en-libertad') {
+      return (
+        <Badge className="bg-orange-500/15 text-orange-400 border-orange-500/30 hover:bg-orange-500/20">
+          <Flame className="w-3 h-3 mr-1" />
+          Compromiso
+        </Badge>
+      );
+    }
     return (
       <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20">
         <FileText className="w-3 h-3 mr-1" />
@@ -99,12 +115,139 @@ export default function CursoVidaEnLibertad() {
       ? format(new Date(report.report_date + 'T12:00:00'), 'PPP', { locale: es })
       : 'Sin fecha';
 
+    // Compromiso card
+    if (report.area === 'compromiso-vida-en-libertad') {
+      const compromisosAcept = Array.isArray(extra.compromisos) ? extra.compromisos as string[] : [];
+      return (
+        <Card key={report.id} className="border-orange-500/20 hover:border-orange-500/40 transition-all duration-300">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                {getReportTypeBadge(report.area)}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {reportDate}
+                </span>
+                <button
+                  onClick={() => setDeleteReportId(report.id)}
+                  className="p-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                  title="Eliminar compromiso"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-orange-400 shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Nombre Completo</p>
+                  <p className="text-sm font-medium text-foreground">{report.leader_name || '—'}</p>
+                </div>
+              </div>
+              {extra.fecha && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-orange-400 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Fecha</p>
+                    <p className="text-sm font-medium text-foreground">{extra.fecha as string}</p>
+                  </div>
+                </div>
+              )}
+              {compromisosAcept.length > 0 && (
+                <div className="flex items-start gap-2 sm:col-span-2">
+                  <CheckCircle className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Compromisos aceptados ({compromisosAcept.length})</p>
+                    <ul className="text-sm text-foreground space-y-0.5">
+                      {compromisosAcept.map((c, i) => (
+                        <li key={i} className="flex items-start gap-1.5">
+                          <CheckCircle className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Inscription card
+    if (report.area === 'inscripcion-curso-vida-libertad') {
+      const compromisos = Array.isArray(extra.compromisos) ? extra.compromisos as string[] : [];
+      return (
+        <Card key={report.id} className="border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                {getReportTypeBadge(report.area)}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {reportDate}
+                </span>
+                <button
+                  onClick={() => setDeleteReportId(report.id)}
+                  className="p-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                  title="Eliminar inscripción"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-blue-400 shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Nombre Completo</p>
+                  <p className="text-sm font-medium text-foreground">{report.leader_name || '—'}</p>
+                </div>
+              </div>
+              {extra.telefono && (
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-blue-400 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Teléfono</p>
+                    <p className="text-sm font-medium text-foreground">{extra.telefono as string}</p>
+                  </div>
+                </div>
+              )}
+              {compromisos.length > 0 && (
+                <div className="flex items-start gap-2 sm:col-span-2">
+                  <CheckCircle className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Compromisos aceptados ({compromisos.length})</p>
+                    <ul className="text-sm text-foreground space-y-0.5">
+                      {compromisos.map((c, i) => (
+                        <li key={i} className="flex items-start gap-1.5">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Class report card
     return (
       <Card key={report.id} className="border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300">
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
-              {getReportTypeBadge()}
+              {getReportTypeBadge(report.area)}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -194,20 +337,28 @@ export default function CursoVidaEnLibertad() {
               </p>
             </div>
           </div>
-          <Button
-            onClick={() => navigate('/inscripcion-curso-vida-libertad')}
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6"
-            size="lg"
-          >
-            <UserPlus className="w-5 h-5" />
-            INSCRÍBETE
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              onClick={() => navigate('/compromiso-vida-en-libertad')}
+              className="gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6"
+              size="lg"
+            >
+              <Flame className="w-5 h-5" />
+              Compromiso
+            </Button>
+            <Button
+              onClick={() => navigate('/inscripcion-curso-vida-libertad')}
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6"
+              size="lg"
+            >
+              <UserPlus className="w-5 h-5" />
+              INSCRÍBETE
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card
-            className="hover:shadow-soft transition-all duration-300 animate-fade-in flex flex-col"
-          >
+          <Card className="hover:shadow-soft transition-all duration-300 animate-fade-in flex flex-col">
             <CardHeader>
               <div className="flex items-start justify-between gap-2">
                 <div className={`p-2 rounded-lg bg-muted ${CURSO.color}`}>
@@ -254,7 +405,7 @@ export default function CursoVidaEnLibertad() {
             </div>
             <div>
               <h2 className="text-xl font-bold text-foreground">Reportes</h2>
-              <p className="text-sm text-muted-foreground">Reportes de Clase</p>
+              <p className="text-sm text-muted-foreground">Inscripciones y Reportes de Clase</p>
             </div>
           </div>
 
@@ -267,7 +418,7 @@ export default function CursoVidaEnLibertad() {
               <CardContent className="p-8 text-center">
                 <FileText className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
                 <p className="text-muted-foreground">No hay reportes registrados aún</p>
-                <p className="text-sm text-muted-foreground/70 mt-1">Los reportes aparecerán aquí cuando se envíen reportes de clase.</p>
+                <p className="text-sm text-muted-foreground/70 mt-1">Los reportes aparecerán aquí cuando se envíen inscripciones o reportes de clase.</p>
               </CardContent>
             </Card>
           ) : (

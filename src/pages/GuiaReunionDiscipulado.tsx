@@ -82,7 +82,7 @@ export default function GuiaReunionDiscipulado() {
           <Button
             variant="outline"
             className="gap-2"
-            onClick={() => navigate('/discipleship')}
+            onClick={() => navigate('/escuela-equipamiento')}
           >
             <ArrowLeft className="w-4 h-4" />
             Volver

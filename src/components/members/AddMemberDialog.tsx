@@ -145,7 +145,7 @@ export function AddMemberDialog({ open, onOpenChange, onSubmit }: AddMemberDialo
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="etapa">Etapa</Label>
+              <Label htmlFor="etapa">Rango</Label>
               <Select
                 onValueChange={(value) => setValue('etapa', value as any)}
                 defaultValue="Adulto"
@@ -207,7 +207,7 @@ export function AddMemberDialog({ open, onOpenChange, onSubmit }: AddMemberDialo
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role">Función</Label>
+            <Label htmlFor="role">Estado</Label>
             <Select
               onValueChange={(value) => setValue('role', value as any)}
               defaultValue="member"

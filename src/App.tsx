@@ -23,7 +23,8 @@ import ReporteMembresia from "./pages/ReporteMembresia";
 
 import Batismos from "./pages/Batismos";
 import BaptismRegistration from "./pages/BaptismRegistration";
-import Discipleship from "./pages/Discipleship";
+import EscuelaEquipamientoAlias from "./pages/ruta-discipulo/EscuelaEquipamiento";
+import NivelI from "./pages/ruta-discipulo/NivelI";
 import Cursos from "./pages/Cursos";
 import ReporteDiscipulado from "./pages/ReporteDiscipulado";
 import ReunionesDiscipuladores from "./pages/ReunionesDiscipuladores";
@@ -48,6 +49,7 @@ import Oracion247 from "./pages/Oracion247";
 import CuartoDeGuerra from "./pages/CuartoDeGuerra";
 import InscripcionVidaNuevos from "./pages/InscripcionVidaNuevos";
 import CompromisoVNH from "./pages/CompromisoVNH";
+import CompromisoVidaEnLibertad from "./pages/CompromisoVidaEnLibertad";
 import PrimerosPassos from "./pages/PrimerosPassos";
 import InscripcionPrimerosPassos from "./pages/InscripcionPrimerosPassos";
 import ReportePasosFirmes from "./pages/ReportePasosFirmes";
@@ -57,6 +59,8 @@ import RetiroVidaEnLibertad from "./pages/RetiroVidaEnLibertad";
 import InscripcionRetiroVidaLibertad from "./pages/InscripcionRetiroVidaLibertad";
 import InscripcionCursoVidaLibertad from "./pages/InscripcionCursoVidaLibertad";
 import Discipulador from "./pages/Discipulador";
+import RutaDiscipulo from "./pages/ruta-discipulo/RutaDiscipulo";
+import EscuelaEquipamiento from "./pages/ruta-discipulo/EscuelaEquipamiento";
 import Recursos from "./pages/reunion-dominical/Recursos";
 import Programa from "./pages/reunion-dominical/Programa";
 import FrasesInstitucionales from "./pages/reunion-dominical/FrasesInstitucionales";
@@ -93,6 +97,7 @@ const App = () => (
                 <Route path="/inscripcion-primeros-pasos" element={<InscripcionPrimerosPassos />} />
                 <Route path="/inscripcion-retiro-vida-libertad" element={<InscripcionRetiroVidaLibertad />} />
                 <Route path="/inscripcion-curso-vida-libertad" element={<InscripcionCursoVidaLibertad />} />
+                <Route path="/compromiso-vida-en-libertad" element={<CompromisoVidaEnLibertad />} />
 
                 {/* Protected routes */}
                 <Route path="/" element={<P><Dashboard /></P>} />
@@ -105,7 +110,7 @@ const App = () => (
                 <Route path="/membresia" element={<P><NuevosComienzos /></P>} />
                 <Route path="/reporte-membresia" element={<P><ReporteMembresia /></P>} />
                 <Route path="/batismos" element={<P><Batismos /></P>} />
-                <Route path="/discipleship" element={<P><Discipleship /></P>} />
+                <Route path="/discipleship" element={<P><NivelI /></P>} />
                 <Route path="/cursos" element={<P><Cursos /></P>} />
                 <Route path="/reporte-discipulado" element={<P><ReporteDiscipulado /></P>} />
                 <Route path="/listado-lideres" element={<P><ListadoLideres /></P>} />
@@ -137,6 +142,9 @@ const App = () => (
                 <Route path="/retiro-vida-libertad" element={<P><RetiroVidaEnLibertad /></P>} />
                 <Route path="/calendar-2026" element={<P><CalendarTaskPage /></P>} />
                 <Route path="/discipulador" element={<P><Discipulador /></P>} />
+                <Route path="/ruta-discipulo" element={<P><RutaDiscipulo /></P>} />
+                <Route path="/escuela-equipamiento" element={<P><EscuelaEquipamientoAlias /></P>} />
+                <Route path="/escuela-equipamiento/nivel-i" element={<P><NivelI /></P>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

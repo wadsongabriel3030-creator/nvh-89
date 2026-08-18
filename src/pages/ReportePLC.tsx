@@ -42,6 +42,7 @@ interface ReportePLCData {
   ofrendaRecolectada: string;
   metodoOfrenda: string;
   numeroTransferencia: string;
+  numeroCheque: string;
   todosRecibieronAnuncios: boolean | null;
   comentarios: string;
 }
@@ -101,6 +102,7 @@ export default function ReportePLC() {
     ofrendaRecolectada: '',
     metodoOfrenda: '',
     numeroTransferencia: '',
+    numeroCheque: '',
     todosRecibieronAnuncios: null,
     comentarios: '',
   });
@@ -158,6 +160,7 @@ export default function ReportePLC() {
         incorporadosInfo: formData.incorporadosInfo,
         testimonioMilagros: formData.testimonioMilagros,
         ofrendaRecolectada: formData.ofrendaRecolectada,
+        numeroCheque: formData.numeroCheque,
         todosRecibieronAnuncios: formData.todosRecibieronAnuncios,
         comentarios: formData.comentarios,
       });
@@ -209,6 +212,7 @@ export default function ReportePLC() {
           offeringAmount: ofrendaAmount,
           offeringPaymentMethod: metodoLower,
           offeringTransferNumber: metodoLower === 'transferencia' ? formData.numeroTransferencia.trim() || undefined : undefined,
+          offeringChequeNumber: metodoLower === 'cheque' ? formData.numeroCheque.trim() || undefined : undefined,
           firstFruitsAmount: 0,
           firstFruitsPaymentMethod: 'efectivo',
           proTemploAmount: 0,
@@ -256,6 +260,7 @@ export default function ReportePLC() {
       ofrendaRecolectada: '',
       metodoOfrenda: '',
       numeroTransferencia: '',
+      numeroCheque: '',
       todosRecibieronAnuncios: null,
       comentarios: '',
     });
@@ -696,6 +701,21 @@ export default function ReportePLC() {
                         onChange={(e) => setFormData({ ...formData, numeroTransferencia: e.target.value })}
                         placeholder="Ej: 123456789"
                         maxLength={100}
+                      />
+                    </div>
+                  )}
+
+                  {formData.metodoOfrenda === 'Cheque' && (
+                    <div className="mt-4 animate-in fade-in duration-200">
+                      <Label className="text-sm font-semibold">Número de cheque</Label>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Ingrese el número del cheque
+                      </p>
+                      <Input
+                        value={formData.numeroCheque}
+                        onChange={(e) => setFormData({ ...formData, numeroCheque: e.target.value })}
+                        placeholder="Ej: 00123456"
+                        maxLength={50}
                       />
                     </div>
                   )}

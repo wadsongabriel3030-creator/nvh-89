@@ -35,13 +35,22 @@ import {
   Megaphone,
   GraduationCap,
   Eye,
+  Map,
+  Footprints,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+interface NavSubChild {
+  icon: React.ElementType;
+  label: string;
+  href: string;
+}
 
 interface NavSubItem {
   icon: React.ElementType;
   label: string;
-  href: string;
+  href?: string;
+  subChildren?: NavSubChild[];
 }
 
 interface NavItem {
@@ -54,7 +63,7 @@ interface NavItem {
 
 const mainNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Resumen administrativo', href: '/' },
-  { icon: Users, label: 'Miembros', href: '/members' },
+  { icon: Users, label: 'Comunidad', href: '/members' },
   { icon: Tags, label: 'Etiquetas', href: '/tags' },
   { icon: Calendar, label: 'Eventos', href: '/events' },
   { icon: Calendar, label: 'Calendario 2026', href: '/calendar-2026' },
@@ -85,14 +94,7 @@ const secondaryNavItems: NavItem[] = [
   { icon: Coins, label: 'Diezmos', href: '/tithes' },
   { icon: MessageSquareQuote, label: 'Testimonios', href: '/testimonies' },
   { icon: HandHeart, label: 'PLCs', href: '/plc' },
-  {
-    icon: Sparkles,
-    label: 'Nueva Vida',
-    children: [
-      { icon: Sparkles, label: 'Vida Nuevos Hechos', href: '/membresia' },
-      { icon: Sparkles, label: 'Pasos Firmes', href: '/primeros-pasos' },
-    ]
-  },
+
   {
     icon: Heart,
     label: 'Vida en Libertad',
@@ -107,7 +109,7 @@ const secondaryNavItems: NavItem[] = [
     icon: BookOpen,
     label: 'Escuela de Equipamiento',
     children: [
-      { icon: BookOpen, label: 'Nivel I', href: '/discipleship' },
+      { icon: BookOpen, label: 'Nivel I', href: '/escuela-equipamiento' },
       { icon: GraduationCap, label: 'Cursos', href: '/cursos' },
       { icon: Users, label: 'Listado de Maestros', href: '/listado-lideres' },
       { icon: Calendar, label: 'Reuniones de mentores', href: '/reuniones-discipuladores' },
@@ -116,6 +118,22 @@ const secondaryNavItems: NavItem[] = [
     ]
   },
   { icon: HandHeart, label: 'Discipulador', href: '/discipulador' },
+  {
+    icon: Map,
+    label: 'Ruta del Discípulo',
+    children: [
+      { icon: Map, label: 'Ruta', href: '/ruta-discipulo' },
+      { icon: Sparkles, label: 'Nueva Vida', href: '/membresia' },
+      { icon: Footprints, label: 'Pasos Firmes', href: '/primeros-pasos' },
+      {
+        icon: GraduationCap,
+        label: 'Escuela de Equipamiento',
+        subChildren: [
+          { icon: BookOpen, label: 'Nivel I', href: '/escuela-equipamiento/nivel-i' },
+        ]
+      },
+    ]
+  },
   { icon: BarChart3, label: 'Informes', href: '/reports' },
 ];
 
@@ -132,7 +150,13 @@ export function Sidebar() {
     const out: NavItem[] = [];
     for (const it of items) {
       if (it.children) {
-        const kids = it.children.filter(c => canAccessPath(perms, c.href));
+        const kids = it.children.filter(c => {
+          if (c.subChildren) {
+            // Sub-group: keep if any sub-child is accessible
+            return c.subChildren.some(sc => canAccessPath(perms, sc.href));
+          }
+          return c.href ? canAccessPath(perms, c.href) : false;
+        });
         if (kids.length) out.push({ ...it, children: kids });
       } else if (it.href && canAccessPath(perms, it.href)) {
         out.push(it);
@@ -146,12 +170,22 @@ export function Sidebar() {
   const showSettings = perms.isAdmin || canAccessPath(perms, '/settings');
 
   const [expandedItems, setExpandedItems] = useState<string[]>(() => {
-    // Auto-expand if current route matches a child
+    // Auto-expand if current route matches a child or sub-child
     const expanded: string[] = [];
     secondaryNavItems.forEach(item => {
-      if (item.children?.some(child => location.pathname === child.href)) {
+      if (item.children?.some(child => {
+        if (child.href && location.pathname === child.href) return true;
+        if (child.subChildren?.some(sc => location.pathname === sc.href)) return true;
+        return false;
+      })) {
         expanded.push(item.label);
       }
+      // Also auto-expand sub-groups whose sub-child is active
+      item.children?.forEach(child => {
+        if (child.subChildren?.some(sc => location.pathname === sc.href)) {
+          expanded.push(`sub-${child.label}`);
+        }
+      });
     });
     return expanded;
   });
@@ -220,12 +254,70 @@ export function Sidebar() {
           {isExpanded && (
             <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border/50 pl-2">
               {item.children.map(child => {
+                // Sub-group: child has subChildren (e.g. Escuela de Equipamiento)
+                if (child.subChildren) {
+                  const subKey = `sub-${child.label}`;
+                  const isSubExpanded = expandedItems.includes(subKey);
+                  const isSubChildActive = child.subChildren.some(sc => location.pathname === sc.href);
+                  const isSubSelfActive = child.href ? location.pathname === child.href : false;
+                  const isSubActive = isSubChildActive || isSubSelfActive;
+                  const SubIcon = child.icon;
+                  return (
+                    <div key={child.label}>
+                      <button
+                        onClick={() => toggleExpand(subKey)}
+                        className={cn(
+                          'group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm w-full text-left',
+                          isSubActive
+                            ? 'bg-primary/10 text-primary font-medium'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        )}
+                      >
+                        <SubIcon
+                          className={cn('w-4 h-4 shrink-0', isSubActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')}
+                          strokeWidth={isSubActive ? 2 : 1.5}
+                        />
+                        <span className="flex-1 text-sm">{child.label}</span>
+                        <ChevronDown className={cn('w-3 h-3 transition-transform duration-200', isSubExpanded && 'rotate-180')} />
+                      </button>
+                      {isSubExpanded && (
+                        <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border/30 pl-2">
+                          {child.subChildren.map(sc => {
+                            const isScActive = location.pathname === sc.href;
+                            const ScIcon = sc.icon;
+                            return (
+                              <Link
+                                key={sc.href}
+                                to={sc.href}
+                                onClick={handleNavClick}
+                                className={cn(
+                                  'group flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all duration-200 text-xs',
+                                  isScActive
+                                    ? 'bg-primary/10 text-primary font-medium'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                )}
+                              >
+                                <ScIcon
+                                  className={cn('w-3.5 h-3.5 shrink-0', isScActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')}
+                                  strokeWidth={isScActive ? 2 : 1.5}
+                                />
+                                {sc.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Regular child link
                 const isActive = location.pathname === child.href;
                 const ChildIcon = child.icon;
                 return (
                   <Link
                     key={child.href}
-                    to={child.href}
+                    to={child.href!}
                     onClick={handleNavClick}
                     className={cn(
                       'group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm',

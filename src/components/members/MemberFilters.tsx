@@ -85,10 +85,10 @@ export function MemberFilters({
 
           <Select value={etapaFilter} onValueChange={onEtapaChange}>
             <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Etapa" />
+              <SelectValue placeholder="Rango" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas las etapas</SelectItem>
+              <SelectItem value="all">Todos los rangos</SelectItem>
               <SelectItem value="Adulto">Adulto</SelectItem>
               <SelectItem value="Joven Adulto">Joven Adulto</SelectItem>
               <SelectItem value="Joven">Joven</SelectItem>

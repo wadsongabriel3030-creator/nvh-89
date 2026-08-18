@@ -42,6 +42,7 @@ import {
   type PlcReportRow,
 } from '@/lib/plcReports';
 import { MEMBER_PROGRESS_EVENT } from '@/lib/memberProgressEvents';
+import { toast } from 'sonner';
 
 export default function ResumenPLC() {
   const navigate = useNavigate();
@@ -346,6 +347,11 @@ export default function ResumenPLC() {
                       <div>
                         <p className="text-muted-foreground">Ofrenda</p>
                         <p className="font-medium">{report.ofrenda_recolectada ?? '—'}</p>
+                        {report.numero_cheque && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Cheque #{report.numero_cheque}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <p className="text-muted-foreground">Invitados</p>

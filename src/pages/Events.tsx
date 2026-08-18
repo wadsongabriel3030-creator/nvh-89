@@ -330,11 +330,15 @@ export default function Events() {
                   >
                     {/* Event Image */}
                     {eventImage && (
-                      <div className="aspect-video bg-muted overflow-hidden">
+                      <div className="aspect-video bg-muted overflow-hidden relative">
                         <img
                           src={eventImage.data}
                           alt={event.title}
-                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover transition-opacity duration-300"
+                          onLoad={(e) => (e.currentTarget.style.opacity = '1')}
+                          style={{ opacity: 0 }}
                         />
                       </div>
                     )}
@@ -408,15 +412,7 @@ export default function Events() {
                           <ClipboardList className="w-3.5 h-3.5" />
                           Inscríbete
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-1"
-                          onClick={() => window.open(generateGoogleCalendarUrl(event), '_blank')}
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          Lembrete Google Calendar
-                        </Button>
+
                         <Button size="sm" onClick={() => handleManageEvent(event)}>
                           Administrar
                         </Button>

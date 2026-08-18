@@ -158,7 +158,7 @@ export function EditMemberDialog({ member, open, onOpenChange, onSubmit }: EditM
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="etapa">Etapa</Label>
+              <Label htmlFor="etapa">Rango</Label>
               <Select
                 onValueChange={(value) => setValue('etapa', value as any)}
                 defaultValue={member.etapa || 'Adulto'}
@@ -239,7 +239,7 @@ export function EditMemberDialog({ member, open, onOpenChange, onSubmit }: EditM
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role">Función</Label>
+            <Label htmlFor="role">Estado</Label>
             <Select
               onValueChange={(value) => setValue('role', value as any)}
               defaultValue={member.role}

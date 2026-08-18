@@ -355,7 +355,7 @@ export default function ReporteDominical() {
               {step === 7 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <Label className="text-base font-semibold">
-                    ¿Cuántas personas nos visitaron por primera vez? *
+                    ¿Cuántas personas asistieron por primera vez? *
                   </Label>
                   <Input
                     type="number"

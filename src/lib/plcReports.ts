@@ -21,6 +21,7 @@ export interface PlcReportInput {
   incorporadosInfo?: string | null;
   testimonioMilagros?: string | null;
   ofrendaRecolectada?: string | null;
+  numeroCheque?: string | null;
   todosRecibieronAnuncios?: boolean | null;
   comentarios?: string | null;
 }
@@ -46,6 +47,7 @@ export interface PlcReportRow {
   incorporados_info: string | null;
   testimonio_milagros: string | null;
   ofrenda_recolectada: string | null;
+  numero_cheque: string | null;
   todos_recibieron_anuncios: boolean | null;
   comentarios: string | null;
   created_at: string;
@@ -83,6 +85,7 @@ export async function savePlcReport(input: PlcReportInput): Promise<PlcReportRow
       incorporados_info: input.incorporadosInfo ?? null,
       testimonio_milagros: input.testimonioMilagros ?? null,
       ofrenda_recolectada: input.ofrendaRecolectada ?? null,
+      numero_cheque: input.numeroCheque ?? null,
       todos_recibieron_anuncios: input.todosRecibieronAnuncios ?? null,
       comentarios: input.comentarios ?? null,
       created_by: userData.user?.id ?? null,
