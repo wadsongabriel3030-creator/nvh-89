@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Event } from '@/types';
-import { Repeat, Upload, Image as ImageIcon, Download, Trash2, X } from 'lucide-react';
+import { Repeat, Upload, Image as ImageIcon, Download, Trash2, X, FileText, FilePlus } from 'lucide-react';
 import {
   type ReunionFile,
   formatFileSize,
@@ -26,6 +26,10 @@ import { useDbStorage } from '@/hooks/useDbStorage';
 
 interface EventImageMap {
   [eventId: string]: ReunionFile | null;
+}
+
+export interface EventDocumentMap {
+  [eventId: string]: ReunionFile[];
 }
 
 interface EditEventDialogProps {
@@ -82,11 +86,32 @@ const frequencyOptions = [
   { value: 'yearly', label: 'Anual (1x por año)' },
 ];
 
+const ACCEPTED_DOCS = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+
+function getFileIcon(type: string) {
+  if (type.startsWith('image/')) return ImageIcon;
+  return FileText;
+}
+
 export function EditEventDialog({ open, onOpenChange, event, onSubmit }: EditEventDialogProps) {
   const { toast } = useToast();
   const { value: eventImages, setValue: setEventImages } = useDbStorage<EventImageMap>('event-images', {}, 'events');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Documents per event
+  const docKey = event ? `event-documents-${event.id}` : 'event-documents-__none__';
+  const { value: eventDocuments, setValue: setEventDocuments } = useDbStorage<ReunionFile[]>(docKey, [], 'events');
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   const currentImage = event ? eventImages[event.id] || null : null;
 
@@ -392,6 +417,86 @@ export function EditEventDialog({ open, onOpenChange, event, onSubmit }: EditEve
               </div>
             )}
           </div>
+
+          {/* Documents Section */}
+          <div className="space-y-3 rounded-lg border border-border p-4">
+            <div className="flex items-center gap-2">
+              <FilePlus className="w-4 h-4 text-primary" />
+              <span className="text-base font-semibold">Documentos del Evento</span>
+              <span className="text-xs text-muted-foreground ml-auto">PDF, PNG, JPG, DOCX</span>
+            </div>
+
+            {/* Upload area */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-5 text-center transition-colors cursor-pointer ${
+                isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
+              }`}
+              onClick={() => docInputRef.current?.click()}
+              onDragEnter={(e) => { e.preventDefault(); setIsDragActive(true); }}
+              onDragLeave={(e) => { e.preventDefault(); setIsDragActive(false); }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDocDrop}
+            >
+              <input
+                ref={docInputRef}
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
+                onChange={handleDocSelect}
+                className="hidden"
+                multiple
+              />
+              {isUploadingDoc ? (
+                <div className="space-y-1">
+                  <Upload className="w-7 h-7 mx-auto text-primary animate-pulse" />
+                  <p className="text-sm text-muted-foreground">Subiendo archivo...</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <Upload className="w-7 h-7 mx-auto text-muted-foreground" />
+                  <p className="text-sm font-medium text-foreground">Arrastra un archivo o haz clic para subir</p>
+                  <p className="text-xs text-muted-foreground">PDF, PNG, JPG, DOCX</p>
+                </div>
+              )}
+            </div>
+
+            {/* Document list */}
+            {eventDocuments.length > 0 && (
+              <div className="space-y-2">
+                {eventDocuments.map((doc) => {
+                  const Icon = getFileIcon(doc.type);
+                  return (
+                    <div key={doc.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+                      <Icon className="w-5 h-5 flex-shrink-0 text-primary" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate" title={doc.name}>{doc.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatFileSize(doc.size)}</p>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="gap-1"
+                          onClick={() => downloadReunionFile(doc)}
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteDoc(doc.id)}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         <DialogFooter>
@@ -474,5 +579,83 @@ export function EditEventDialog({ open, onOpenChange, event, onSubmit }: EditEve
       return updated;
     });
     toast({ title: 'Imagen eliminada', description: 'La imagen del evento fue removida.' });
+  }
+
+  // ─── Document handlers ───────────────────────────────────────────────────────
+
+  async function uploadDocFile(file: File) {
+    if (!event) return;
+    if (!ACCEPTED_DOCS.includes(file.type)) {
+      toast({ title: 'Formato no permitido', description: 'Sube PDF, PNG, JPG o DOCX.', variant: 'destructive' });
+      return;
+    }
+    setIsUploadingDoc(true);
+    try {
+      await ensureBucket();
+      const fileId = crypto.randomUUID();
+      const ext = file.name.split('.').pop() || 'bin';
+      const storagePath = `event-docs/${fileId}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(storagePath, file, { contentType: file.type, upsert: true });
+
+      let fileUrl: string;
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+        fileUrl = urlData?.publicUrl || '';
+      } else {
+        fileUrl = await readFileAsDataUrl(file);
+      }
+
+      const docFile: ReunionFile = {
+        id: fileId,
+        name: file.name,
+        type: file.type,
+        data: fileUrl,
+        size: file.size,
+        uploadedAt: new Date().toISOString(),
+      };
+
+      setEventDocuments((prev) => [...prev, docFile]);
+      toast({ title: 'Documento subido', description: `"${file.name}" se añadió al evento.` });
+    } catch (err) {
+      console.error('[EditEventDialog] Doc upload error:', err);
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        const docFile: ReunionFile = {
+          id: crypto.randomUUID(),
+          name: file.name,
+          type: file.type,
+          data: dataUrl,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+        };
+        setEventDocuments((prev) => [...prev, docFile]);
+        toast({ title: 'Documento guardado', description: `"${file.name}" se guardó (modo local).` });
+      } catch {
+        toast({ title: 'Error', description: 'No se pudo guardar el documento.', variant: 'destructive' });
+      }
+    } finally {
+      setIsUploadingDoc(false);
+      if (docInputRef.current) docInputRef.current.value = '';
+    }
+  }
+
+  async function handleDocSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    for (const f of files) await uploadDocFile(f);
+  }
+
+  async function handleDocDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragActive(false);
+    const files = Array.from(e.dataTransfer.files || []);
+    for (const f of files) await uploadDocFile(f);
+  }
+
+  function handleDeleteDoc(docId: string) {
+    setEventDocuments((prev) => prev.filter((d) => d.id !== docId));
+    toast({ title: 'Documento eliminado', description: 'El documento fue removido del evento.' });
   }
 }

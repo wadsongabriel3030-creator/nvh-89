@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { CalendarCheck, ChevronLeft, ChevronRight, Send, CheckCircle, Clock, MapPin, Users, Calendar, ExternalLink } from 'lucide-react';
+import { CalendarCheck, ChevronLeft, ChevronRight, Send, CheckCircle, Clock, MapPin, Users, Calendar, ExternalLink, FileText, Download, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,11 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useDbStorage } from '@/hooks/useDbStorage';
 import type { EventImageMap } from '@/components/events/EditEventDialog';
+import {
+  type ReunionFile,
+  formatFileSize,
+  downloadReunionFile,
+} from '@/components/reunion-dominical/UploadFileDialog';
 
 interface InscripcionEventoFormData {
   nombre: string;
@@ -74,6 +79,10 @@ export default function InscripcionEvento() {
   const [attendeeCount, setAttendeeCount] = useState(0);
   const { value: eventImages } = useDbStorage<EventImageMap>('event-images', {}, 'events');
   const fetchedRef = useRef(false);
+
+  // Load documents (key depends on eventData.id, updated once we have it)
+  const docKey = eventData ? `event-documents-${eventData.id}` : 'event-documents-__none__';
+  const { value: eventDocuments } = useDbStorage<ReunionFile[]>(docKey, [], 'events');
 
   useEffect(() => {
     if (fetchedRef.current || !eventSlug) return;
@@ -242,6 +251,43 @@ export default function InscripcionEvento() {
             )}
           </CardContent>
         </Card>
+
+        {/* Documents Download Section */}
+        {eventDocuments.length > 0 && (
+          <Card className="w-full max-w-lg">
+            <CardContent className="p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-foreground">Documentos</h3>
+                <span className="text-xs text-muted-foreground ml-auto">{eventDocuments.length} archivo{eventDocuments.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="space-y-2">
+                {eventDocuments.map((doc) => {
+                  const isImage = doc.type.startsWith('image/');
+                  const Icon = isImage ? ImageIcon : FileText;
+                  return (
+                    <div key={doc.id} className="flex items-center gap-3 rounded-lg border border-border bg-card/50 p-3">
+                      <Icon className="w-5 h-5 flex-shrink-0 text-primary" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate" title={doc.name}>{doc.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatFileSize(doc.size)}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 flex-shrink-0"
+                        onClick={() => downloadReunionFile(doc)}
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Descargar
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         <Card className="w-full max-w-lg">
           <CardContent className="p-6 sm:p-8">
             <div className="mb-6">

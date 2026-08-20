@@ -73,7 +73,7 @@ export function MemberFilters({
           <Select value={statusFilter} onValueChange={onStatusChange}>
             <SelectTrigger className="w-[140px]">
               <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Estado" />
+              <SelectValue placeholder="Cargo" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>

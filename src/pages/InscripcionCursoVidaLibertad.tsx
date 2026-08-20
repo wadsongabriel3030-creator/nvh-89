@@ -21,9 +21,6 @@ import {
   MapPin,
   DollarSign,
   Building2,
-  Pencil,
-  X,
-  Save,
 } from 'lucide-react';
 
 interface EventSettings {
@@ -196,184 +193,55 @@ export default function InscripcionCursoVidaLibertad() {
               </p>
             </div>
 
-            {/* Event Info Card */}
-            <div className="mb-6 p-4 bg-muted/50 rounded-xl border space-y-3 relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-2 right-2 h-7 w-7 p-0"
-                onClick={() => {
-                  if (editing) {
-                    setEditDraft(settings);
-                    setEditing(false);
-                  } else {
-                    setEditing(true);
-                  }
-                }}
-                title={editing ? 'Cancelar edición' : 'Editar información'}
-              >
-                {editing ? <X className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
-              </Button>
+            {/* Event Info Card - Read Only */}
+            <div className="mb-6 p-4 bg-muted/50 rounded-xl border space-y-3">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="w-4 h-4 text-primary shrink-0" />
+                <p className="text-sm font-medium text-foreground">
+                  FECHA DE INICIO: {settings.fechaInicio}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-primary shrink-0" />
+                <p className="text-sm text-foreground">HORARIO: {settings.horario}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                <p className="text-sm text-foreground">LUGAR: {settings.lugar}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-primary shrink-0" />
+                <p className="text-sm text-foreground">
+                  {settings.costoLibro} (Costo de libro)
+                </p>
+              </div>
 
-              {editing ? (
-                <div className="space-y-3 pr-8">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Fecha de Inicio</Label>
-                      <Input
-                        value={editDraft.fechaInicio}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, fechaInicio: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Horario</Label>
-                      <Input
-                        value={editDraft.horario}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, horario: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                      <Label className="text-xs text-muted-foreground">Lugar</Label>
-                      <Input
-                        value={editDraft.lugar}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, lugar: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Costo del libro</Label>
-                      <Input
-                        value={editDraft.costoLibro}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, costoLibro: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Costo del retiro</Label>
-                      <Input
-                        value={editDraft.costoRetiro}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, costoRetiro: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Banco</Label>
-                      <Input
-                        value={editDraft.banco}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, banco: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Tipo de Cuenta</Label>
-                      <Input
-                        value={editDraft.tipoCuenta}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, tipoCuenta: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">No. de Cuenta</Label>
-                      <Input
-                        value={editDraft.numeroCuenta}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, numeroCuenta: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">A nombre de</Label>
-                      <Input
-                        value={editDraft.nombreCuenta}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, nombreCuenta: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Fecha límite de pago</Label>
-                      <Input
-                        value={editDraft.fechaLimitePago}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, fechaLimitePago: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">WhatsApp para comprobante</Label>
-                      <Input
-                        value={editDraft.whatsapp}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, whatsapp: e.target.value })
-                        }
-                      />
-                    </div>
-                  </div>
-                  <Button onClick={handleSaveSettings} size="sm" className="w-full gap-2 mt-2">
-                    <Save className="w-4 h-4" />
-                    Guardar Cambios
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="w-4 h-4 text-primary shrink-0" />
-                    <p className="text-sm font-medium text-foreground">
-                      FECHA DE INICIO: {settings.fechaInicio}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-primary shrink-0" />
-                    <p className="text-sm text-foreground">HORARIO: {settings.horario}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-primary shrink-0" />
-                    <p className="text-sm text-foreground">LUGAR: {settings.lugar}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-primary shrink-0" />
+              <div className="mt-3 pt-3 border-t border-border/50 space-y-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Transferencia o depósitos a:
+                </p>
+                <div className="flex items-start gap-2">
+                  <Building2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{settings.banco}</p>
                     <p className="text-sm text-foreground">
-                      {settings.costoLibro} (Costo de libro)
+                      {settings.tipoCuenta} No. {settings.numeroCuenta}
                     </p>
+                    <p className="text-sm text-foreground">A nombre de: {settings.nombreCuenta}</p>
                   </div>
+                </div>
+              </div>
 
-                  <div className="mt-3 pt-3 border-t border-border/50 space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      Transferencia o depósitos a:
-                    </p>
-                    <div className="flex items-start gap-2">
-                      <Building2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{settings.banco}</p>
-                        <p className="text-sm text-foreground">
-                          {settings.tipoCuenta} No. {settings.numeroCuenta}
-                        </p>
-                        <p className="text-sm text-foreground">A nombre de: {settings.nombreCuenta}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-2 p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
-                    <p className="text-xs text-amber-600 dark:text-amber-400">
-                      📌 El costo del libro debe ser cancelado a más tardar el{' '}
-                      <span className="font-semibold">{settings.fechaLimitePago}</span>.
-                    </p>
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                      Enviar comprobante de pago al WhatsApp{' '}
-                      <span className="font-semibold">{settings.whatsapp}</span>
-                    </p>
-                  </div>
-                </>
-              )}
+              <div className="mt-2 p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  📌 El costo del libro debe ser cancelado a más tardar el{' '}
+                  <span className="font-semibold">{settings.fechaLimitePago}</span>.
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                  Enviar comprobante de pago al WhatsApp{' '}
+                  <span className="font-semibold">{settings.whatsapp}</span>
+                </p>
+              </div>
             </div>
 
             {/* Progress */}

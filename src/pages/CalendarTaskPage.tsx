@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Search, Plus, Pencil, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Plus, Pencil, Trash2, Upload, FileText, X } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isToday, isSameDay, addMonths, subMonths, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -10,6 +10,8 @@ import { calendarActivities2026 } from '@/lib/calendar-activities-2026';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useDbStorage } from '@/hooks/useDbStorage';
+import { UploadCalendarDocDialog, downloadCalendarDoc, CalendarDocFile } from '@/components/calendar/UploadCalendarDocDialog';
 import {
   Dialog,
   DialogContent,
@@ -58,11 +60,15 @@ export default function CalendarTaskPage() {
   const [activities, setActivities] = useState<CalendarActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Edit & delete state
   const [editActivity, setEditActivity] = useState<CalendarActivity | null>(null);
   const [deleteActivity, setDeleteActivity] = useState<CalendarActivity | null>(null);
+
+  // Document upload storage (Supabase via useDbStorage)
+  const { value: docFiles, setValue: setDocFiles } = useDbStorage<CalendarDocFile[]>('calendar_2026_docs', []);
 
   // Role-based access: admin or leader can manage activities
   const { isAdmin, permissions } = usePermissions();
@@ -230,6 +236,23 @@ export default function CalendarTaskPage() {
     setIsAddDialogOpen(true);
   };
 
+  // Document handlers
+  const handleSaveDoc = (doc: CalendarDocFile) => {
+    setDocFiles(prev => [...prev, doc]);
+  };
+
+  const handleDeleteDoc = (docId: string) => {
+    setDocFiles(prev => prev.filter(d => d.id !== docId));
+  };
+
+  const getDocsForActivity = (activityId: string) => {
+    return docFiles.filter(d => d.activityId === activityId);
+  };
+
+  const getDocsForDate = (date: Date) => {
+    return docFiles.filter(d => isSameDay(new Date(d.activityDate), date));
+  };
+
   const handlePrevMonth = () => {
     setCurrentDate(subMonths(currentDate, 1));
     setSelectedDate(null);
@@ -260,16 +283,29 @@ export default function CalendarTaskPage() {
               </h1>
               <p className="text-muted-foreground mt-1 text-sm">2026</p>
             </div>
-            {canManage && (
+            <div className="flex gap-2 w-full sm:w-auto">
+              {canManage && (
+                <Button
+                  onClick={handleOpenAddDialog}
+                  className="gap-2 flex-1 sm:flex-none"
+                  size="default"
+                >
+                  <Plus className="w-4 h-4" />
+                  Agregar
+                </Button>
+              )}
               <Button
-                onClick={handleOpenAddDialog}
-                className="gap-2 w-full sm:w-auto"
+                variant="outline"
+                onClick={() => setUploadDialogOpen(true)}
+                className="gap-2 flex-1 sm:flex-none border-dashed border-primary/50 text-primary hover:bg-primary/10"
                 size="default"
+                disabled={activities.length === 0}
               >
-                <Plus className="w-4 h-4" />
-                Agregar
+                <Upload className="w-4 h-4" />
+                <span className="hidden sm:inline">Subir Documento</span>
+                <span className="sm:hidden">Subir Doc</span>
               </Button>
-            )}
+            </div>
           </div>
 
           {/* Calendar Controls */}
@@ -401,6 +437,26 @@ export default function CalendarTaskPage() {
                             +{tasksForDay.length - (window.innerWidth >= 1024 ? 3 : 2)} más
                           </div>
                         )}
+                        {/* Docs for this day */}
+                        {getDocsForDate(day).map(doc => (
+                          <div key={doc.id} className="flex items-center gap-0.5 group">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); downloadCalendarDoc(doc); }}
+                              className="flex items-center gap-1 text-[10px] lg:text-xs text-primary hover:underline cursor-pointer truncate flex-1 min-w-0"
+                              title={doc.name}
+                            >
+                              <FileText className="w-3 h-3 shrink-0" />
+                              <span className="truncate">{doc.name}</span>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDeleteDoc(doc.id); }}
+                              className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                              title="Eliminar documento"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   );
@@ -430,58 +486,85 @@ export default function CalendarTaskPage() {
                   No hay actividades {selectedDate ? 'para esta fecha' : 'este mes'}
                 </div>
               ) : (
-                upcomingActivities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="bg-card border border-border rounded-xl p-3 sm:p-4 flex items-start gap-3 hover:bg-muted/30 transition-colors group"
-                  >
-                    <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${dotColors[activity.color]}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm sm:text-base text-foreground truncate">
-                        {activity.title}
-                      </p>
-                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                        {format(activity.date, "EEEE d 'de' MMMM", { locale: es })}
-                      </p>
-                      {activity.comments && (
-                        <p className="text-xs text-muted-foreground mt-1 italic">
-                          {activity.comments}
+                upcomingActivities.map((activity) => {
+                  const activityDocs = getDocsForActivity(activity.id);
+                  return (
+                    <div
+                      key={activity.id}
+                      className="bg-card border border-border rounded-xl p-3 sm:p-4 flex items-start gap-3 hover:bg-muted/30 transition-colors group"
+                    >
+                      <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${dotColors[activity.color]}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm sm:text-base text-foreground truncate">
+                          {activity.title}
                         </p>
-                      )}
-                      {activity.cycles && (
-                        <span className="inline-block mt-1 text-[10px] sm:text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                          {activity.cycles}
-                        </span>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                          {format(activity.date, "EEEE d 'de' MMMM", { locale: es })}
+                        </p>
+                        {activity.comments && (
+                          <p className="text-xs text-muted-foreground mt-1 italic">
+                            {activity.comments}
+                          </p>
+                        )}
+                        {activity.cycles && (
+                          <span className="inline-block mt-1 text-[10px] sm:text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            {activity.cycles}
+                          </span>
+                        )}
+                        {/* Linked documents */}
+                        {activityDocs.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {activityDocs.map(doc => (
+                              <div key={doc.id} className="flex items-center gap-1 group/doc">
+                                <button
+                                  onClick={() => downloadCalendarDoc(doc)}
+                                  className="flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer truncate flex-1 min-w-0"
+                                  title={doc.name}
+                                >
+                                  <FileText className="w-3 h-3 shrink-0" />
+                                  <span className="truncate">{doc.name}</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteDoc(doc.id)}
+                                  className="text-destructive opacity-0 group-hover/doc:opacity-100 transition-opacity shrink-0"
+                                  title="Eliminar documento"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Edit & Delete buttons - visible only for users with manage access */}
+                      {canManage && (
+                        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditDialog(activity);
+                            }}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                            title="Editar actividad"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteActivity(activity);
+                            }}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            title="Eliminar actividad"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </div>
-
-                    {/* Edit & Delete buttons - visible only for users with manage access */}
-                    {canManage && (
-                      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditDialog(activity);
-                          }}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                          title="Editar actividad"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteActivity(activity);
-                          }}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                          title="Eliminar actividad"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -534,6 +617,23 @@ export default function CalendarTaskPage() {
             comments: editActivity.comments,
             cycles: editActivity.cycles,
           } : null}
+        />
+
+        {/* Upload Document Dialog */}
+        <UploadCalendarDocDialog
+          open={uploadDialogOpen}
+          onOpenChange={setUploadDialogOpen}
+          activities={activities.map(a => ({
+            id: a.id,
+            title: a.title,
+            description: a.comments,
+            date: format(a.date, 'yyyy-MM-dd'),
+            startTime: '',
+            endTime: '',
+            type: 'evento' as const,
+            isRecurring: false,
+          }))}
+          onSave={handleSaveDoc}
         />
 
         {/* Delete confirmation dialog */}

@@ -239,7 +239,7 @@ export function EditMemberDialog({ member, open, onOpenChange, onSubmit }: EditM
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role">Estado</Label>
+            <Label htmlFor="role">Cargo</Label>
             <Select
               onValueChange={(value) => setValue('role', value as any)}
               defaultValue={member.role}

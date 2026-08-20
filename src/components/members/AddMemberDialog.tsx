@@ -207,7 +207,7 @@ export function AddMemberDialog({ open, onOpenChange, onSubmit }: AddMemberDialo
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role">Estado</Label>
+            <Label htmlFor="role">Cargo</Label>
             <Select
               onValueChange={(value) => setValue('role', value as any)}
               defaultValue="member"

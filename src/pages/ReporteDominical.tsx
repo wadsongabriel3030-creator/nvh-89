@@ -142,10 +142,9 @@ export default function ReporteDominical() {
   };
 
   const calcularTotal = () => {
-    const participantes = parseInt(formData.asistentes) || 0;
-    const servidores = parseInt(formData.servidores) || 0;
-    const invitados = parseInt(formData.visitantesPrimeraVez) || 0;
-    return participantes + servidores + invitados;
+    // El campo 'asistentes' (paso 5) ya representa el total de personas:
+    // servidores/voluntarios + participantes + invitados.
+    return parseInt(formData.asistentes) || 0;
   };
 
   const isStepValid = () => {
@@ -314,14 +313,14 @@ export default function ReporteDominical() {
                 </div>
               )}
 
-              {/* Paso 5 - Participantes */}
+              {/* Paso 5 - Total de asistentes */}
               {step === 5 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <Label className="text-base font-semibold">
-                    ¿Cuántas participantes asistieron? *
+                    ¿Cuántas personas asistieron a la reunión? *
                   </Label>
                   <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 border border-border/50">
-                    <strong>Nota:</strong> Número de personas que están en la reunión, no tomando en cuenta a los servidores/voluntarios ni a los invitados por primera vez, ya que se contabilizan por separado en los pasos siguientes.
+                    <strong>Nota:</strong> Número total de personas que asistieron a la reunión. Tomando en cuenta a servidores/voluntarios e invitados.
                   </p>
                   <Input
                     type="number"
@@ -377,23 +376,19 @@ export default function ReporteDominical() {
                     Total de asistencia a la Reunión Dominical
                   </Label>
                   <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 border border-border/50">
-                    <strong>Nota:</strong> Este total se calcula automáticamente sumando participantes, servidores e invitados.
+                    <strong>Nota:</strong> Número total de personas que asistieron a la reunión, tomando en cuenta a servidores/voluntarios e invitados (ingresado en el paso 5).
                   </p>
                   <div className="mt-3 space-y-3">
                     <div className="flex items-center justify-between text-sm p-2 rounded-md bg-muted/30">
-                      <span className="text-muted-foreground">Participantes:</span>
-                      <span className="font-medium">{parseInt(formData.asistentes) || 0}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm p-2 rounded-md bg-muted/30">
-                      <span className="text-muted-foreground">Servidores:</span>
+                      <span className="text-muted-foreground">Servidores/voluntarios:</span>
                       <span className="font-medium">{parseInt(formData.servidores) || 0}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm p-2 rounded-md bg-muted/30">
-                      <span className="text-muted-foreground">Invitados:</span>
+                      <span className="text-muted-foreground">Invitados primera vez:</span>
                       <span className="font-medium">{parseInt(formData.visitantesPrimeraVez) || 0}</span>
                     </div>
                     <div className="flex items-center justify-between text-base p-3 rounded-lg bg-primary/10 border border-primary/20 font-semibold">
-                      <span className="text-primary">Total:</span>
+                      <span className="text-primary">Total (paso 5):</span>
                       <span className="text-primary text-lg">{calcularTotal()}</span>
                     </div>
                   </div>
