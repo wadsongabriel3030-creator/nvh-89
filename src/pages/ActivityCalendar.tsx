@@ -9,11 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Calendar as CalendarIcon, Clock, MapPin, Edit, Trash2, ChevronLeft, ChevronRight, Upload, FileText, X } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Clock, Trash2, ChevronLeft, ChevronRight, Upload, FileText, X, Cake } from 'lucide-react';
 import { CalendarActivity, ActivityType } from '@/types';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { UploadCalendarDocDialog, downloadCalendarDoc, CalendarDocFile } from '@/components/calendar/UploadCalendarDocDialog';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const activityTypes: { value: ActivityType; label: string; color: string }[] = [
   { value: 'culto', label: 'Culto', color: 'bg-blue-500' },
@@ -59,6 +61,20 @@ const mockActivities: CalendarActivity[] = [
 export default function ActivityCalendarPage() {
   const { value: activities, setValue: setActivities } = useDbStorage<CalendarActivity[]>('activity_calendar', []);
   const { value: docFiles, setValue: setDocFiles } = useDbStorage<CalendarDocFile[]>('calendar_doc_files', []);
+
+  // Fetch member birthdays
+  const { data: members = [] } = useQuery({
+    queryKey: ['members_for_calendar_birthdays'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('members')
+        .select('id, first_name, last_name, birth_date')
+        .not('birth_date', 'is', null);
+      if (error) throw error;
+      return data as { id: string; first_name: string; last_name: string; birth_date: string }[];
+    },
+  });
+
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -122,6 +138,16 @@ export default function ActivityCalendarPage() {
 
   const getDocsForDate = (date: Date) => {
     return docFiles.filter(d => isSameDay(new Date(d.activityDate), date));
+  };
+
+  /** Returns members whose birthday falls on this day/month in the current calendar month */
+  const getBirthdaysForDate = (date: Date) => {
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    return members.filter(member => {
+      const [, bMonth, bDay] = member.birth_date.split('-').map(Number);
+      return bMonth === m && bDay === d;
+    });
   };
 
   return (
@@ -262,6 +288,7 @@ export default function ActivityCalendarPage() {
                 {days.map((day, idx) => {
                   const dayActivities = getActivitiesForDate(day);
                   const dayDocs = getDocsForDate(day);
+                  const dayBirthdays = getBirthdaysForDate(day);
                   return (
                     <button
                       key={idx}
@@ -286,6 +313,20 @@ export default function ActivityCalendarPage() {
                         ))}
                         {dayActivities.length > 2 && (
                           <span className="text-xs text-muted-foreground">+{dayActivities.length - 2} mais</span>
+                        )}
+                        {/* Birthday events */}
+                        {dayBirthdays.slice(0, 2).map(member => (
+                          <div
+                            key={member.id}
+                            title={`🎂 ${member.first_name} ${member.last_name}`}
+                            className="text-xs text-white px-1 py-0.5 rounded truncate bg-pink-500 flex items-center gap-0.5"
+                          >
+                            <Cake className="w-2.5 h-2.5 shrink-0" />
+                            <span className="truncate">{member.first_name}</span>
+                          </div>
+                        ))}
+                        {dayBirthdays.length > 2 && (
+                          <span className="text-xs text-pink-400">+{dayBirthdays.length - 2} 🎂</span>
                         )}
                         {dayDocs.map(doc => (
                           <div key={doc.id} className="flex items-center gap-0.5 group">
@@ -404,6 +445,11 @@ export default function ActivityCalendarPage() {
                   <span className="text-sm">{type.label}</span>
                 </div>
               ))}
+              {/* Birthday legend */}
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-pink-500" />
+                <span className="text-sm">Cumpleaños</span>
+              </div>
             </div>
           </CardContent>
         </Card>

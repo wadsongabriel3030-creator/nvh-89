@@ -1,4 +1,4 @@
-import { Bell, Camera, Search, User } from 'lucide-react';
+import { Bell, Camera, Search, User, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,23 +10,61 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useRef } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
+import {
+  fetchNotifications,
+  markAllRead,
+  markOneRead,
+  type AppNotification,
+} from '@/lib/notifications';
 
 export function Header() {
   const { profile, uploadAvatar } = useProfile();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /* ─── Notifications ─── */
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const loadNotifications = useCallback(async () => {
+    if (!user?.id) return;
+    const data = await fetchNotifications(user.id);
+    setNotifications(data);
+  }, [user?.id]);
+
+  // Load on mount and poll every 30s
+  useEffect(() => {
+    loadNotifications();
+    const id = setInterval(loadNotifications, 30_000);
+    return () => clearInterval(id);
+  }, [loadNotifications]);
+
+  const handleMarkAllRead = async () => {
+    if (!user?.id) return;
+    const updated = await markAllRead(user.id, notifications);
+    setNotifications(updated);
+  };
+
+  const handleClickNotification = async (n: AppNotification) => {
+    if (!user?.id) return;
+    const updated = await markOneRead(user.id, notifications, n.id);
+    setNotifications(updated);
+    setNotifOpen(false);
+    navigate(n.link ?? '/members');
+  };
+
+  /* ─── Avatar ─── */
   const handleLogout = async () => {
     await signOut();
     navigate('/login', { replace: true });
   };
-
 
   const handleAvatarClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -78,11 +116,90 @@ export function Header() {
           className="hidden"
           onChange={handleFileChange}
         />
-        {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
-          <Bell className="w-[18px] h-[18px]" strokeWidth={1.5} />
-          <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary rounded-full" />
-        </Button>
+
+        {/* ─── Notifications Bell ─── */}
+        <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative text-muted-foreground hover:text-foreground"
+            >
+              <Bell className="w-[18px] h-[18px]" strokeWidth={1.5} />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 text-[10px] font-bold bg-primary text-primary-foreground rounded-full flex items-center justify-center leading-none">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+              {unreadCount === 0 && (
+                <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-muted-foreground/30 rounded-full" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-80 bg-popover border-border" sideOffset={8}>
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
+              <DropdownMenuLabel className="text-foreground p-0">
+                Notificaciones
+                {unreadCount > 0 && (
+                  <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                    {unreadCount} nueva{unreadCount !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </DropdownMenuLabel>
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                >
+                  <CheckCheck className="w-3 h-3" />
+                  Marcar todas
+                </button>
+              )}
+            </div>
+
+            {notifications.length === 0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                <Bell className="w-6 h-6 mx-auto mb-2 opacity-30" />
+                Sin notificaciones
+              </div>
+            ) : (
+              <div className="max-h-80 overflow-y-auto">
+                {notifications.map(n => (
+                  <button
+                    key={n.id}
+                    onClick={() => handleClickNotification(n)}
+                    className={`w-full text-left px-3 py-3 hover:bg-muted transition-colors border-b border-border/30 last:border-0 ${
+                      !n.read ? 'bg-primary/5' : ''
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      {/* Unread dot */}
+                      <div className="mt-1.5 shrink-0">
+                        {!n.read
+                          ? <span className="w-2 h-2 rounded-full bg-primary block" />
+                          : <span className="w-2 h-2 rounded-full bg-transparent block" />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground font-medium leading-snug">
+                          {n.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {new Date(n.createdAt).toLocaleString('es', {
+                            day: 'numeric', month: 'short',
+                            hour: '2-digit', minute: '2-digit',
+                          })}
+                          {n.from && ` · de ${n.from}`}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* User Menu */}
         <DropdownMenu>

@@ -127,7 +127,7 @@ export default function RutaDiscipulo() {
             <BookMarked className="w-7 h-7 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Ruta del Discípulo</h1>
+            <h1 className="text-3xl font-bold text-foreground">Ruta Escuela de Equipamiento</h1>
             <p className="text-muted-foreground mt-0.5">
               Camino de formación espiritual progresiva en Nuevos Hechos
             </p>

@@ -105,14 +105,7 @@ const secondaryNavItems: NavItem[] = [
   },
 
   { icon: Droplets, label: 'Bautismos', href: '/batismos' },
-  {
-    icon: BookOpen,
-    label: 'Escuela de Equipamiento',
-    children: [
-      { icon: BookOpen, label: 'Nivel I', href: '/escuela-equipamiento' },
-      { icon: GraduationCap, label: 'Cursos', href: '/cursos' },
-    ]
-  },
+
   {
     icon: HandHeart,
     label: 'Discipulado',
@@ -122,8 +115,8 @@ const secondaryNavItems: NavItem[] = [
         label: 'Discipuladores',
         subChildren: [
           { icon: HandHeart, label: 'Discipulador', href: '/discipulador' },
-          { icon: BookOpenCheck, label: 'Guía de Mentor', href: '/guia-reunion-discipulado' },
-          { icon: Calendar, label: 'Reuniones de mentores', href: '/reuniones-discipuladores' },
+          { icon: BookOpenCheck, label: 'Guía de discipulado', href: '/guia-reunion-discipulado' },
+          { icon: Calendar, label: 'Reuniones de Discipuladores', href: '/reuniones-discipuladores' },
           { icon: BookOpen, label: 'Proceso de Discipular', href: '/proceso-discipular' },
         ],
       },
@@ -131,7 +124,7 @@ const secondaryNavItems: NavItem[] = [
   },
   {
     icon: Map,
-    label: 'Ruta del Discípulo',
+    label: 'Escuela de Equipamiento',
     children: [
       { icon: Map, label: 'Ruta', href: '/ruta-discipulo' },
       { icon: Sparkles, label: 'Nueva Vida', href: '/membresia' },
@@ -139,7 +132,7 @@ const secondaryNavItems: NavItem[] = [
       { icon: Users, label: 'Listado de Maestros', href: '/listado-lideres' },
       {
         icon: GraduationCap,
-        label: 'Escuela de Equipamiento',
+        label: 'Doctrina Básica',
         subChildren: [
           { icon: BookOpen, label: 'Nivel I', href: '/escuela-equipamiento/nivel-i' },
         ]
