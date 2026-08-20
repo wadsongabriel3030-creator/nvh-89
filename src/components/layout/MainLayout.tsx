@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useSidebarContext } from '@/contexts/SidebarContext';
 import { cn } from '@/lib/utils';
+import { FloatingChat } from '@/components/chat/FloatingChat';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -16,6 +17,7 @@ export function MainLayout({ children, hideSidebar = false }: MainLayoutProps) {
     return (
       <div className="min-h-screen bg-background">
         <main className="p-4 md:p-6 animate-fade-in">{children}</main>
+        <FloatingChat />
       </div>
     );
   }
@@ -32,6 +34,7 @@ export function MainLayout({ children, hideSidebar = false }: MainLayoutProps) {
         <Header />
         <main className="p-4 md:p-6 animate-fade-in">{children}</main>
       </div>
+      <FloatingChat />
     </div>
   );
 }

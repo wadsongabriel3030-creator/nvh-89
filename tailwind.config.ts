@@ -92,11 +92,21 @@ export default {
         "shimmer": {
           "100%": { transform: "translateX(100%)" },
         },
+        "fade-in": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to:   { opacity: "1", transform: "translateY(0)" },
+        },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.92) translateY(12px)" },
+          to:   { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "shimmer": "shimmer 2s infinite",
+        "fade-in": "fade-in 0.25s ease-out both",
+        "scale-in": "scale-in 0.22s cubic-bezier(0.34,1.56,0.64,1) both",
       },
     },
   },
