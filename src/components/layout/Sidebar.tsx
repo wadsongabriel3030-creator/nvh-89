@@ -111,13 +111,24 @@ const secondaryNavItems: NavItem[] = [
     children: [
       { icon: BookOpen, label: 'Nivel I', href: '/escuela-equipamiento' },
       { icon: GraduationCap, label: 'Cursos', href: '/cursos' },
-      { icon: Users, label: 'Listado de Maestros', href: '/listado-lideres' },
-      { icon: Calendar, label: 'Reuniones de mentores', href: '/reuniones-discipuladores' },
-      { icon: BookOpenCheck, label: 'Guía de Mentor', href: '/guia-reunion-discipulado' },
-      { icon: BookOpen, label: 'Proceso de Discipular', href: '/proceso-discipular' },
     ]
   },
-  { icon: HandHeart, label: 'Discipulador', href: '/discipulador' },
+  {
+    icon: HandHeart,
+    label: 'Discipulado',
+    children: [
+      {
+        icon: Users,
+        label: 'Discipuladores',
+        subChildren: [
+          { icon: HandHeart, label: 'Discipulador', href: '/discipulador' },
+          { icon: BookOpenCheck, label: 'Guía de Mentor', href: '/guia-reunion-discipulado' },
+          { icon: Calendar, label: 'Reuniones de mentores', href: '/reuniones-discipuladores' },
+          { icon: BookOpen, label: 'Proceso de Discipular', href: '/proceso-discipular' },
+        ],
+      },
+    ],
+  },
   {
     icon: Map,
     label: 'Ruta del Discípulo',
@@ -125,6 +136,7 @@ const secondaryNavItems: NavItem[] = [
       { icon: Map, label: 'Ruta', href: '/ruta-discipulo' },
       { icon: Sparkles, label: 'Nueva Vida', href: '/membresia' },
       { icon: Footprints, label: 'Pasos Firmes', href: '/primeros-pasos' },
+      { icon: Users, label: 'Listado de Maestros', href: '/listado-lideres' },
       {
         icon: GraduationCap,
         label: 'Escuela de Equipamiento',

@@ -3,8 +3,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Calendar, MapPin, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, MoreVertical, Pencil, Trash2, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 export interface BaptismRow {
   id: string;
@@ -26,6 +27,7 @@ interface Props {
   index: number;
 }
 
+
 const statusColors: Record<string, string> = {
   scheduled: 'bg-amber-500/10 text-amber-500 border-0',
   completed: 'bg-success/10 text-success border-0',
@@ -44,6 +46,8 @@ function getInitials(name: string) {
 }
 
 export function BatismoCard({ record, onEdit, onDelete, index }: Props) {
+  const navigate = useNavigate();
+
   return (
     <Card className="hover:shadow-soft transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
       <CardHeader className="pb-3">
@@ -84,6 +88,17 @@ export function BatismoCard({ record, onEdit, onDelete, index }: Props) {
               <span>{record.location}</span>
             </div>
           )}
+
+          <div className="pt-2 border-t border-border/50">
+            <Button
+              size="sm"
+              className="w-full gap-2 bg-cyan-600 hover:bg-cyan-700 text-white"
+              onClick={() => navigate(`/inscripcion-bautismo?baptismId=${record.id}`)}
+            >
+              <ClipboardList className="w-4 h-4" />
+              Inscripción
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Droplets, ChevronLeft, ChevronRight, Send, CheckCircle } from 'lucide-react';
+import { Droplets, ChevronLeft, ChevronRight, Send, CheckCircle, Calendar, Clock, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,10 @@ import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { saveClassReport } from '@/lib/classReports';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import type { BaptismRow } from '@/components/batismos/BatismoCard';
 
 interface BaptismRegistrationData {
   fullName: string;
@@ -21,6 +26,26 @@ interface BaptismRegistrationData {
 const TOTAL_STEPS = 5;
 
 export default function BaptismRegistration() {
+  const [searchParams] = useSearchParams();
+  const baptismId = searchParams.get('baptismId');
+
+  const [baptism, setBaptism] = useState<BaptismRow | null>(null);
+  const [loadingBaptism, setLoadingBaptism] = useState(!!baptismId);
+
+  useEffect(() => {
+    if (!baptismId) return;
+    (async () => {
+      setLoadingBaptism(true);
+      const { data } = await supabase
+        .from('baptisms')
+        .select('*')
+        .eq('id', baptismId)
+        .single();
+      setBaptism(data as BaptismRow | null);
+      setLoadingBaptism(false);
+    })();
+  }, [baptismId]);
+
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState<BaptismRegistrationData>({
@@ -32,15 +57,11 @@ export default function BaptismRegistration() {
   });
 
   const handleNext = () => {
-    if (step < TOTAL_STEPS) {
-      setStep(step + 1);
-    }
+    if (step < TOTAL_STEPS) setStep(step + 1);
   };
 
   const handlePrevious = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    }
+    if (step > 1) setStep(step - 1);
   };
 
   const handleSubmit = async () => {
@@ -55,6 +76,8 @@ export default function BaptismRegistration() {
           email: formData.email,
           receivedChrist: formData.receivedChrist,
           attendedMembership: formData.attendedMembership,
+          baptismId: baptismId ?? undefined,
+          baptismName: baptism?.full_name ?? undefined,
         },
       });
       toast.success('¡Inscripción enviada con éxito!');
@@ -78,18 +101,12 @@ export default function BaptismRegistration() {
 
   const isStepValid = () => {
     switch (step) {
-      case 1:
-        return formData.fullName.trim().length > 0;
-      case 2:
-        return formData.phone.trim().length > 0;
-      case 3:
-        return true; // Email is optional
-      case 4:
-        return formData.receivedChrist !== null;
-      case 5:
-        return formData.attendedMembership !== null;
-      default:
-        return false;
+      case 1: return formData.fullName.trim().length > 0;
+      case 2: return formData.phone.trim().length > 0;
+      case 3: return true;
+      case 4: return formData.receivedChrist !== null;
+      case 5: return formData.attendedMembership !== null;
+      default: return false;
     }
   };
 
@@ -123,6 +140,7 @@ export default function BaptismRegistration() {
       <div className="min-h-[80vh] flex items-center justify-center py-8">
         <Card className="w-full max-w-lg">
           <CardContent className="p-6 sm:p-8">
+            {/* Header */}
             <div className="text-center mb-6">
               <div className="flex justify-center mb-4">
                 <div className="p-3 rounded-xl bg-cyan-500/10">
@@ -138,6 +156,59 @@ export default function BaptismRegistration() {
               </p>
             </div>
 
+            {/* Baptism Info Card */}
+            {baptismId && (
+              <div className="mb-6">
+                {loadingBaptism ? (
+                  <div className="flex items-center justify-center p-4 bg-muted/50 rounded-xl border">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : baptism ? (
+                  <div className="p-4 bg-cyan-500/5 rounded-xl border border-cyan-500/20 space-y-2.5">
+                    <p className="text-xs font-semibold text-cyan-500 uppercase tracking-wide mb-3">
+                      Información del Bautismo
+                    </p>
+
+                    {/* Fecha */}
+                    {baptism.scheduled_date && (
+                      <div className="flex items-center gap-2.5">
+                        <Calendar className="w-4 h-4 text-cyan-500 shrink-0" />
+                        <div>
+                          <span className="text-xs text-muted-foreground font-medium">Fecha: </span>
+                          <span className="text-sm text-foreground font-semibold">
+                            {format(new Date(baptism.scheduled_date + 'T12:00:00'), "EEEE d 'de' MMMM yyyy", { locale: es })}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hora — field "notes" used as time if present */}
+                    {baptism.notes && (
+                      <div className="flex items-center gap-2.5">
+                        <Clock className="w-4 h-4 text-cyan-500 shrink-0" />
+                        <div>
+                          <span className="text-xs text-muted-foreground font-medium">Hora: </span>
+                          <span className="text-sm text-foreground font-semibold">{baptism.notes}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Ubicación */}
+                    {baptism.location && (
+                      <div className="flex items-center gap-2.5">
+                        <MapPin className="w-4 h-4 text-cyan-500 shrink-0" />
+                        <div>
+                          <span className="text-xs text-muted-foreground font-medium">Ubicación: </span>
+                          <span className="text-sm text-foreground font-semibold">{baptism.location}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+            {/* Progress */}
             <div className="mb-6">
               <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
                 <span>Paso {step} de {TOTAL_STEPS}</span>
@@ -146,14 +217,13 @@ export default function BaptismRegistration() {
               <Progress value={progress} className="h-2" />
             </div>
 
+            {/* Steps */}
             <div className="min-h-[200px] py-4">
               {step === 1 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div>
                     <Label className="text-base font-semibold">Nombre y Apellido *</Label>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Escribe tu nombre completo
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-3">Escribe tu nombre completo</p>
                     <Input
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
@@ -168,9 +238,7 @@ export default function BaptismRegistration() {
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div>
                     <Label className="text-base font-semibold">Número de Teléfono *</Label>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Ingresa tu número de contacto
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-3">Ingresa tu número de contacto</p>
                     <Input
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -186,9 +254,7 @@ export default function BaptismRegistration() {
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div>
                     <Label className="text-base font-semibold">Correo electrónico</Label>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Opcional - Para enviarte información adicional
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-3">Opcional - Para enviarte información adicional</p>
                     <Input
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -204,25 +270,23 @@ export default function BaptismRegistration() {
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div>
                     <Label className="text-base font-semibold">¿Recibiste a Cristo como tu Único Señor y Salvador? *</Label>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Selecciona una opción
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-4">Selecciona una opción</p>
                     <div className="space-y-3">
-                      <div 
+                      <div
                         className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-colors ${formData.receivedChrist === true ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                         onClick={() => setFormData({ ...formData, receivedChrist: true })}
                       >
-                        <Checkbox 
+                        <Checkbox
                           checked={formData.receivedChrist === true}
                           onCheckedChange={() => setFormData({ ...formData, receivedChrist: true })}
                         />
                         <Label className="cursor-pointer font-medium">Sí</Label>
                       </div>
-                      <div 
+                      <div
                         className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-colors ${formData.receivedChrist === false ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                         onClick={() => setFormData({ ...formData, receivedChrist: false })}
                       >
-                        <Checkbox 
+                        <Checkbox
                           checked={formData.receivedChrist === false}
                           onCheckedChange={() => setFormData({ ...formData, receivedChrist: false })}
                         />
@@ -237,32 +301,30 @@ export default function BaptismRegistration() {
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div>
                     <Label className="text-base font-semibold">¿Asististe al curso de Membrecía Vida Nuevos Hechos? *</Label>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Selecciona una opción
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-4">Selecciona una opción</p>
                     <div className="space-y-3">
-                      <div 
+                      <div
                         className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-colors ${formData.attendedMembership === true ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                         onClick={() => setFormData({ ...formData, attendedMembership: true })}
                       >
-                        <Checkbox 
+                        <Checkbox
                           checked={formData.attendedMembership === true}
                           onCheckedChange={() => setFormData({ ...formData, attendedMembership: true })}
                         />
                         <Label className="cursor-pointer font-medium">Sí</Label>
                       </div>
-                      <div 
+                      <div
                         className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-colors ${formData.attendedMembership === false ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                         onClick={() => setFormData({ ...formData, attendedMembership: false })}
                       >
-                        <Checkbox 
+                        <Checkbox
                           checked={formData.attendedMembership === false}
                           onCheckedChange={() => setFormData({ ...formData, attendedMembership: false })}
                         />
                         <Label className="cursor-pointer font-medium">No</Label>
                       </div>
                     </div>
-                    
+
                     <div className="mt-6 p-4 bg-muted/50 rounded-lg border">
                       <p className="text-sm italic text-muted-foreground">
                         "Por tanto, vayan y hagan discípulos de todas las naciones, bautizándolos en el nombre del Padre y del Hijo y del Espíritu Santo, enseñándoles a obedecer todo lo que les he mandado a ustedes. Y les aseguro que estaré con ustedes siempre, hasta el fin del mundo."
@@ -274,6 +336,7 @@ export default function BaptismRegistration() {
               )}
             </div>
 
+            {/* Navigation */}
             <div className="flex items-center justify-between gap-3 pt-4 border-t">
               <Button
                 variant="outline"
@@ -286,20 +349,12 @@ export default function BaptismRegistration() {
               </Button>
 
               {step < TOTAL_STEPS ? (
-                <Button
-                  onClick={handleNext}
-                  disabled={!isStepValid()}
-                  className="gap-2"
-                >
+                <Button onClick={handleNext} disabled={!isStepValid()} className="gap-2">
                   Siguiente
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!isStepValid()}
-                  className="gap-2"
-                >
+                <Button onClick={handleSubmit} disabled={!isStepValid()} className="gap-2">
                   <Send className="w-4 h-4" />
                   Enviar Inscripción
                 </Button>
