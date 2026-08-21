@@ -6,10 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-type Role = 'admin' | 'pastor' | 'leader' | 'server' | 'member';
+type Role = 'admin' | 'mini_admin' | 'pastor' | 'leader' | 'server' | 'member';
 
 const UI_TO_DB: Record<string, Role> = {
   admin: 'admin',
+  mini_admin: 'mini_admin',
+  miniadmin: 'mini_admin',
   pastor: 'pastor',
   lider: 'leader',
   leader: 'leader',
@@ -39,11 +41,17 @@ Deno.serve(async (req) => {
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
-    const { data: isAdmin, error: roleErr } = await admin.rpc('has_role', {
-      _user_id: userData.user.id, _role: 'admin',
-    });
-    if (roleErr || !isAdmin) {
-      return new Response(JSON.stringify({ error: 'Solo administradores' }), {
+
+    // Allow admin OR mini_admin to create accounts
+    const { data: callerRoles } = await admin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userData.user.id);
+    const callerRoleSet = new Set((callerRoles ?? []).map((r: any) => r.role));
+    const isAdminOrMini = callerRoleSet.has('admin') || callerRoleSet.has('mini_admin');
+
+    if (!isAdminOrMini) {
+      return new Response(JSON.stringify({ error: 'Solo administradores y mini-administradores' }), {
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -54,10 +62,32 @@ Deno.serve(async (req) => {
     const name = String(body.name ?? '').trim();
     const roleInput = String(body.role ?? 'member').toLowerCase();
     const permissions: string[] = Array.isArray(body.permissions) ? body.permissions : [];
+    const memberId: string | null = body.member_id ?? null;
     const role: Role = UI_TO_DB[roleInput] ?? 'member';
+
+    // Validate email domain
+    if (!email.endsWith('@nuevoshechos.gt')) {
+      return new Response(JSON.stringify({ error: 'Solo se aceptan correos @nuevoshechos.gt' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!email || !password || password.length < 6) {
       return new Response(JSON.stringify({ error: 'Email y contraseña (>=6) requeridos' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Prevent mini_admin from creating admin accounts
+    if (role === 'admin' && !callerRoleSet.has('admin')) {
+      return new Response(JSON.stringify({ error: 'Solo el Apóstol puede crear cuentas de Administrador' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Require member_id
+    if (!memberId) {
+      return new Response(JSON.stringify({ error: 'Debe seleccionar un miembro registrado' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -77,11 +107,12 @@ Deno.serve(async (req) => {
     await admin.from('user_roles').delete().eq('user_id', newId);
     await admin.from('user_roles').insert({ user_id: newId, role });
 
-    // Permissions row
+    // Permissions row with member_id
     await admin.from('user_permissions').upsert({
       user_id: newId,
       display_name: name || email.split('@')[0],
       permissions,
+      member_id: memberId,
     }, { onConflict: 'user_id' });
 
     return new Response(JSON.stringify({ ok: true, user_id: newId }), {

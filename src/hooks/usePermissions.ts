@@ -5,17 +5,18 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface UserPermissionsState {
   loading: boolean;
   isAdmin: boolean;
+  isMiniAdmin: boolean;
   permissions: string[]; // empty array + !isAdmin means no restricted-page access
 }
 
 export function usePermissions(): UserPermissionsState {
   const { user, loading: authLoading } = useAuth();
-  const [state, setState] = useState<UserPermissionsState>({ loading: true, isAdmin: false, permissions: [] });
+  const [state, setState] = useState<UserPermissionsState>({ loading: true, isAdmin: false, isMiniAdmin: false, permissions: [] });
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      setState({ loading: false, isAdmin: false, permissions: [] });
+      setState({ loading: false, isAdmin: false, isMiniAdmin: false, permissions: [] });
       return;
     }
     let active = true;
@@ -25,10 +26,13 @@ export function usePermissions(): UserPermissionsState {
         supabase.from('user_permissions').select('permissions').eq('user_id', user.id).maybeSingle(),
       ]);
       if (!active) return;
-      const isAdmin = (roles ?? []).some((r: any) => r.role === 'admin');
+      const roleList = (roles ?? []).map((r: any) => r.role as string);
+      const isAdmin = roleList.includes('admin');
+      const isMiniAdmin = roleList.includes('mini_admin');
       setState({
         loading: false,
         isAdmin,
+        isMiniAdmin,
         permissions: (perms?.permissions as string[] | undefined) ?? [],
       });
     })();

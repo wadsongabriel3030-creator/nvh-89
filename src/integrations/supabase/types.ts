@@ -1355,6 +1355,7 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string | null
+          member_id: string | null
           permissions: string[]
           updated_at: string
           user_id: string
@@ -1362,6 +1363,7 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string | null
+          member_id?: string | null
           permissions?: string[]
           updated_at?: string
           user_id: string
@@ -1369,11 +1371,20 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string | null
+          member_id?: string | null
           permissions?: string[]
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -1407,10 +1418,17 @@ export type Database = {
           created_at: string
           display_name: string
           email: string
+          member_id: string | null
           permissions: string[]
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }[]
+      }
+      has_admin_or_mini: {
+        Args: {
+          _user_id: string
+        }
+        Returns: boolean
       }
       has_role: {
         Args: {
@@ -1421,7 +1439,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "pastor" | "leader" | "server" | "member"
+      app_role: "admin" | "mini_admin" | "pastor" | "leader" | "server" | "member"
       baptism_status: "scheduled" | "completed" | "cancelled"
       course_status: "in_progress" | "completed" | "dropped"
       discipleship_level: "beginner" | "intermediate" | "advanced"
@@ -1565,7 +1583,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "pastor", "leader", "server", "member"],
+      app_role: ["admin", "mini_admin", "pastor", "leader", "server", "member"],
       baptism_status: ["scheduled", "completed", "cancelled"],
       course_status: ["in_progress", "completed", "dropped"],
       discipleship_level: ["beginner", "intermediate", "advanced"],

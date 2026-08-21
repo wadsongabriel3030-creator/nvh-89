@@ -78,34 +78,30 @@ export async function markConversationRead(myId: string, otherId: string): Promi
     .is('read_at', null);
 }
 
-/** Fetch all system users — falls back to leaders_list if profiles empty */
+/** Fetch all users with an account (created via Cuentas de usuario).
+ *  Uses the chat_list_users() RPC which:
+ *  - Only returns users that have a role in user_roles (real accounts)
+ *  - Works for any authenticated user regardless of their role (admin, leader, server)
+ *  - Excludes the calling user automatically
+ */
 export async function fetchAllUsers(): Promise<{
   user_id: string;
   display_name: string | null;
   email: string | null;
   avatar_url: string | null;
 }[]> {
-  const { data: profileData, error } = await supabase
-    .from('profiles')
-    .select('user_id, display_name, email, avatar_url')
-    .order('display_name');
+  const { data, error } = await supabase.rpc('chat_list_users');
 
-  if (error) console.error('fetchAllUsers error:', error.message);
-
-  // If profiles table is empty or returns nothing, try leaders_list as fallback
-  if (!profileData || profileData.length === 0) {
-    const { data: leaders } = await supabase
-      .from('leaders_list')
-      .select('id, name, email')
-      .order('name');
-
-    return (leaders ?? []).map(l => ({
-      user_id: l.id,
-      display_name: l.name,
-      email: l.email,
-      avatar_url: null,
-    }));
+  if (error) {
+    console.error('fetchAllUsers (chat_list_users) error:', error.message);
+    // Fallback: try profiles table directly (will only work for admin/pastor due to RLS)
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, email, avatar_url')
+      .order('display_name');
+    if (profileError) console.error('fetchAllUsers fallback error:', profileError.message);
+    return profileData ?? [];
   }
 
-  return profileData;
+  return data ?? [];
 }

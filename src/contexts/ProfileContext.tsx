@@ -19,12 +19,11 @@ export interface ProfileData {
 }
 
 const DEFAULT_PROFILE: ProfileData = {
-  name: 'Apóstol Silvio',
-  role: 'Administrador',
-  email: 'silvio@nuevoshechos.com',
-  phone: '+502 5202-3805',
-  avatar:
-    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face',
+  name: '',
+  role: '',
+  email: '',
+  phone: '',
+  avatar: '',
   church: {
     name: 'Nuevos Hechos',
     phone: '+502 5202-3805',
@@ -77,6 +76,16 @@ function writeLocalProfile(profile: ProfileData) {
   }
 }
 
+/** Map DB role enum values to human-readable Spanish labels */
+const DB_ROLE_LABELS: Record<string, string> = {
+  admin: 'Administrador (Apóstol)',
+  mini_admin: 'MiniAdministrador',
+  pastor: 'Pastor',
+  leader: 'Líder',
+  server: 'Servidor',
+  member: 'Miembro',
+};
+
 function mapDbToProfile(
   row: {
     display_name: string | null;
@@ -85,7 +94,8 @@ function mapDbToProfile(
     avatar_url: string | null;
   } | null,
   extras: ProfileExtras | null,
-  user: User | null
+  user: User | null,
+  dbRole: string | null,
 ): ProfileData {
   const base = readLocalProfile();
 
@@ -102,7 +112,13 @@ function mapDbToProfile(
     base.email = user.email ?? base.email;
   }
 
-  if (extras?.role) base.role = extras.role;
+  // DB role (from user_roles table) ALWAYS takes priority
+  if (dbRole) {
+    base.role = DB_ROLE_LABELS[dbRole] ?? dbRole;
+  } else if (extras?.role) {
+    base.role = extras.role;
+  }
+
   if (extras?.church) base.church = { ...base.church, ...extras.church };
 
   return base;
@@ -130,27 +146,40 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     userIdRef.current = user.id;
 
     (async () => {
-      const [{ data: row, error: profileError }, { data: extrasRow, error: extrasError }] =
-        await Promise.all([
-          supabase
-            .from('profiles')
-            .select('display_name, email, phone, avatar_url')
-            .eq('user_id', user.id)
-            .maybeSingle(),
-          supabase
-            .from('app_storage')
-            .select('value')
-            .eq('key', extrasKey(user.id))
-            .maybeSingle(),
-        ]);
+      const [
+        { data: row, error: profileError },
+        { data: extrasRow, error: extrasError },
+        { data: roleRows, error: roleError },
+      ] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('display_name, email, phone, avatar_url')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('app_storage')
+          .select('value')
+          .eq('key', extrasKey(user.id))
+          .maybeSingle(),
+        // Fetch the real role from user_roles table
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true })
+          .limit(1),
+      ]);
 
       if (!active) return;
 
       if (profileError) console.error('Error loading profile:', profileError.message);
       if (extrasError) console.error('Error loading profile extras:', extrasError.message);
+      if (roleError) console.error('Error loading user role:', roleError.message);
 
       const extras = (extrasRow?.value as ProfileExtras | null) ?? null;
-      setProfile(mapDbToProfile(row, extras, user));
+      // Get the highest-priority role from user_roles
+      const dbRole = (roleRows && roleRows.length > 0) ? (roleRows[0] as any).role as string : null;
+      setProfile(mapDbToProfile(row, extras, user, dbRole));
       hydratedRef.current = true;
     })();
 

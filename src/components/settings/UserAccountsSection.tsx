@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { UserPlus, Users, Trash2, Shield, Eye, EyeOff, Check, Loader2, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
+import { UserPlus, Users, Trash2, Shield, Eye, EyeOff, Check, Loader2, Pencil, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,20 +13,30 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { AVAILABLE_PAGES } from '@/lib/permissions';
+import { usePermissions } from '@/hooks/usePermissions';
 
-type UiRole = 'admin' | 'lider' | 'servidor';
+type UiRole = 'mini_admin' | 'lider' | 'servidor';
 
 interface Account {
   user_id: string;
   email: string;
   display_name: string;
-  role: 'admin' | 'pastor' | 'leader' | 'server' | 'member';
+  role: 'admin' | 'mini_admin' | 'pastor' | 'leader' | 'server' | 'member';
   permissions: string[];
   created_at: string;
+  member_id: string | null;
+}
+
+interface Member {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone: string | null;
 }
 
 const emptyForm = {
-  name: '',
+  memberId: '' as string,
+  memberName: '',
   email: '',
   password: '',
   role: 'lider' as UiRole,
@@ -35,6 +45,7 @@ const emptyForm = {
 
 const roleLabel = (role: Account['role']) =>
   role === 'admin' ? 'Administrador (Apóstol)'
+    : role === 'mini_admin' ? 'MiniAdministrador'
     : role === 'pastor' ? 'Pastor'
     : role === 'leader' ? 'Líder'
     : role === 'server' ? 'Servidor'
@@ -42,6 +53,7 @@ const roleLabel = (role: Account['role']) =>
 
 const roleBadgeClass = (role: Account['role']) =>
   role === 'admin' ? 'bg-primary/15 text-primary'
+    : role === 'mini_admin' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
     : role === 'leader' || role === 'pastor' ? 'bg-accent/30 text-accent-foreground'
     : 'bg-muted text-muted-foreground';
 
@@ -63,6 +75,12 @@ export function UserAccountsSection() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Member search state
+  const [members, setMembers] = useState<Member[]>([]);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [showMemberDropdown, setShowMemberDropdown] = useState(false);
+
   // Edit permissions state
   const [editAccount, setEditAccount] = useState<Account | null>(null);
   const [editPermissions, setEditPermissions] = useState<string[]>([]);
@@ -70,6 +88,9 @@ export function UserAccountsSection() {
 
   // Expanded permissions view per account
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Current user permissions
+  const { isAdmin } = usePermissions();
 
   const grouped = useMemo(() => {
     const map = new Map<string, typeof AVAILABLE_PAGES>();
@@ -93,6 +114,49 @@ export function UserAccountsSection() {
   };
 
   useEffect(() => { loadAccounts(); }, []);
+
+  // Load members for the search
+  const loadMembers = async (search: string) => {
+    setMembersLoading(true);
+    let query = supabase
+      .from('members')
+      .select('id, first_name, last_name, phone')
+      .order('first_name', { ascending: true })
+      .limit(20);
+
+    if (search.trim()) {
+      query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      toast.error(error.message);
+      setMembers([]);
+    } else {
+      setMembers((data ?? []) as Member[]);
+    }
+    setMembersLoading(false);
+  };
+
+  // Debounced member search
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => {
+      loadMembers(memberSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [memberSearch, open]);
+
+  const selectMember = (member: Member) => {
+    const fullName = `${member.first_name} ${member.last_name}`.trim();
+    setForm((f) => ({
+      ...f,
+      memberId: member.id,
+      memberName: fullName,
+    }));
+    setMemberSearch(fullName);
+    setShowMemberDropdown(false);
+  };
 
   // --- Create form helpers ---
   const togglePermission = (path: string) =>
@@ -157,8 +221,17 @@ export function UserAccountsSection() {
   };
 
   const handleCreate = async () => {
-    if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
-      toast.error('Complete nombre, email y contraseña');
+    if (!form.memberId) {
+      toast.error('Seleccione un miembro registrado');
+      return;
+    }
+    if (!form.email.trim() || !form.password.trim()) {
+      toast.error('Complete email y contraseña');
+      return;
+    }
+    // Validate email domain
+    if (!form.email.trim().toLowerCase().endsWith('@nuevoshechos.gt')) {
+      toast.error('Solo se aceptan correos @nuevoshechos.gt');
       return;
     }
     if (form.password.length < 6) {
@@ -166,14 +239,15 @@ export function UserAccountsSection() {
       return;
     }
     setSubmitting(true);
-    const permissions = form.role === 'admin' ? AVAILABLE_PAGES.map((p) => p.path) : form.permissions;
+    const permissions = form.permissions;
     const { data, error } = await supabase.functions.invoke('admin-create-user', {
       body: {
-        name: form.name.trim(),
+        name: form.memberName,
         email: form.email.trim(),
         password: form.password,
         role: form.role,
         permissions,
+        member_id: form.memberId,
       },
     });
     setSubmitting(false);
@@ -181,8 +255,9 @@ export function UserAccountsSection() {
       toast.error((data as any)?.error ?? error?.message ?? 'Error al crear cuenta');
       return;
     }
-    toast.success(`Cuenta creada para ${form.name.trim()}`);
+    toast.success(`Cuenta creada para ${form.memberName}`);
     setForm(emptyForm);
+    setMemberSearch('');
     setShowPassword(false);
     setOpen(false);
     loadAccounts();
@@ -197,6 +272,22 @@ export function UserAccountsSection() {
     setDeleteId(null);
     toast.success('Cuenta eliminada');
     loadAccounts();
+  };
+
+  /** Can the current user delete a given account? */
+  const canDelete = (account: Account): boolean => {
+    // Admin can delete anyone except themselves (handled by backend)
+    if (isAdmin) return account.role !== 'admin';
+    // mini_admin can only delete leader/server/member accounts
+    return !['admin', 'mini_admin'].includes(account.role);
+  };
+
+  /** Can the current user edit permissions of a given account? */
+  const canEdit = (account: Account): boolean => {
+    if (account.role === 'admin') return false; // admin always has full access
+    if (isAdmin) return true;
+    // mini_admin cannot edit other mini_admins
+    return account.role !== 'mini_admin';
   };
 
   /** Renders the grouped permission checkboxes (reused in both create & edit dialogs) */
@@ -263,7 +354,7 @@ export function UserAccountsSection() {
               Cree credenciales reales para líderes y defina a qué páginas pueden acceder.
             </CardDescription>
           </div>
-          <Button onClick={() => setOpen(true)} className="shrink-0">
+          <Button onClick={() => { setOpen(true); setMemberSearch(''); setForm(emptyForm); }} className="shrink-0">
             <UserPlus className="w-4 h-4 mr-2" />
             Nueva cuenta
           </Button>
@@ -326,8 +417,8 @@ export function UserAccountsSection() {
                         size="sm"
                         onClick={() => openEditDialog(a)}
                         className="text-primary hover:text-primary"
-                        disabled={a.role === 'admin'}
-                        title={a.role === 'admin' ? 'Administradores tienen acceso total' : 'Editar permisos'}
+                        disabled={!canEdit(a)}
+                        title={!canEdit(a) ? 'No puede editar este usuario' : 'Editar permisos'}
                       >
                         <Pencil className="w-4 h-4 mr-1" />
                         Editar
@@ -337,8 +428,8 @@ export function UserAccountsSection() {
                         size="sm"
                         onClick={() => setDeleteId(a.user_id)}
                         className="text-destructive hover:text-destructive shrink-0"
-                        disabled={a.role === 'admin'}
-                        title={a.role === 'admin' ? 'No se puede eliminar un administrador' : 'Eliminar'}
+                        disabled={!canDelete(a)}
+                        title={!canDelete(a) ? 'No puede eliminar este usuario' : 'Eliminar'}
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
                         Eliminar
@@ -379,24 +470,87 @@ export function UserAccountsSection() {
           <DialogHeader>
             <DialogTitle>Crear nueva cuenta</DialogTitle>
             <DialogDescription>
-              Defina las credenciales y los permisos de acceso a páginas. El usuario podrá iniciar sesión con este email y contraseña.
+              Seleccione un miembro registrado y defina las credenciales de acceso. Solo se aceptan correos <strong>@nuevoshechos.gt</strong>.
             </DialogDescription>
           </DialogHeader>
 
           <ScrollArea className="-mx-6 px-6 max-h-[60vh] overflow-y-auto">
             <div className="space-y-4 py-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Nombre completo</Label>
-                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Juan Pérez" />
+              {/* Member search */}
+              <div className="space-y-2">
+                <Label>Miembro registrado</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={memberSearch}
+                    onChange={(e) => {
+                      setMemberSearch(e.target.value);
+                      setShowMemberDropdown(true);
+                      // Clear selection if user edits the text
+                      if (form.memberId && e.target.value !== form.memberName) {
+                        setForm((f) => ({ ...f, memberId: '', memberName: '' }));
+                      }
+                    }}
+                    onFocus={() => setShowMemberDropdown(true)}
+                    placeholder="Buscar por nombre..."
+                    className="pl-9"
+                  />
+                  {/* Selected member indicator */}
+                  {form.memberId && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Check className="w-4 h-4 text-green-500" />
+                    </div>
+                  )}
+
+                  {/* Dropdown */}
+                  {showMemberDropdown && !form.memberId && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {membersLoading ? (
+                        <div className="flex items-center justify-center py-4 text-muted-foreground text-sm">
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" /> Buscando…
+                        </div>
+                      ) : members.length === 0 ? (
+                        <div className="py-4 text-center text-muted-foreground text-sm">
+                          No se encontraron miembros
+                        </div>
+                      ) : (
+                        members.map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => selectMember(m)}
+                            className="w-full text-left px-4 py-2.5 hover:bg-accent/50 transition-colors flex items-center justify-between"
+                          >
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{m.first_name} {m.last_name}</p>
+                              {m.phone && <p className="text-xs text-muted-foreground">{m.phone}</p>}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="lider@iglesia.com" />
-                </div>
+                {form.memberId && (
+                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Miembro seleccionado: <strong>{form.memberName}</strong>
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="usuario@nuevoshechos.gt"
+                  />
+                  {form.email && !form.email.toLowerCase().endsWith('@nuevoshechos.gt') && (
+                    <p className="text-xs text-destructive">Solo se aceptan correos @nuevoshechos.gt</p>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <Label>Contraseña</Label>
                   <div className="relative">
@@ -412,29 +566,30 @@ export function UserAccountsSection() {
                     </button>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Rol</Label>
-                  <Select value={form.role} onValueChange={(v: UiRole) => setForm({ ...form, role: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Administrador (Apóstol)</SelectItem>
-                      <SelectItem value="lider">Líder</SelectItem>
-                      <SelectItem value="servidor">Servidor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Rol</Label>
+                <Select value={form.role} onValueChange={(v: UiRole) => setForm({ ...form, role: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mini_admin">MiniAdministrador</SelectItem>
+                    <SelectItem value="lider">Líder</SelectItem>
+                    <SelectItem value="servidor">Servidor</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <Separator />
 
-              {form.role === 'admin' ? (
-                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 text-sm flex items-start gap-2">
-                  <Shield className="w-4 h-4 text-primary mt-0.5" />
-                  <p>El rol de <strong>Administrador</strong> tiene acceso total a todas las páginas de la plataforma.</p>
+              {form.role === 'mini_admin' ? (
+                <div className="p-4 rounded-lg bg-amber-500/5 border border-amber-500/20 text-sm flex items-start gap-2">
+                  <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <p>El rol de <strong>MiniAdministrador</strong> puede crear cuentas y gestionar usuarios. Tendrá acceso a todas las páginas permitidas que seleccione abajo.</p>
                 </div>
-              ) : (
-                renderPermissionCheckboxes(form.permissions, togglePermission, toggleGroup, selectAll, clearAll)
-              )}
+              ) : null}
+
+              {renderPermissionCheckboxes(form.permissions, togglePermission, toggleGroup, selectAll, clearAll)}
             </div>
           </ScrollArea>
 

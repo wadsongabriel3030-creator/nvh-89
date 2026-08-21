@@ -65,12 +65,15 @@ export function FloatingChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const realtimeRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  // Load users list
+  // Load users list (chat_list_users RPC already excludes the current user)
   useEffect(() => {
     if (!open || !user?.id) return;
     setLoadingUsers(true);
     fetchAllUsers()
-      .then(data => setUsers(data.filter(u => u.user_id !== user.id)))
+      .then(data => {
+        // Extra safety: filter out self in case fallback was used
+        setUsers(data.filter(u => u.user_id !== user.id));
+      })
       .finally(() => setLoadingUsers(false));
   }, [open, user?.id]);
 

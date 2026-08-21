@@ -59,7 +59,7 @@ export const AVAILABLE_PAGES: PagePermission[] = [
   { path: '/settings', label: 'Configuración', group: 'Sistema' },
 ];
 
-export type UserAccountRole = 'admin' | 'lider' | 'servidor';
+export type UserAccountRole = 'admin' | 'mini_admin' | 'lider' | 'servidor';
 
 export interface UserAccount {
   id: string;

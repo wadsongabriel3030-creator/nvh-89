@@ -22,9 +22,17 @@ Deno.serve(async (req) => {
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
-    const { data: isAdmin } = await admin.rpc('has_role', { _user_id: userData.user.id, _role: 'admin' });
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: 'Solo administradores' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+    // Allow admin OR mini_admin to delete accounts
+    const { data: callerRoles } = await admin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userData.user.id);
+    const callerRoleSet = new Set((callerRoles ?? []).map((r: any) => r.role));
+    const isAdminOrMini = callerRoleSet.has('admin') || callerRoleSet.has('mini_admin');
+
+    if (!isAdminOrMini) {
+      return new Response(JSON.stringify({ error: 'Solo administradores y mini-administradores' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const { user_id } = await req.json();
@@ -33,6 +41,18 @@ Deno.serve(async (req) => {
     }
     if (user_id === userData.user.id) {
       return new Response(JSON.stringify({ error: 'No puede eliminarse a sí mismo' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // If caller is mini_admin (not admin), prevent deleting admin or other mini_admins
+    if (!callerRoleSet.has('admin')) {
+      const { data: targetRoles } = await admin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user_id);
+      const targetRoleSet = new Set((targetRoles ?? []).map((r: any) => r.role));
+      if (targetRoleSet.has('admin') || targetRoleSet.has('mini_admin')) {
+        return new Response(JSON.stringify({ error: 'No tiene permisos para eliminar este usuario' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
     }
 
     const { error } = await admin.auth.admin.deleteUser(user_id);

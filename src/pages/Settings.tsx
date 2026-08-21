@@ -12,11 +12,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRef } from 'react';
 import { toast } from 'sonner';
 import { UserAccountsSection } from '@/components/settings/UserAccountsSection';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme();
   const { profile, updateProfile, updateChurch, uploadAvatar } = useProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isAdmin, isMiniAdmin } = usePermissions();
 
   const onPickAvatar = () => fileInputRef.current?.click();
   const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,7 +155,9 @@ export default function Settings() {
                 <Label>Rol</Label>
                 <Input
                   value={profile.role}
-                  onChange={(e) => updateProfile({ role: e.target.value })}
+                  readOnly
+                  disabled
+                  className="bg-muted/50"
                 />
               </div>
               <div className="space-y-2">
@@ -203,8 +207,8 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* User Accounts */}
-        <UserAccountsSection />
+        {/* User Accounts - only visible to admin and mini_admin */}
+        {(isAdmin || isMiniAdmin) && <UserAccountsSection />}
 
         {/* Church Info */}
         <Card>
@@ -221,6 +225,9 @@ export default function Settings() {
               <Input
                 value={profile.church.name}
                 onChange={(e) => updateChurch({ name: e.target.value })}
+                readOnly={!isAdmin && !isMiniAdmin}
+                disabled={!isAdmin && !isMiniAdmin}
+                className={!isAdmin && !isMiniAdmin ? 'bg-muted/50' : ''}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -229,6 +236,9 @@ export default function Settings() {
                 <Input
                   value={profile.church.phone}
                   onChange={(e) => updateChurch({ phone: e.target.value })}
+                  readOnly={!isAdmin && !isMiniAdmin}
+                  disabled={!isAdmin && !isMiniAdmin}
+                  className={!isAdmin && !isMiniAdmin ? 'bg-muted/50' : ''}
                 />
               </div>
               <div className="space-y-2">
@@ -236,6 +246,9 @@ export default function Settings() {
                 <Input
                   value={profile.church.email}
                   onChange={(e) => updateChurch({ email: e.target.value })}
+                  readOnly={!isAdmin && !isMiniAdmin}
+                  disabled={!isAdmin && !isMiniAdmin}
+                  className={!isAdmin && !isMiniAdmin ? 'bg-muted/50' : ''}
                 />
               </div>
             </div>
@@ -244,9 +257,14 @@ export default function Settings() {
               <Input
                 value={profile.church.address}
                 onChange={(e) => updateChurch({ address: e.target.value })}
+                readOnly={!isAdmin && !isMiniAdmin}
+                disabled={!isAdmin && !isMiniAdmin}
+                className={!isAdmin && !isMiniAdmin ? 'bg-muted/50' : ''}
               />
             </div>
-            <Button onClick={() => toast.success('Información guardada')}>Guardar información</Button>
+            {(isAdmin || isMiniAdmin) && (
+              <Button onClick={() => toast.success('Información guardada')}>Guardar información</Button>
+            )}
           </CardContent>
         </Card>
       </div>
