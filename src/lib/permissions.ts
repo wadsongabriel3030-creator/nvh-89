@@ -5,57 +5,69 @@ export interface PagePermission {
 }
 
 export const AVAILABLE_PAGES: PagePermission[] = [
-  { path: '/', label: 'Dashboard', group: 'Principal' },
-  { path: '/members', label: 'Miembros', group: 'Personas' },
-  { path: '/tags', label: 'Etiquetas', group: 'Personas' },
+  // ── Principal (sidebar: mainNavItems) ──
+  { path: '/', label: 'Resumen Administrativo', group: 'Principal' },
+  { path: '/members', label: 'Comunidad', group: 'Principal' },
+  { path: '/tags', label: 'Etiquetas', group: 'Principal' },
+  { path: '/events', label: 'Eventos', group: 'Principal' },
+  { path: '/calendar-2026', label: 'Calendario 2026', group: 'Principal' },
 
-  { path: '/listado-lideres', label: 'Listado de Maestros', group: 'Personas' },
-
-  { path: '/events', label: 'Eventos', group: 'Eventos' },
-  { path: '/calendar-2026', label: 'Calendario 2026', group: 'Eventos' },
-
-  { path: '/plc', label: 'PLC', group: 'PLC' },
-  { path: '/resumen-plc', label: 'Resumen PLC', group: 'PLC' },
-  { path: '/reporte-plc', label: 'Reporte PLC', group: 'PLC' },
-
-  { path: '/membresia', label: 'Nuevos Comienzos', group: 'Discipulado' },
-  { path: '/reporte-membresia', label: 'Reporte Membresía', group: 'Discipulado' },
-
-  { path: '/discipleship', label: 'Discipulado', group: 'Discipulado' },
-  { path: '/cursos', label: 'Cursos', group: 'Discipulado' },
-  { path: '/reporte-discipulado', label: 'Reporte Discipulado', group: 'Discipulado' },
-  { path: '/reuniones-discipuladores', label: 'Reuniones de mentores', group: 'Discipulado' },
-  { path: '/guia-reunion-discipulado', label: 'Guía Reunión Discipulado', group: 'Discipulado' },
-  { path: '/proceso-discipular', label: 'Proceso Discipular', group: 'Discipulado' },
-  { path: '/primeros-pasos', label: 'Primeros Pasos', group: 'Discipulado' },
-  { path: '/curso-vida-libertad', label: 'Curso Vida en Libertad', group: 'Discipulado' },
-  { path: '/retiro-vida-libertad', label: 'Retiro Vida en Libertad', group: 'Discipulado' },
-  { path: '/compromiso-vnh', label: 'Compromiso VNH', group: 'Discipulado' },
-  { path: '/discipulador', label: 'Discipulador', group: 'Discipulado' },
-  { path: '/ruta-discipulo', label: 'Ruta del Discípulo', group: 'Ruta del Discípulo' },
-  { path: '/escuela-equipamiento', label: 'Escuela de Equipamiento', group: 'Ruta del Discípulo' },
-  { path: '/escuela-equipamiento/nivel-i', label: 'Escuela de Equipamiento – Nivel I', group: 'Ruta del Discípulo' },
-
-  { path: '/batismos', label: 'Bautismos', group: 'Bautismos' },
-
-  { path: '/prayer-guide', label: 'Guía de Oración', group: 'Oración' },
-  { path: '/secreto-de-daniel', label: 'Secreto de Daniel', group: 'Oración' },
-  { path: '/oracion-247', label: 'Oración 24/7', group: 'Oración' },
-  { path: '/cuarto-de-guerra', label: 'Cuarto de Guerra', group: 'Oración' },
-
-  { path: '/tithes', label: 'Diezmos', group: 'Finanzas' },
-  { path: '/registro-diezmos', label: 'Registro de Diezmos', group: 'Finanzas' },
-  { path: '/recibo-donacion', label: 'Recibo de Donación', group: 'Finanzas' },
-
-  { path: '/testimonies', label: 'Testimonios', group: 'Comunicación' },
-  { path: '/reunion-dominical/recursos', label: 'Reunión Dominical - Anuncios', group: 'Reunión Dominical' },
-  { path: '/reunion-dominical/programa', label: 'Reunión Dominical - Programa', group: 'Reunión Dominical' },
-  { path: '/reunion-dominical/frases', label: 'Reunión Dominical - Frases', group: 'Reunión Dominical' },
-  { path: '/reunion-dominical/versiculos', label: 'Reunión Dominical - Versículos', group: 'Reunión Dominical' },
-  { path: '/reunion-dominical/anuncios', label: 'Reunión Dominical - Recursos', group: 'Reunión Dominical' },
+  // ── Reunión Dominical ──
+  { path: '/reunion-dominical/recursos', label: 'Anuncios', group: 'Reunión Dominical' },
+  { path: '/reunion-dominical/programa', label: 'Programa', group: 'Reunión Dominical' },
+  { path: '/reunion-dominical/frases', label: 'Frases Institucionales', group: 'Reunión Dominical' },
+  { path: '/reunion-dominical/versiculos', label: 'Versículos', group: 'Reunión Dominical' },
+  { path: '/reunion-dominical/anuncios', label: 'Recursos', group: 'Reunión Dominical' },
+  { path: '/reunion-dominical/reporte-dominical', label: 'Reporte Dominical (Sub)', group: 'Reunión Dominical' },
   { path: '/reporte-dominical', label: 'Reporte Dominical', group: 'Reunión Dominical' },
 
-  { path: '/reports', label: 'Reportes', group: 'Sistema' },
+  // ── Guía de Oración ──
+  { path: '/secreto-de-daniel', label: 'Secreto de Daniel', group: 'Guía de Oración' },
+  { path: '/oracion-247', label: 'Oración 24/7', group: 'Guía de Oración' },
+  { path: '/cuarto-de-guerra', label: 'Cuarto de Guerra', group: 'Guía de Oración' },
+
+  // ── Diezmos ──
+  { path: '/tithes', label: 'Diezmos', group: 'Diezmos' },
+  { path: '/registro-diezmos', label: 'Registro de Diezmos', group: 'Diezmos' },
+  { path: '/recibo-donacion', label: 'Recibo de Donación', group: 'Diezmos' },
+
+  // ── Testimonios ──
+  { path: '/testimonies', label: 'Testimonios', group: 'Testimonios' },
+
+  // ── PLCs ──
+  { path: '/plc', label: 'PLCs', group: 'PLCs' },
+  { path: '/resumen-plc', label: 'Resumen PLC', group: 'PLCs' },
+  { path: '/reporte-plc', label: 'Reporte PLC', group: 'PLCs' },
+
+  // ── Vida en Libertad ──
+  { path: '/curso-vida-libertad', label: 'Curso Vida en Libertad', group: 'Vida en Libertad' },
+  { path: '/retiro-vida-libertad', label: 'Retiro Vida en Libertad', group: 'Vida en Libertad' },
+
+  // ── Bautismos ──
+  { path: '/batismos', label: 'Bautismos', group: 'Bautismos' },
+
+  // ── Discipulado → Discipuladores ──
+  { path: '/discipulador', label: 'Discipulador', group: 'Discipulado' },
+  { path: '/guia-reunion-discipulado', label: 'Guía de Discipulado', group: 'Discipulado' },
+  { path: '/reuniones-discipuladores', label: 'Reuniones de Discipuladores', group: 'Discipulado' },
+  { path: '/proceso-discipular', label: 'Proceso Discipular', group: 'Discipulado' },
+  { path: '/reporte-discipulado', label: 'Reporte Discipulado', group: 'Discipulado' },
+
+  // ── Escuela de Equipamiento ──
+  { path: '/ruta-discipulo', label: 'Ruta', group: 'Escuela de Equipamiento' },
+  { path: '/membresia', label: 'Nueva Vida', group: 'Escuela de Equipamiento' },
+  { path: '/reporte-membresia', label: 'Reporte Membresía', group: 'Escuela de Equipamiento' },
+  { path: '/primeros-pasos', label: 'Pasos Firmes', group: 'Escuela de Equipamiento' },
+  { path: '/reporte-pasos-firmes', label: 'Reporte Pasos Firmes', group: 'Escuela de Equipamiento' },
+  { path: '/listado-lideres', label: 'Listado de Maestros', group: 'Escuela de Equipamiento' },
+  { path: '/cursos', label: 'Cursos', group: 'Escuela de Equipamiento' },
+  { path: '/discipleship', label: 'Discipulado (Nivel I)', group: 'Escuela de Equipamiento' },
+  { path: '/escuela-equipamiento', label: 'Escuela de Equipamiento', group: 'Escuela de Equipamiento' },
+  { path: '/escuela-equipamiento/nivel-i', label: 'Doctrina Básica – Nivel I', group: 'Escuela de Equipamiento' },
+  { path: '/compromiso-vnh', label: 'Compromiso VNH', group: 'Escuela de Equipamiento' },
+
+  // ── Sistema ──
+  { path: '/reports', label: 'Informes', group: 'Sistema' },
   { path: '/settings', label: 'Configuración', group: 'Sistema' },
 ];
 

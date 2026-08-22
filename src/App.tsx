@@ -98,6 +98,7 @@ const App = () => (
                 <Route path="/inscripcion-retiro-vida-libertad" element={<InscripcionRetiroVidaLibertad />} />
                 <Route path="/inscripcion-curso-vida-libertad" element={<InscripcionCursoVidaLibertad />} />
                 <Route path="/compromiso-vida-en-libertad" element={<CompromisoVidaEnLibertad />} />
+                <Route path="/compromiso-vnh" element={<CompromisoVNH />} />
 
                 {/* Protected routes */}
                 <Route path="/" element={<P><Dashboard /></P>} />
@@ -134,7 +135,7 @@ const App = () => (
                 <Route path="/reunion-dominical/versiculos" element={<P><Versiculos /></P>} />
                 <Route path="/reunion-dominical/anuncios" element={<P><Anuncios /></P>} />
                 <Route path="/reunion-dominical/reporte-dominical" element={<P><ReporteDominicalSubpage /></P>} />
-                <Route path="/compromiso-vnh" element={<P><CompromisoVNH /></P>} />
+
                 <Route path="/primeros-pasos" element={<P><PrimerosPassos /></P>} />
                 <Route path="/reporte-pasos-firmes/:cursoId" element={<P><ReportePasosFirmes /></P>} />
 
