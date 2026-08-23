@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { saveClassReport } from '@/lib/classReports';
 export default function InscripcionPrimerosPassos() {
   const { toast } = useToast();
@@ -17,6 +18,7 @@ export default function InscripcionPrimerosPassos() {
   const [acepto, setAcepto] = useState(false);
   const [conectarme, setConectarme] = useState(false);
   const [practica, setPractica] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async () => {
     if (!nombre.trim() || !apellido.trim() || !fecha) {
@@ -50,8 +52,41 @@ export default function InscripcionPrimerosPassos() {
     }
 
     toast({ title: '¡Registro exitoso!', description: `${nombre} ${apellido} ha dado el Primer Paso en Nuevos Hechos.` });
-    navigate('/primeros-pasos');
+    setSubmitted(true);
   };
+
+  const handleReset = () => {
+    setNombre('');
+    setApellido('');
+    setFecha(new Date().toISOString().split('T')[0]);
+    setAcepto(false);
+    setConectarme(false);
+    setPractica(false);
+    setSubmitted(false);
+  };
+
+  if (submitted) {
+    return (
+      <MainLayout hideSidebar>
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <Card className="w-full max-w-lg p-8 text-center">
+            <div className="flex flex-col items-center gap-4">
+              <div className="p-4 rounded-full bg-emerald-500/10">
+                <CheckCircle className="w-12 h-12 text-emerald-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-foreground">¡Inscripción Enviada!</h2>
+              <p className="text-muted-foreground">
+                Gracias {nombre} {apellido} por dar el primer paso para crecer espiritualmente en Nuevos Hechos.
+              </p>
+              <Button onClick={handleReset} className="mt-4">
+                Enviar Otra Inscripción
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout hideSidebar>
