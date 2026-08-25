@@ -88,16 +88,26 @@ export default function ReporteDiscipulado() {
   const cursoParam = searchParams.get('curso') || '';
   const cursoConfig = LECCIONES_POR_CURSO[cursoParam];
   const lecciones = cursoConfig ? cursoConfig.lecciones : LECCIONES_DEFAULT;
+  // Map course slugs to their IDs in the discipleship-courses-v1 storage
+  const SLUG_TO_COURSE_ID: Record<string, string> = {
+    administracion: '3',
+    'la-familia': '4',
+    'creencias-basicas': '5',
+  };
+
   const [alumnos, setAlumnos] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     if (!cursoParam) return;
     try {
-      const raw = sessionStorage.getItem(`discipulado-students-${cursoParam}`);
+      // Read enrolled students from localStorage (same store as NivelI)
+      const raw = localStorage.getItem('discipleship-courses-v1');
       if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          setAlumnos(parsed.map((s: any) => ({ id: String(s.id), name: String(s.name) })));
+        const saved = JSON.parse(raw) as Record<string, { id: string; name: string }[]>;
+        const courseId = SLUG_TO_COURSE_ID[cursoParam];
+        const list = courseId ? saved[courseId] : undefined;
+        if (Array.isArray(list)) {
+          setAlumnos(list.map((s: any) => ({ id: String(s.id), name: String(s.name) })));
         }
       }
     } catch {}

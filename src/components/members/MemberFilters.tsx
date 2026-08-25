@@ -28,6 +28,7 @@ interface MemberFiltersProps {
   tagFilter: string[];
   onTagFilterChange: (value: string[]) => void;
   onAddMember: () => void;
+  canCreate?: boolean;
 }
 
 export function MemberFilters({
@@ -42,6 +43,7 @@ export function MemberFilters({
   tagFilter,
   onTagFilterChange,
   onAddMember,
+  canCreate = true,
 }: MemberFiltersProps) {
   const { tags } = useTags();
 
@@ -171,10 +173,12 @@ export function MemberFilters({
             </PopoverContent>
           </Popover>
 
-          <Button onClick={onAddMember} className="gap-2">
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nuevo Miembro</span>
-          </Button>
+          {canCreate && (
+            <Button onClick={onAddMember} className="gap-2">
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Nuevo Miembro</span>
+            </Button>
+          )}
         </div>
       </div>
     </div>

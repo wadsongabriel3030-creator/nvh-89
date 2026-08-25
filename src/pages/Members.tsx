@@ -11,6 +11,7 @@ import type { MemberSeguimiento, MemberSeguimientoMap } from '@/components/membe
 import { AssignTagsDialog } from '@/components/tags/AssignTagsDialog';
 import { useMembers } from '@/contexts/MembersContext';
 import { useDbStorage } from '@/hooks/useDbStorage';
+import { usePermissions, getMembersPermissions } from '@/hooks/usePermissions';
 import { Member, Tag } from '@/types';
 import { Users } from 'lucide-react';
 
@@ -18,6 +19,8 @@ import { toast } from '@/hooks/use-toast';
 
 export default function Members() {
   const { members, addMember, updateMember, deleteMember, addTagToMember, removeTagFromMember } = useMembers();
+  const permState = usePermissions();
+  const memberPerms = getMembersPermissions(permState);
   const { value: seguimientosMap, setValue: setSeguimientosMap } = useDbStorage<MemberSeguimientoMap>(
     'member-seguimientos',
     {},
@@ -215,6 +218,7 @@ export default function Members() {
           tagFilter={tagFilter}
           onTagFilterChange={setTagFilter}
           onAddMember={() => setIsAddDialogOpen(true)}
+          canCreate={memberPerms.canCreate}
         />
 
         {/* Members Grid */}
@@ -236,6 +240,8 @@ export default function Members() {
                   onAssignTags={openTagsDialog}
                   seguimientoCount={memberSeguimientos.length}
                   lastSeguimiento={memberSeguimientos.length > 0 ? memberSeguimientos[0] : null}
+                  canEdit={memberPerms.canEdit}
+                  canDelete={memberPerms.canDelete}
                 />
               </div>
             );

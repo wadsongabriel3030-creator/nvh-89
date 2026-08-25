@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import {
   BookOpen, Users, Award, Clock, Plus, ClipboardList,
-  UserPlus, GraduationCap, ArrowLeft, CalendarDays, ChevronDown, ChevronUp
+  UserPlus, GraduationCap, ArrowLeft, CalendarDays, ChevronDown, ChevronUp, Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { ManageCourseDialog, CourseLesson } from '@/components/discipleship/Mana
 import { ViewStudentsDialog, CourseStudent } from '@/components/discipleship/ViewStudentsDialog';
 import { AddStudentDialog } from '@/components/discipleship/AddStudentDialog';
 import { notifyMemberProgressUpdated } from '@/lib/memberProgressEvents';
-import { fetchClassReports, ClassReportRow } from '@/lib/classReports';
+import { fetchClassReports, deleteClassReport, ClassReportRow } from '@/lib/classReports';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -119,6 +119,7 @@ const STORAGE_KEY = 'discipleship-courses-v1';
 function CourseReports({ slug }: { slug: string }) {
   const [reports, setReports] = useState<ClassReportRow[]>([]);
   const [expanded, setExpanded] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchClassReports().then((all) => {
@@ -132,6 +133,18 @@ function CourseReports({ slug }: { slug: string }) {
       setReports(filtered);
     });
   }, [slug]);
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await deleteClassReport(id);
+      setReports((prev) => prev.filter((r) => r.id !== id));
+    } catch {
+      // silent
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (reports.length === 0) return null;
 
@@ -147,16 +160,26 @@ function CourseReports({ slug }: { slug: string }) {
         {visible.map((r) => (
           <div
             key={r.id}
-            className="text-xs rounded-lg bg-muted/40 border border-border/30 px-3 py-2 space-y-0.5"
+            className="text-xs rounded-lg bg-muted/40 border border-border/30 px-3 py-2 space-y-0.5 group relative"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium text-foreground truncate">{r.leccion || '—'}</span>
-              <span className="text-muted-foreground shrink-0 flex items-center gap-1">
-                <CalendarDays className="w-3 h-3" />
-                {r.report_date
-                  ? format(new Date(r.report_date + 'T12:00:00'), 'd MMM yyyy', { locale: es })
-                  : '—'}
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <CalendarDays className="w-3 h-3" />
+                  {r.report_date
+                    ? format(new Date(r.report_date + 'T12:00:00'), 'd MMM yyyy', { locale: es })
+                    : '—'}
+                </span>
+                <button
+                  onClick={() => handleDelete(r.id)}
+                  disabled={deletingId === r.id}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive disabled:opacity-50"
+                  title="Eliminar reporte"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
             </div>
             {r.leader_name && (
               <p className="text-muted-foreground">Discipulador: {r.leader_name}</p>
@@ -240,12 +263,6 @@ export default function NivelI() {
   };
 
   const goToReporte = (course: CourseData) => {
-    try {
-      sessionStorage.setItem(
-        `discipulado-students-${course.slug}`,
-        JSON.stringify(course.studentList)
-      );
-    } catch {}
     navigate(`/reporte-discipulado?curso=${course.slug}`);
   };
 

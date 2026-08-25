@@ -22,6 +22,8 @@ interface MemberCardProps {
   onAssignTags?: (member: Member) => void;
   seguimientoCount?: number;
   lastSeguimiento?: MemberSeguimiento | null;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 const getEtapaColor = (etapa?: string) => {
@@ -49,7 +51,7 @@ const formatBirthday = (birthDate?: string) => {
   }
 };
 
-export function MemberCard({ member, onEdit, onDelete, onView, onSeguimiento, onAssignTags, seguimientoCount = 0, lastSeguimiento }: MemberCardProps) {
+export function MemberCard({ member, onEdit, onDelete, onView, onSeguimiento, onAssignTags, seguimientoCount = 0, lastSeguimiento, canEdit = true, canDelete = true }: MemberCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -121,10 +123,12 @@ export function MemberCard({ member, onEdit, onDelete, onView, onSeguimiento, on
                   <Eye className="w-4 h-4 mr-2" />
                   Ver perfil
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit?.(member)}>
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  Editar
-                </DropdownMenuItem>
+                {canEdit && (
+                  <DropdownMenuItem onClick={() => onEdit?.(member)}>
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Editar
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => onSeguimiento?.(member)}>
                   <UserCheck className="w-4 h-4 mr-2" />
                   Seguimientos
@@ -133,14 +137,18 @@ export function MemberCard({ member, onEdit, onDelete, onView, onSeguimiento, on
                   <Tags className="w-4 h-4 mr-2" />
                   Etiquetas
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => onDelete?.(member)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Eliminar
-                </DropdownMenuItem>
+                {canDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => onDelete?.(member)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Eliminar
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

@@ -5,12 +5,15 @@ import { Tags as TagsIcon, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AddTagDialog } from '@/components/tags/AddTagDialog';
 import { useTags } from '@/contexts/TagsContext';
+import { usePermissions, getTagsPermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { Tag } from '@/types';
 
 export default function Tags() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const { addTag } = useTags();
+  const permState = usePermissions();
+  const tagPerms = getTagsPermissions(permState);
 
   const handleAddTag = (tag: Omit<Tag, 'id'>) => {
     addTag(tag);
@@ -33,10 +36,12 @@ export default function Tags() {
               </p>
             </div>
           </div>
-          <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
-            <Plus className="w-4 h-4" />
-            Nueva Etiqueta
-          </Button>
+          {tagPerms.canCreate && (
+            <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
+              <Plus className="w-4 h-4" />
+              Nueva Etiqueta
+            </Button>
+          )}
         </div>
 
         {/* Info Card */}
@@ -49,7 +54,11 @@ export default function Tags() {
         </div>
 
         {/* Tags List */}
-        <TagsList />
+        <TagsList
+          canCreate={tagPerms.canCreate}
+          canEdit={tagPerms.canEdit}
+          canDelete={tagPerms.canDelete}
+        />
       </div>
 
       <AddTagDialog

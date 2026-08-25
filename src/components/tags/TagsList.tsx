@@ -17,7 +17,13 @@ const categoryLabels: Record<string, string> = {
   custom: 'Personalizadas',
 };
 
-export function TagsList() {
+interface TagsListProps {
+  canCreate?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
+}
+
+export function TagsList({ canCreate = true, canEdit = true, canDelete = true }: TagsListProps) {
   const { tags, addTag, updateTag, deleteTag, getTagsByCategory } = useTags();
   
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -78,15 +84,17 @@ export function TagsList() {
                 <h3 className="text-lg font-semibold text-foreground">
                   {categoryLabels[category] || category}
                 </h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => openAddDialogForCategory(category)}
-                >
-                  <Plus className="w-4 h-4" />
-                  Agregar
-                </Button>
+                {canCreate && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => openAddDialogForCategory(category)}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Agregar
+                  </Button>
+                )}
               </div>
               <div className="bg-card rounded-xl p-4 border border-border shadow-card">
                 {categoryTags.length === 0 ? (
@@ -102,22 +110,26 @@ export function TagsList() {
                       >
                         <TagBadge tag={tag} />
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            className="h-6 w-6"
-                            onClick={() => openEditDialog(tag)}
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            className="h-6 w-6 text-destructive hover:text-destructive"
-                            onClick={() => openDeleteDialog(tag)}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="h-6 w-6"
+                              onClick={() => openEditDialog(tag)}
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="h-6 w-6 text-destructive hover:text-destructive"
+                              onClick={() => openDeleteDialog(tag)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}

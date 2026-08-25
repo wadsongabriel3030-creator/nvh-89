@@ -19,6 +19,8 @@ interface EventDetailsDialogProps {
   event: Event | null;
   onEdit: () => void;
   onDelete: () => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 const typeColors: Record<string, string> = {
@@ -39,7 +41,7 @@ const typeLabels: Record<string, string> = {
   training: 'Capacitación',
 };
 
-export function EventDetailsDialog({ open, onOpenChange, event, onEdit, onDelete }: EventDetailsDialogProps) {
+export function EventDetailsDialog({ open, onOpenChange, event, onEdit, onDelete, canEdit = true, canDelete = true }: EventDetailsDialogProps) {
   if (!event) return null;
 
   const formatDate = (dateStr: string) => {
@@ -160,15 +162,19 @@ export function EventDetailsDialog({ open, onOpenChange, event, onEdit, onDelete
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="destructive" onClick={onDelete} className="w-full sm:w-auto">
-            Eliminar
-          </Button>
+          {canDelete && (
+            <Button variant="destructive" onClick={onDelete} className="w-full sm:w-auto">
+              Eliminar
+            </Button>
+          )}
           <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Cerrar
           </Button>
-          <Button onClick={onEdit} className="w-full sm:w-auto">
-            Editar
-          </Button>
+          {canEdit && (
+            <Button onClick={onEdit} className="w-full sm:w-auto">
+              Editar
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

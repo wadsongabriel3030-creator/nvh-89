@@ -251,9 +251,10 @@ function readFileAsDataUrl(file: File): Promise<string> {
 interface FilesListProps {
   files: ReunionFile[];
   onDelete: (id: string) => void;
+  canDelete?: boolean;
 }
 
-export function ReunionFilesList({ files, onDelete }: FilesListProps) {
+export function ReunionFilesList({ files, onDelete, canDelete = true }: FilesListProps) {
   if (files.length === 0) return null;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -275,9 +276,11 @@ export function ReunionFilesList({ files, onDelete }: FilesListProps) {
                 <Button size="sm" variant="outline" className="flex-1" onClick={() => downloadReunionFile(f)}>
                   Descargar
                 </Button>
-                <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => onDelete(f.id)}>
-                  <X className="w-4 h-4" />
-                </Button>
+                {canDelete && (
+                  <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => onDelete(f.id)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>

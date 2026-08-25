@@ -7,7 +7,7 @@ import { AddActivityDialog, Activity } from '@/components/calendar/AddActivityDi
 import { Button } from '@/components/ui/button';
 import { CalendarActivity } from '@/lib/calendar-activities-2026';
 import { calendarActivities2026 } from '@/lib/calendar-activities-2026';
-import { usePermissions } from '@/hooks/usePermissions';
+import { usePermissions, getCalendarPermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useDbStorage } from '@/hooks/useDbStorage';
@@ -70,9 +70,9 @@ export default function CalendarTaskPage() {
   // Document upload storage (Supabase via useDbStorage)
   const { value: docFiles, setValue: setDocFiles } = useDbStorage<CalendarDocFile[]>('calendar_2026_docs', []);
 
-  // Role-based access: admin or leader can manage activities
-  const { isAdmin, permissions } = usePermissions();
-  const canManage = isAdmin || permissions.includes('/calendar-2026');
+  // Role-based access: granular permissions per role
+  const permState = usePermissions();
+  const calPerms = getCalendarPermissions(permState);
 
   // Load activities from Supabase
   const loadActivities = useCallback(async () => {
@@ -284,7 +284,7 @@ export default function CalendarTaskPage() {
               <p className="text-muted-foreground mt-1 text-sm">2026</p>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
-              {canManage && (
+              {calPerms.canCreate && (
                 <Button
                   onClick={handleOpenAddDialog}
                   className="gap-2 flex-1 sm:flex-none"
@@ -448,13 +448,15 @@ export default function CalendarTaskPage() {
                               <FileText className="w-3 h-3 shrink-0" />
                               <span className="truncate">{doc.name}</span>
                             </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleDeleteDoc(doc.id); }}
-                              className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                              title="Eliminar documento"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
+                            {calPerms.canDelete && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteDoc(doc.id); }}
+                                className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                title="Eliminar documento"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -524,22 +526,24 @@ export default function CalendarTaskPage() {
                                   <FileText className="w-3 h-3 shrink-0" />
                                   <span className="truncate">{doc.name}</span>
                                 </button>
-                                <button
-                                  onClick={() => handleDeleteDoc(doc.id)}
-                                  className="text-destructive opacity-0 group-hover/doc:opacity-100 transition-opacity shrink-0"
-                                  title="Eliminar documento"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
+                                {calPerms.canDelete && (
+                                  <button
+                                    onClick={() => handleDeleteDoc(doc.id)}
+                                    className="text-destructive opacity-0 group-hover/doc:opacity-100 transition-opacity shrink-0"
+                                    title="Eliminar documento"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                )}
                               </div>
                             ))}
                           </div>
                         )}
                       </div>
 
-                      {/* Edit & Delete buttons - visible only for users with manage access */}
-                      {canManage && (
-                        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Edit & Delete buttons - visible based on role permissions */}
+                      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {calPerms.canEdit && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -550,6 +554,8 @@ export default function CalendarTaskPage() {
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
+                        )}
+                        {calPerms.canDelete && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -560,8 +566,8 @@ export default function CalendarTaskPage() {
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   );
                 })

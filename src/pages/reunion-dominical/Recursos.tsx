@@ -9,10 +9,13 @@ import {
   type ReunionFile,
 } from '@/components/reunion-dominical/UploadFileDialog';
 import { useDbStorage } from '@/hooks/useDbStorage';
+import { usePermissions, getReunionDominicalPermissions } from '@/hooks/usePermissions';
 
 export default function Recursos() {
   const [open, setOpen] = useState(false);
   const { value: files, setValue: setFiles, loading } = useDbStorage<ReunionFile[]>('reunion_dominical_recursos', [], 'reunion-dominical');
+  const permState = usePermissions();
+  const rdPerms = getReunionDominicalPermissions(permState);
 
   const handleSaveFile = (file: ReunionFile) => {
     setFiles((prev) => [file, ...prev]);
@@ -35,10 +38,12 @@ export default function Recursos() {
               <p className="text-muted-foreground">Sube y gestiona anuncios para la reunión dominical</p>
             </div>
           </div>
-          <Button className="gap-2" onClick={() => setOpen(true)}>
-            <Plus className="w-4 h-4" />
-            Subir Anuncio
-          </Button>
+          {rdPerms.canCreate && (
+            <Button className="gap-2" onClick={() => setOpen(true)}>
+              <Plus className="w-4 h-4" />
+              Subir Anuncio
+            </Button>
+          )}
         </div>
 
         {loading ? (
@@ -58,7 +63,7 @@ export default function Recursos() {
             </div>
           </Card>
         ) : (
-          <ReunionFilesList files={files} onDelete={handleDelete} />
+          <ReunionFilesList files={files} onDelete={handleDelete} canDelete={rdPerms.canDelete} />
         )}
 
         <UploadFileDialog
@@ -72,3 +77,4 @@ export default function Recursos() {
     </MainLayout>
   );
 }
+

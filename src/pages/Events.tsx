@@ -18,6 +18,7 @@ import { EventDetailsDialog } from '@/components/events/EventDetailsDialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useDbStorage } from '@/hooks/useDbStorage';
+import { usePermissions, getEventsPermissions } from '@/hooks/usePermissions';
 
 const typeColors: Record<string, string> = {
   worship: 'bg-primary/10 text-primary',
@@ -115,6 +116,8 @@ export default function Events() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const { value: eventImages } = useDbStorage<EventImageMap>('event-images', {}, 'events');
+  const permState = usePermissions();
+  const eventPerms = getEventsPermissions(permState);
 
   interface InscripcionEvento {
     id: string;
@@ -275,10 +278,12 @@ export default function Events() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
-              <Plus className="w-4 h-4" />
-              Nuevo Evento
-            </Button>
+            {eventPerms.canCreate && (
+              <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
+                <Plus className="w-4 h-4" />
+                Nuevo Evento
+              </Button>
+            )}
           </div>
         </div>
         {/* Filters */}
@@ -413,9 +418,11 @@ export default function Events() {
                           Inscríbete
                         </Button>
 
-                        <Button size="sm" onClick={() => handleManageEvent(event)}>
-                          Administrar
-                        </Button>
+                        {eventPerms.canEdit && (
+                          <Button size="sm" onClick={() => handleManageEvent(event)}>
+                            Administrar
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -477,9 +484,11 @@ export default function Events() {
                             </p>
                           </td>
                           <td className="p-4 text-right">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteInscripcion(insc.id)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            {eventPerms.canDelete && (
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteInscripcion(insc.id)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -499,9 +508,11 @@ export default function Events() {
                         <p className="font-semibold text-foreground">{insc.nombre} {insc.apellido}</p>
                         <Badge className="bg-primary/10 text-primary border-0 capitalize mt-1">{insc.eventName}</Badge>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteInscripcion(insc.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {eventPerms.canDelete && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteInscripcion(insc.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                     <div className="space-y-1.5 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
@@ -556,6 +567,8 @@ export default function Events() {
         event={selectedEvent}
         onEdit={handleEditFromDetails}
         onDelete={handleDeleteFromDetails}
+        canEdit={eventPerms.canEdit}
+        canDelete={eventPerms.canDelete}
       />
     </MainLayout>
   );

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { useDbStorage } from '@/hooks/useDbStorage';
+import { usePermissions, getReunionDominicalPermissions } from '@/hooks/usePermissions';
 
 interface Versiculo {
   id: string;
@@ -19,6 +20,8 @@ interface Versiculo {
 
 export default function Versiculos() {
   const { value: versiculos, setValue: setVersiculos, loading } = useDbStorage<Versiculo[]>('versiculos-reunion-dominical', [], 'reunion-dominical');
+  const permState = usePermissions();
+  const rdPerms = getReunionDominicalPermissions(permState);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [referencia, setReferencia] = useState('');
@@ -89,10 +92,12 @@ export default function Versiculos() {
               <p className="text-muted-foreground">Versículos bíblicos para la reunión dominical</p>
             </div>
           </div>
-          <Button className="gap-2" onClick={() => setShowForm((s) => !s)}>
-            <Plus className="w-4 h-4" />
-            Nuevo Versículo
-          </Button>
+          {rdPerms.canCreate && (
+            <Button className="gap-2" onClick={() => setShowForm((s) => !s)}>
+              <Plus className="w-4 h-4" />
+              Nuevo Versículo
+            </Button>
+          )}
         </div>
 
         {showForm && (
@@ -155,12 +160,16 @@ export default function Versiculos() {
                 <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
                   <CardTitle className="text-lg text-primary">{v.referencia}</CardTitle>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(v)} title="Editar versículo">
-                      <Pencil className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                    </Button>
-                    <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(v.id)} title="Eliminar versículo">
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                    {rdPerms.canEdit && (
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(v)} title="Editar versículo">
+                        <Pencil className="w-4 h-4 text-muted-foreground hover:text-primary" />
+                      </Button>
+                    )}
+                    {rdPerms.canDelete && (
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(v.id)} title="Eliminar versículo">
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
