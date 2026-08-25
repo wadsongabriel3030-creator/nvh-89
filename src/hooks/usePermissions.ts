@@ -153,3 +153,60 @@ export function getReunionDominicalPermissions(state: UserPermissionsState) {
   // Servidor or any other role
   return { canView: true, canCreate: false, canEdit: false, canDelete: false };
 }
+
+/**
+ * Returns the permissions for the /secreto-de-daniel page based on the user's role.
+ *
+ * Admin:              Ver ✅  Crear ✅  Editar ✅  Eliminar ✅
+ * Miniadministrador:  Ver ✅  Crear ✅  Editar ✅  Eliminar ✅
+ * Líder:              Ver ✅  Crear ✅  Editar ✅  Eliminar ❌
+ * Servidor:           Ver ✅  Crear ❌  Editar ❌  Eliminar ❌
+ */
+export function getSecretoDeDanielPermissions(state: UserPermissionsState) {
+  if (state.isAdmin || state.isMiniAdmin) {
+    return { canView: true, canCreate: true, canEdit: true, canDelete: true };
+  }
+  if (state.isLider) {
+    return { canView: true, canCreate: true, canEdit: true, canDelete: false };
+  }
+  // Servidor or any other role
+  return { canView: true, canCreate: false, canEdit: false, canDelete: false };
+}
+
+/**
+ * Returns the permissions for the /oracion-247 page based on the user's role.
+ *
+ * Admin:              Ver ✅  Crear ✅  Editar ✅  Eliminar ✅
+ * Miniadministrador:  Ver ✅  Crear ✅  Editar ✅  Eliminar ✅
+ * Líder:              Ver ✅  Crear ✅  Editar ✅  Eliminar ❌
+ * Servidor:           Ver ✅  Crear ❌  Editar ❌  Eliminar ❌
+ */
+export function getOracion247Permissions(state: UserPermissionsState) {
+  if (state.isAdmin || state.isMiniAdmin) {
+    return { canView: true, canCreate: true, canEdit: true, canDelete: true };
+  }
+  if (state.isLider) {
+    return { canView: true, canCreate: true, canEdit: true, canDelete: false };
+  }
+  // Servidor or any other role
+  return { canView: true, canCreate: false, canEdit: false, canDelete: false };
+}
+
+/**
+ * Returns the permissions for the /cuarto-de-guerra page based on the user's role.
+ *
+ * Admin:              Ver ✅  Crear ✅  Editar ✅  Eliminar ✅
+ * Miniadministrador:  Ver ✅  Crear ✅  Editar ✅  Eliminar ✅
+ * Líder:              Ver ✅  Crear ✅  Editar ✅  Eliminar ❌
+ * Servidor:           Ver ✅  Crear ❌  Editar ❌  Eliminar ❌
+ */
+export function getCuartoDeGuerraPermissions(state: UserPermissionsState) {
+  if (state.isAdmin || state.isMiniAdmin) {
+    return { canView: true, canCreate: true, canEdit: true, canDelete: true };
+  }
+  if (state.isLider) {
+    return { canView: true, canCreate: true, canEdit: true, canDelete: false };
+  }
+  // Servidor or any other role
+  return { canView: true, canCreate: false, canEdit: false, canDelete: false };
+}
