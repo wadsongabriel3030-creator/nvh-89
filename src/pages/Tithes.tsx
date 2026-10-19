@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePermissions, canAccessPath } from '@/hooks/usePermissions';
 import { MainLayout } from '@/components/layout/MainLayout';
 import {
   Banknote,
@@ -68,6 +69,10 @@ const CATEGORY_OPTIONS: { value: TitheCategory | 'all'; label: string }[] = [
 
 export default function Tithes() {
   const navigate = useNavigate();
+  const perms = usePermissions();
+  const canViewHistorico = perms.isAdmin || canAccessPath(perms, '/tithes');
+  const canRegistrar = perms.isAdmin || canAccessPath(perms, '/registro-diezmos');
+  const canRecibo = perms.isAdmin || canAccessPath(perms, '/recibo-donacion');
   const [tithes, setTithes] = useState<TitheRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -347,6 +352,7 @@ export default function Tithes() {
           </div>
         </div>
 
+        {canViewHistorico && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
@@ -401,20 +407,25 @@ export default function Tithes() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         <Tabs defaultValue="records" className="space-y-4">
           <TabsList>
+            {canViewHistorico && (
             <TabsTrigger value="records" className="gap-2">
               <FileText className="w-4 h-4" />
               Registros
             </TabsTrigger>
+            )}
+            {canViewHistorico && (
             <TabsTrigger value="reports" className="gap-2">
               <Calendar className="w-4 h-4" />
               Informes
             </TabsTrigger>
+            )}
           </TabsList>
 
-          <TabsContent value="records" className="space-y-4">
+          {canViewHistorico && <TabsContent value="records" className="space-y-4">
             <div className="flex flex-col gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -597,9 +608,9 @@ export default function Tithes() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent>}
 
-          <TabsContent value="reports" className="space-y-4">
+          {canViewHistorico && <TabsContent value="reports" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -675,7 +686,7 @@ export default function Tithes() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent>}
         </Tabs>
       </div>
 

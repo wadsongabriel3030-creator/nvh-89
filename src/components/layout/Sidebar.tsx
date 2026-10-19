@@ -37,6 +37,8 @@ import {
   Eye,
   Map,
   Footprints,
+  Plus,
+  Receipt,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -91,7 +93,15 @@ const secondaryNavItems: NavItem[] = [
       { icon: Heart, label: 'Cuarto de Guerra', href: '/cuarto-de-guerra' },
     ]
   },
-  { icon: Coins, label: 'Diezmos', href: '/tithes' },
+  {
+    icon: Coins,
+    label: 'Diezmos',
+    children: [
+      { icon: Coins, label: 'Diezmos Histórico', href: '/tithes' },
+      { icon: Plus, label: 'Registro de Diezmos', href: '/registro-diezmos' },
+      { icon: Receipt, label: 'Recibo de Donación', href: '/recibo-donacion' },
+    ],
+  },
   { icon: MessageSquareQuote, label: 'Testimonios', href: '/testimonies' },
   { icon: HandHeart, label: 'PLCs', href: '/plc' },
 

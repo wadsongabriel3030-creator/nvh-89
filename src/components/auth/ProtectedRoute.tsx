@@ -20,7 +20,11 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   // Check if user has access to the current path
   const path = location.pathname;
-  if (!perms.isAdmin && perms.permissions.length > 0 && !canAccessPath(perms, path)) {
+  // Allow /tithes access if user has any Diezmos group permission
+  const diezmosGroupPaths = ['/tithes', '/registro-diezmos', '/recibo-donacion'];
+  const hasDiezmosAccess = diezmosGroupPaths.some(p => perms.permissions.includes(p));
+  const canAccess = canAccessPath(perms, path) || (path === '/tithes' && hasDiezmosAccess);
+  if (!perms.isAdmin && perms.permissions.length > 0 && !canAccess) {
     // Redirect to the first permitted page instead of showing error
     const firstPermitted = perms.permissions[0];
     if (firstPermitted && firstPermitted !== path) {

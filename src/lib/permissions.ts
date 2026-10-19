@@ -27,7 +27,7 @@ export const AVAILABLE_PAGES: PagePermission[] = [
   { path: '/cuarto-de-guerra', label: 'Cuarto de Guerra', group: 'Guía de Oración' },
 
   // ── Diezmos ──
-  { path: '/tithes', label: 'Diezmos', group: 'Diezmos' },
+  { path: '/tithes', label: 'Diezmos Histórico', group: 'Diezmos' },
   { path: '/registro-diezmos', label: 'Registro de Diezmos', group: 'Diezmos' },
   { path: '/recibo-donacion', label: 'Recibo de Donación', group: 'Diezmos' },
 
