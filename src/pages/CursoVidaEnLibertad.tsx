@@ -47,7 +47,7 @@ interface EventSettings {
 }
 
 const DEFAULT_SETTINGS: EventSettings = {
-  fechaInicio: 'LUNES 15 DE JUNIO',
+  fechaInicio: 'LUNES 15 DE AGOSTO',
   horario: '7:30 P.M.',
   lugar: 'DANCE FACTORY MAJADAS, C.C. MAJADAS ONCE',
   costoLibro: 'Q100.00',
@@ -260,6 +260,15 @@ export default function CursoVidaEnLibertad() {
               Compromiso
             </Button>
             <Button
+              onClick={() => setEditOpen(true)}
+              variant="outline"
+              className="gap-2 px-6"
+              size="lg"
+            >
+              <Pencil className="w-5 h-5" />
+              Editar Info
+            </Button>
+            <Button
               onClick={() => navigate('/inscripcion-curso-vida-libertad')}
               className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6"
               size="lg"
@@ -280,13 +289,6 @@ export default function CursoVidaEnLibertad() {
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setEditOpen(true)}
-                    className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                    title="Editar información del curso"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
                   <Badge variant="secondary" className="font-semibold">
                     {CURSO.totalLabel}
                   </Badge>

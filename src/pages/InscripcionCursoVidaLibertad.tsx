@@ -38,7 +38,7 @@ interface EventSettings {
 }
 
 const DEFAULT_SETTINGS: EventSettings = {
-  fechaInicio: 'LUNES 15 DE JUNIO',
+  fechaInicio: 'LUNES 15 DE AGOSTO',
   horario: '7:30 P.M.',
   lugar: 'DANCE FACTORY MAJADAS, C.C. MAJADAS ONCE',
   costoLibro: 'Q100.00',
